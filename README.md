@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Expense Tracker
 
-## Getting Started
+Aplicación personal de control de gastos con Next.js + Supabase.
 
-First, run the development server:
+## Requisitos
+
+- Node.js 20+
+- Proyecto Supabase configurado
+
+## Configuración local
+
+1. Copia variables de entorno:
+
+```bash
+cp .env.local.example .env.local
+```
+
+2. Completa en `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `ALLOWED_USER_EMAIL` (por defecto: `rickardoberdejo@gmail.com`)
+
+3. Instala dependencias y ejecuta:
+
+```bash
+npm install
+npm run dev
+```
+
+## Seguridad (single-user)
+
+Esta app está protegida para uso de un único usuario.
+
+- Login obligatorio por email + contraseña (`/login`)
+- Acceso permitido solo al correo configurado (`ALLOWED_USER_EMAIL`)
+- Rutas privadas protegidas por `src/proxy.ts`
+- Datos protegidos en PostgreSQL con RLS estricta por `user_id = auth.uid()`
+
+## Pasos para habilitar seguridad en Supabase
+
+1. Crea el usuario autorizado en **Supabase Auth**:
+   - `rickardoberdejo@gmail.com`
+   - define contraseña
+
+2. Aplica migraciones SQL (incluye hardening de seguridad):
+   - `supabase/migrations/20260403_single_user_auth_hardening.sql`
+
+3. (Opcional) Ejecuta seed cuando el usuario autorizado exista:
+   - `supabase/seed.sql`
+
+4. Verifica:
+   - sin sesión no se puede acceder a `/`, `/accounts`, `/transactions`, `/budgets`
+   - correo no autorizado queda bloqueado
+   - correo autorizado puede operar normalmente
+
+## Scripts útiles
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run build
+node --test tests/*.test.mjs
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
