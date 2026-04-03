@@ -23,6 +23,7 @@ import {
   formatIntegerInput,
   parseIntegerInput,
 } from "@/lib/utils/number-input-format";
+import { isDestinationSelectionValid } from "@/lib/utils/transaction-destination-rules";
 import type {
   Account,
   Budget,
@@ -156,11 +157,13 @@ export function TransactionForm({
   }, [type, categoryId, budgetId, toAccountId]);
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
-  const needsDestination = type === "transfer" || type === "payment";
   const requiresBudget = type === "expense";
   const hasValidBudget = !requiresBudget || !!selectedBudget;
-  const hasValidDestination =
-    !needsDestination || (!!toAccountId && toAccountId !== accountId);
+  const hasValidDestination = isDestinationSelectionValid(
+    type,
+    accountId,
+    toAccountId
+  );
   const canSave =
     !saving &&
     !!amount &&
@@ -315,10 +318,10 @@ export function TransactionForm({
 
           {(type === "transfer" || type === "payment") && (
             <div className="space-y-2">
-              <Label htmlFor="toAccount">Cuenta destino</Label>
+              <Label htmlFor="toAccount">Cuenta destino (opcional)</Label>
               <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? "")}>
                 <SelectTrigger id="toAccount">
-                  <SelectValue placeholder="Selecciona cuenta destino" />
+                  <SelectValue placeholder="Selecciona cuenta destino o dejalo vacio" />
                 </SelectTrigger>
                 <SelectContent>
                   {destinationAccounts.map((a) => (

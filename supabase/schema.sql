@@ -59,7 +59,9 @@ BEGIN
       UPDATE accounts SET balance = balance + NEW.amount WHERE id = NEW.account_id;
     ELSIF NEW.type IN ('transfer', 'payment') THEN
       UPDATE accounts SET balance = balance - NEW.amount WHERE id = NEW.account_id;
-      UPDATE accounts SET balance = balance + NEW.amount WHERE id = NEW.to_account_id;
+      IF NEW.to_account_id IS NOT NULL THEN
+        UPDATE accounts SET balance = balance + NEW.amount WHERE id = NEW.to_account_id;
+      END IF;
     END IF;
   ELSIF TG_OP = 'DELETE' THEN
     IF OLD.type = 'expense' THEN
@@ -68,7 +70,9 @@ BEGIN
       UPDATE accounts SET balance = balance - OLD.amount WHERE id = OLD.account_id;
     ELSIF OLD.type IN ('transfer', 'payment') THEN
       UPDATE accounts SET balance = balance + OLD.amount WHERE id = OLD.account_id;
-      UPDATE accounts SET balance = balance - OLD.amount WHERE id = OLD.to_account_id;
+      IF OLD.to_account_id IS NOT NULL THEN
+        UPDATE accounts SET balance = balance - OLD.amount WHERE id = OLD.to_account_id;
+      END IF;
     END IF;
   END IF;
   RETURN COALESCE(NEW, OLD);
