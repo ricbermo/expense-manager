@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ArrowLeftRight,
   Wallet,
   PiggyBank,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -19,11 +21,23 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  if (pathname === "/login") {
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  };
 
   return (
     <nav className="fixed inset-x-0 bottom-4 z-50 px-4 md:bottom-6">
       <div className="mx-auto max-w-md rounded-2xl border border-border/80 bg-card/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/90">
-        <div className="grid h-14 grid-cols-4 items-center gap-1">
+        <div className="grid h-14 grid-cols-5 items-center gap-1">
           {navItems.map((item) => {
             const isActive =
               item.href === "/"
@@ -47,6 +61,15 @@ export function BottomNav() {
               </Link>
             );
           })}
+
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="flex h-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 text-[11px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Salir</span>
+          </button>
         </div>
       </div>
     </nav>
