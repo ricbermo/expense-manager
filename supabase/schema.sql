@@ -12,7 +12,7 @@ CREATE TABLE categories (
 CREATE TABLE accounts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('savings', 'credit_card', 'loan')),
+  type TEXT NOT NULL CHECK (type IN ('savings', 'cash', 'credit_card', 'loan')),
   balance BIGINT NOT NULL DEFAULT 0,
   credit_limit BIGINT,
   interest_rate DECIMAL(5,2),
