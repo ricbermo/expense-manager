@@ -18,8 +18,14 @@ function getCurrentMonth() {
 export default function TransactionsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [formOpen, setFormOpen] = useState(false);
-  const { transactions, loading, createTransaction, deleteTransaction } =
-    useTransactions(month);
+  const {
+    transactions,
+    loading,
+    error,
+    refetch,
+    createTransaction,
+    deleteTransaction,
+  } = useTransactions(month);
   const { accounts } = useAccounts();
 
   const changeMonth = (delta: number) => {
@@ -71,6 +77,14 @@ export default function TransactionsPage() {
               />
             ))}
           </div>
+        ) : error && transactions.length === 0 ? (
+          <div className="empty-state text-muted-foreground">
+            <p>No se pudieron cargar los movimientos</p>
+            <p className="mt-1 text-xs">{error}</p>
+            <Button className="mt-4" onClick={() => void refetch()}>
+              Reintentar
+            </Button>
+          </div>
         ) : transactions.length === 0 ? (
           <div className="empty-state text-muted-foreground">
             <p>No hay movimientos este mes</p>
@@ -80,10 +94,26 @@ export default function TransactionsPage() {
             </Button>
           </div>
         ) : (
-          <TransactionList
-            transactions={transactions}
-            onDelete={handleDelete}
-          />
+          <div className="space-y-3">
+            {error ? (
+              <div className="section-card p-3">
+                <p className="text-sm font-medium">Error al actualizar movimientos</p>
+                <p className="mt-1 text-xs text-muted-foreground">{error}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => void refetch()}
+                >
+                  Reintentar
+                </Button>
+              </div>
+            ) : null}
+            <TransactionList
+              transactions={transactions}
+              onDelete={handleDelete}
+            />
+          </div>
         )}
       </div>
 
