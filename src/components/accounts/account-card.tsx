@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, CreditCard, Landmark, Trash2, Pencil } from "lucide-react";
+import { Wallet, Banknote, CreditCard, Landmark, Trash2, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,21 @@ import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
 const accountIcons = {
   savings: Wallet,
+  cash: Banknote,
   credit_card: CreditCard,
   loan: Landmark,
 } as const;
 
 const accountLabels = {
   savings: "Ahorros",
+  cash: "Efectivo",
   credit_card: "Tarjeta de Credito",
   loan: "Prestamo",
 } as const;
 
 const accentByType = {
   savings: "bg-emerald-100 text-emerald-700",
+  cash: "bg-teal-100 text-teal-700",
   credit_card: "bg-amber-100 text-amber-700",
   loan: "bg-blue-100 text-blue-700",
 } as const;

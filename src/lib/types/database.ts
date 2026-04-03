@@ -1,4 +1,4 @@
-export type AccountType = "savings" | "credit_card" | "loan";
+export type AccountType = "savings" | "cash" | "credit_card" | "loan";
 export type TransactionType = "expense" | "income" | "transfer" | "payment";
 export type CategoryType = "expense" | "income";
 

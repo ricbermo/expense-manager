@@ -32,6 +32,7 @@ import {
 
 const accountTypeLabels: Record<AccountType, string> = {
   savings: "Ahorros",
+  cash: "Efectivo",
   credit_card: "Tarjeta de Credito",
   loan: "Prestamo",
 };
@@ -98,8 +99,13 @@ export function AccountForm({
     const parsedCreditLimit =
       type === "credit_card" ? parseIntegerInput(creditLimit) || null : null;
     const parsedInterestRate =
-      type !== "savings" ? parseDecimalInput(interestRate) || null : null;
-    const parsedDueDay = type !== "savings" ? parseDueDayInput(dueDay) : null;
+      type === "credit_card" || type === "loan"
+        ? parseDecimalInput(interestRate) || null
+        : null;
+    const parsedDueDay =
+      type === "credit_card" || type === "loan"
+        ? parseDueDayInput(dueDay)
+        : null;
 
     try {
       await onSubmit({
@@ -156,7 +162,7 @@ export function AccountForm({
                   setCreditLimit("");
                 }
 
-                if (nextType === "savings") {
+                if (nextType === "savings" || nextType === "cash") {
                   setInterestRate("");
                   setDueDay("");
                 }
@@ -167,6 +173,7 @@ export function AccountForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="savings">Ahorros</SelectItem>
+                <SelectItem value="cash">Efectivo</SelectItem>
                 <SelectItem value="credit_card">Tarjeta de Credito</SelectItem>
                 <SelectItem value="loan">Prestamo</SelectItem>
               </SelectContent>
@@ -205,7 +212,7 @@ export function AccountForm({
             </div>
           )}
 
-          {type !== "savings" && (
+          {(type === "credit_card" || type === "loan") && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="interestRate">Tasa de interes (%)</Label>

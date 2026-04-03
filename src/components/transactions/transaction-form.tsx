@@ -34,6 +34,10 @@ import type {
 
 type BudgetWithCategory = Budget & { categories: Category | null };
 
+function isLiquidAccount(account: Account) {
+  return account.type === "savings" || account.type === "cash";
+}
+
 function getTodayLocalDate() {
   const today = new Date();
   const year = today.getFullYear();
@@ -117,19 +121,16 @@ export function TransactionForm({
     }
   }, [budgetId, budgets]);
 
-  const savingsAccounts = useMemo(
-    () => accounts.filter((a) => a.type === "savings"),
-    [accounts]
-  );
+  const liquidAccounts = useMemo(() => accounts.filter(isLiquidAccount), [accounts]);
 
   const originAccounts =
     type === "income" || type === "transfer" || type === "payment"
-      ? savingsAccounts
+      ? liquidAccounts
       : accounts;
 
   const destinationAccounts = useMemo(
-    () => savingsAccounts.filter((a) => a.id !== accountId),
-    [savingsAccounts, accountId]
+    () => liquidAccounts.filter((a) => a.id !== accountId),
+    [liquidAccounts, accountId]
   );
 
   useEffect(() => {
@@ -354,9 +355,9 @@ export function TransactionForm({
           )}
 
           {(type === "income" || type === "transfer" || type === "payment") &&
-            savingsAccounts.length === 0 && (
+            liquidAccounts.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                No hay cuentas de ahorro disponibles
+                No hay cuentas de ahorro o efectivo disponibles
               </p>
             )}
 
