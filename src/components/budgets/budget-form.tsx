@@ -18,6 +18,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCategories } from "@/lib/hooks/use-categories";
+import {
+  formatIntegerInput,
+  parseIntegerInput,
+} from "@/lib/utils/number-input-format";
 
 interface BudgetFormProps {
   open: boolean;
@@ -40,12 +44,13 @@ export function BudgetForm({
   const availableCategories = categories.filter(
     (c) => !existingCategoryIds.includes(c.id)
   );
+  const selectedCategory = categories.find((c) => c.id === categoryId);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSubmit(categoryId, parseInt(limitAmount) || 0);
+      await onSubmit(categoryId, parseIntegerInput(limitAmount));
       onOpenChange(false);
       setCategoryId("");
       setLimitAmount("");
@@ -65,11 +70,13 @@ export function BudgetForm({
             <Label htmlFor="budget-category">Categoria</Label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
               <SelectTrigger id="budget-category">
-                <SelectValue placeholder="Selecciona categoria" />
+                <SelectValue placeholder="Selecciona categoria">
+                  {() => selectedCategory?.name ?? "Selecciona categoria"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {availableCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
+                  <SelectItem key={c.id} value={c.id} label={c.name}>
                     {c.name}
                   </SelectItem>
                 ))}
@@ -81,10 +88,11 @@ export function BudgetForm({
             <Label htmlFor="limit">Limite mensual (COP)</Label>
             <Input
               id="limit"
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={limitAmount}
-              onChange={(e) => setLimitAmount(e.target.value)}
-              placeholder="500000"
+              onChange={(e) => setLimitAmount(formatIntegerInput(e.target.value))}
+              placeholder="500.000"
               required
             />
           </div>

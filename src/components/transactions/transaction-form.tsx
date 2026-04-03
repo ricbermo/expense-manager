@@ -157,6 +157,11 @@ export function TransactionForm({
   }, [type, categoryId, budgetId, toAccountId]);
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
+  const selectedIncomeCategory = incomeCategories.find((c) => c.id === categoryId);
+  const selectedOriginAccount = originAccounts.find((a) => a.id === accountId);
+  const selectedDestinationAccount = destinationAccounts.find(
+    (a) => a.id === toAccountId
+  );
   const requiresBudget = type === "expense";
   const hasValidBudget = !requiresBudget || !!selectedBudget;
   const hasValidDestination = isDestinationSelectionValid(
@@ -255,7 +260,9 @@ export function TransactionForm({
               <Label htmlFor="budget">Budget</Label>
               <Select value={budgetId} onValueChange={(v) => setBudgetId(v ?? "")}> 
                 <SelectTrigger id="budget">
-                  <SelectValue placeholder="Selecciona budget" />
+                  <SelectValue placeholder="Selecciona budget">
+                    {() => selectedBudget?.categories?.name ?? "Selecciona budget"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {loadingBudgets ? (
@@ -267,11 +274,15 @@ export function TransactionForm({
                       No hay budgets para este mes
                     </SelectItem>
                   ) : (
-                    budgets.map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.categories?.name ?? "Sin categoria"}
-                      </SelectItem>
-                    ))
+                    budgets.map((b) => {
+                      const budgetLabel = b.categories?.name ?? "Sin categoria";
+
+                      return (
+                        <SelectItem key={b.id} value={b.id} label={budgetLabel}>
+                          {budgetLabel}
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>
@@ -283,11 +294,13 @@ export function TransactionForm({
               <Label htmlFor="category">Categoria</Label>
               <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
                 <SelectTrigger id="category">
-                  <SelectValue placeholder="Selecciona categoria" />
+                  <SelectValue placeholder="Selecciona categoria">
+                    {() => selectedIncomeCategory?.name ?? "Selecciona categoria"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {incomeCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
+                    <SelectItem key={c.id} value={c.id} label={c.name}>
                       {c.name}
                     </SelectItem>
                   ))}
@@ -304,11 +317,13 @@ export function TransactionForm({
             </Label>
             <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
               <SelectTrigger id="account">
-                <SelectValue placeholder="Selecciona cuenta" />
+                <SelectValue placeholder="Selecciona cuenta">
+                  {() => selectedOriginAccount?.name ?? "Selecciona cuenta"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {originAccounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
+                  <SelectItem key={a.id} value={a.id} label={a.name}>
                     {a.name}
                   </SelectItem>
                 ))}
@@ -321,11 +336,15 @@ export function TransactionForm({
               <Label htmlFor="toAccount">Cuenta destino (opcional)</Label>
               <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? "")}>
                 <SelectTrigger id="toAccount">
-                  <SelectValue placeholder="Selecciona cuenta destino o dejalo vacio" />
+                  <SelectValue placeholder="Selecciona cuenta destino o dejalo vacio">
+                    {() =>
+                      selectedDestinationAccount?.name ??
+                      "Selecciona cuenta destino o dejalo vacio"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {destinationAccounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
+                    <SelectItem key={a.id} value={a.id} label={a.name}>
                       {a.name}
                     </SelectItem>
                   ))}
