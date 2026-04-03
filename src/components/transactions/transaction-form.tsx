@@ -18,6 +18,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCategories } from "@/lib/hooks/use-categories";
+import {
+  formatIntegerInput,
+  parseIntegerInput,
+} from "@/lib/utils/number-input-format";
 import type { Account, Transaction, TransactionType } from "@/lib/types/database";
 
 interface TransactionFormProps {
@@ -57,7 +61,7 @@ export function TransactionForm({
     try {
       await onSubmit({
         type,
-        amount: parseInt(amount) || 0,
+        amount: parseIntegerInput(amount),
         description: description || null,
         date,
         category_id:
@@ -114,10 +118,11 @@ export function TransactionForm({
             <Label htmlFor="amount">Monto (COP)</Label>
             <Input
               id="amount"
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="50000"
+              onChange={(e) => setAmount(formatIntegerInput(e.target.value))}
+              placeholder="50.000"
               required
               className="text-2xl font-bold h-14"
             />

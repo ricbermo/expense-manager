@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,37 @@ import {
   normalizeStoredBalance,
   toBalanceFieldValue,
 } from "@/lib/utils/account-balance";
+import {
+  formatIntegerInput,
+  parseDecimalInput,
+  parseDueDayInput,
+  parseIntegerInput,
+  sanitizeDecimalInput,
+} from "@/lib/utils/number-input-format";
+
+const accountTypeLabels: Record<AccountType, string> = {
+  savings: "Ahorros",
+  credit_card: "Tarjeta de Credito",
+  loan: "Prestamo",
+};
+
+function getAccountFormValues(data?: Account) {
+  return {
+    name: data?.name ?? "",
+    type: data?.type ?? ("savings" as AccountType),
+    balance: data
+      ? formatIntegerInput(String(toBalanceFieldValue(data.type, data.balance)))
+      : "",
+    creditLimit: data?.credit_limit
+      ? formatIntegerInput(String(data.credit_limit))
+      : "",
+    interestRate:
+      data?.interest_rate === null || data?.interest_rate === undefined
+        ? ""
+        : String(data.interest_rate),
+    dueDay: data?.due_day ? String(data.due_day) : "",
+  };
+}
 
 interface AccountFormProps {
   open: boolean;
@@ -36,40 +67,57 @@ export function AccountForm({
   onSubmit,
   initialData,
 }: AccountFormProps) {
-  const [name, setName] = useState(initialData?.name ?? "");
-  const [type, setType] = useState<AccountType>(
-    initialData?.type ?? "savings"
-  );
-  const [balance, setBalance] = useState(
-    initialData
-      ? String(toBalanceFieldValue(initialData.type, initialData.balance))
-      : "0"
-  );
-  const [creditLimit, setCreditLimit] = useState(
-    initialData?.credit_limit ? String(initialData.credit_limit) : ""
-  );
-  const [interestRate, setInterestRate] = useState(
-    initialData?.interest_rate ? String(initialData.interest_rate) : ""
-  );
-  const [dueDay, setDueDay] = useState(
-    initialData?.due_day ? String(initialData.due_day) : ""
-  );
+  const initialValues = getAccountFormValues(initialData);
+  const [name, setName] = useState(initialValues.name);
+  const [type, setType] = useState<AccountType>(initialValues.type);
+  const [balance, setBalance] = useState(initialValues.balance);
+  const [creditLimit, setCreditLimit] = useState(initialValues.creditLimit);
+  const [interestRate, setInterestRate] = useState(initialValues.interestRate);
+  const [dueDay, setDueDay] = useState(initialValues.dueDay);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const values = getAccountFormValues(initialData);
+    setName(values.name);
+    setType(values.type);
+    setBalance(values.balance);
+    setCreditLimit(values.creditLimit);
+    setInterestRate(values.interestRate);
+    setDueDay(values.dueDay);
+  }, [open, initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    const parsedBalance = parseIntegerInput(balance);
+    const parsedCreditLimit =
+      type === "credit_card" ? parseIntegerInput(creditLimit) || null : null;
+    const parsedInterestRate =
+      type !== "savings" ? parseDecimalInput(interestRate) || null : null;
+    const parsedDueDay = type !== "savings" ? parseDueDayInput(dueDay) : null;
+
     try {
       await onSubmit({
-        name,
+        name: name.trim(),
         type,
-        balance: normalizeStoredBalance(type, parseInt(balance) || 0),
-        credit_limit: type === "credit_card" ? parseInt(creditLimit) || null : null,
-        interest_rate:
-          type !== "savings" ? parseFloat(interestRate) || null : null,
-        due_day:
-          type !== "savings" ? parseInt(dueDay) || null : null,
+        balance: normalizeStoredBalance(type, parsedBalance),
+        credit_limit: parsedCreditLimit,
+        interest_rate: parsedInterestRate,
+        due_day: parsedDueDay,
       });
+
+      const values = getAccountFormValues();
+      setName(values.name);
+      setType(values.type);
+      setBalance(values.balance);
+      setCreditLimit(values.creditLimit);
+      setInterestRate(values.interestRate);
+      setDueDay(values.dueDay);
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -100,10 +148,22 @@ export function AccountForm({
             <Label htmlFor="type">Tipo</Label>
             <Select
               value={type}
-              onValueChange={(v) => setType(v as AccountType)}
+              onValueChange={(v) => {
+                const nextType = v as AccountType;
+                setType(nextType);
+
+                if (nextType !== "credit_card") {
+                  setCreditLimit("");
+                }
+
+                if (nextType === "savings") {
+                  setInterestRate("");
+                  setDueDay("");
+                }
+              }}
             >
               <SelectTrigger id="type">
-                <SelectValue />
+                <SelectValue>{accountTypeLabels[type]}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="savings">Ahorros</SelectItem>
@@ -123,9 +183,10 @@ export function AccountForm({
             </Label>
             <Input
               id="balance"
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={balance}
-              onChange={(e) => setBalance(e.target.value)}
+              onChange={(e) => setBalance(formatIntegerInput(e.target.value))}
               placeholder="0"
             />
           </div>
@@ -135,10 +196,11 @@ export function AccountForm({
               <Label htmlFor="creditLimit">Cupo total</Label>
               <Input
                 id="creditLimit"
-                type="number"
+                type="text"
+                inputMode="numeric"
                 value={creditLimit}
-                onChange={(e) => setCreditLimit(e.target.value)}
-                placeholder="5000000"
+                onChange={(e) => setCreditLimit(formatIntegerInput(e.target.value))}
+                placeholder="5.000.000"
               />
             </div>
           )}
@@ -149,10 +211,12 @@ export function AccountForm({
                 <Label htmlFor="interestRate">Tasa de interes (%)</Label>
                 <Input
                   id="interestRate"
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={interestRate}
-                  onChange={(e) => setInterestRate(e.target.value)}
+                  onChange={(e) =>
+                    setInterestRate(sanitizeDecimalInput(e.target.value, 2))
+                  }
                   placeholder="28.5"
                 />
               </div>
@@ -160,18 +224,28 @@ export function AccountForm({
                 <Label htmlFor="dueDay">Dia de pago</Label>
                 <Input
                   id="dueDay"
-                  type="number"
-                  min="1"
-                  max="31"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={dueDay}
-                  onChange={(e) => setDueDay(e.target.value)}
+                  onChange={(e) =>
+                    setDueDay(e.target.value.replace(/\D/g, "").slice(0, 2))
+                  }
+                  onBlur={() => {
+                    const parsed = parseDueDayInput(dueDay);
+                    setDueDay(parsed ? String(parsed) : "");
+                  }}
                   placeholder="15"
                 />
               </div>
             </>
           )}
 
-          <Button type="submit" className="w-full" disabled={saving || !name}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={saving || !name.trim()}
+          >
             {saving ? "Guardando..." : initialData ? "Actualizar" : "Crear"}
           </Button>
         </form>
