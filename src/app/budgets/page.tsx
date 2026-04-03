@@ -39,9 +39,10 @@ export default function BudgetsPage() {
   const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
 
   return (
-    <div>
+    <div className="pb-6">
       <PageHeader
         title="Presupuesto"
+        description="Monitorea limites y gasto acumulado por categoria"
         action={
           <div className="flex gap-2">
             <Button
@@ -60,12 +61,12 @@ export default function BudgetsPage() {
         }
       />
 
-      <div className="px-4 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="app-shell page-stack">
+        <div className="month-toolbar">
           <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <p className="text-sm font-medium capitalize">
+          <p className="text-sm font-semibold capitalize text-foreground">
             {formatMonthYear(`${month}-01`)}
           </p>
           <Button variant="ghost" size="icon" onClick={() => changeMonth(1)}>
@@ -74,15 +75,19 @@ export default function BudgetsPage() {
         </div>
 
         {budgets.length > 0 && (
-          <div className="rounded-xl bg-card p-4 border border-border">
+          <div className="kpi-card">
             <div className="flex justify-between text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">Gastado</p>
-                <p className="font-bold text-rose-500">{formatCOP(totalSpent)}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Gastado
+                </p>
+                <p className="font-semibold text-rose-600">{formatCOP(totalSpent)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground">Presupuesto</p>
-                <p className="font-bold">{formatCOP(totalBudget)}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Presupuesto
+                </p>
+                <p className="font-semibold">{formatCOP(totalBudget)}</p>
               </div>
             </div>
           </div>
@@ -93,14 +98,18 @@ export default function BudgetsPage() {
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-24 rounded-xl bg-card animate-pulse border border-border"
+                className="section-card h-24 animate-pulse"
               />
             ))}
           </div>
         ) : budgets.length === 0 ? (
-          <div className="rounded-xl bg-card p-6 border border-border text-center text-muted-foreground">
+          <div className="empty-state text-muted-foreground">
             <p>No hay presupuestos configurados</p>
             <p className="text-xs mt-1">Define limites de gasto por categoria</p>
+            <Button className="mt-4" onClick={() => setFormOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Crear presupuesto
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

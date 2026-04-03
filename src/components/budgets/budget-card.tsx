@@ -15,16 +15,18 @@ interface BudgetCardProps {
 export function BudgetCard({ budget, onDelete }: BudgetCardProps) {
   const percentage = Math.round((budget.spent / budget.limit_amount) * 100);
   const remaining = budget.limit_amount - budget.spent;
+  const status =
+    percentage >= 100 ? "Excedido" : percentage >= 80 ? "En alerta" : "Saludable";
 
   const progressColor =
-    percentage >= 90
-      ? "bg-rose-500"
-      : percentage >= 70
+    percentage >= 100
+      ? "bg-rose-600"
+      : percentage >= 80
         ? "bg-amber-500"
-        : "bg-emerald-500";
+        : "bg-emerald-600";
 
   return (
-    <Card className="p-4 gap-3">
+    <Card className="section-card gap-4 p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
@@ -36,31 +38,30 @@ export function BudgetCard({ budget, onDelete }: BudgetCardProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
-            {percentage}%
-          </span>
+          <span className="text-xs font-semibold text-muted-foreground">{status}</span>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-destructive"
             onClick={() => onDelete(budget.id)}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
-      <div className="relative">
+      <div className="relative space-y-1">
         <Progress value={Math.min(percentage, 100)} className="h-2" />
         <div
           className={`absolute inset-0 h-2 rounded-full ${progressColor}`}
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
+        <p className="text-xs text-muted-foreground">{percentage}% del limite</p>
       </div>
       <div className="flex justify-between text-xs">
         <span className="text-muted-foreground">
           {formatCOP(budget.spent)} gastado
         </span>
-        <span className={remaining >= 0 ? "text-emerald-500" : "text-rose-500"}>
+        <span className={remaining >= 0 ? "text-emerald-600" : "text-rose-600"}>
           {remaining >= 0
             ? `${formatCOP(remaining)} disponible`
             : `${formatCOP(Math.abs(remaining))} excedido`}

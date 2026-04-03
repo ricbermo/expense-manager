@@ -43,10 +43,10 @@ export default function AccountsPage() {
   };
 
   return (
-    <div>
+    <div className="pb-6">
       <PageHeader
         title="Cuentas"
-        description="Tus cuentas y tarjetas"
+        description="Control de ahorros, credito y prestamos"
         action={
           <Button
             size="sm"
@@ -61,11 +61,13 @@ export default function AccountsPage() {
         }
       />
 
-      <div className="px-4 space-y-4">
-        <div className="rounded-xl bg-card p-4 border border-border">
-          <p className="text-xs text-muted-foreground">Balance total</p>
+      <div className="app-shell page-stack">
+        <div className="kpi-card">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Balance total
+          </p>
           <p
-            className={`text-2xl font-bold ${totalBalance >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+            className={`mt-1 text-2xl font-semibold ${totalBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}
           >
             {formatCOP(totalBalance)}
           </p>
@@ -76,14 +78,18 @@ export default function AccountsPage() {
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-32 rounded-xl bg-card animate-pulse border border-border"
+                className="section-card h-32 animate-pulse"
               />
             ))}
           </div>
         ) : accounts.length === 0 ? (
-          <div className="rounded-xl bg-card p-6 border border-border text-center text-muted-foreground">
+          <div className="empty-state text-muted-foreground">
             <p>No hay cuentas registradas</p>
             <p className="text-xs mt-1">Agrega tu primera cuenta</p>
+            <Button className="mt-4" onClick={() => setFormOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Nueva cuenta
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

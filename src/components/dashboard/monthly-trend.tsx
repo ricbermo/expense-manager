@@ -19,58 +19,61 @@ interface DailyData {
 export function MonthlyTrend({ data }: { data: DailyData[] }) {
   if (data.length === 0) {
     return (
-      <Card className="p-4">
-        <p className="text-sm font-medium mb-3">Tendencia diaria</p>
-        <p className="text-xs text-muted-foreground text-center py-6">
+      <Card className="section-card p-4 md:p-5">
+        <p className="mb-3 text-sm font-semibold text-foreground">Tendencia diaria</p>
+        <p className="py-6 text-center text-xs text-muted-foreground">
           Sin datos este mes
         </p>
       </Card>
     );
   }
 
-  // Accumulate spending
-  let cumulative = 0;
-  const chartData = data.map((d) => {
-    cumulative += d.amount;
-    return {
-      date: d.date.split("-")[2],
-      amount: cumulative,
-    };
-  });
+  const chartData = data.reduce<Array<{ date: string; amount: number }>>(
+    (acc, d) => {
+      const previous = acc.at(-1)?.amount ?? 0;
+      acc.push({
+        date: d.date.split("-")[2],
+        amount: previous + d.amount,
+      });
+      return acc;
+    },
+    []
+  );
 
   return (
-    <Card className="p-4">
-      <p className="text-sm font-medium mb-3">Gasto acumulado</p>
+    <Card className="section-card p-4 md:p-5">
+      <p className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</p>
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.28} />
+                <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: "#71717a" }}
+              tick={{ fontSize: 10, fill: "#64748b" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis hide />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#18181b",
-                border: "1px solid #27272a",
+                backgroundColor: "#ffffff",
+                border: "1px solid #dbe4ee",
                 borderRadius: "8px",
                 fontSize: "12px",
               }}
+              labelStyle={{ color: "#334155" }}
               formatter={(value) => [formatCOP(Number(value)), "Acumulado"]}
               labelFormatter={(label) => `Dia ${label}`}
             />
             <Area
               type="monotone"
               dataKey="amount"
-              stroke="#f43f5e"
+              stroke="#1e3a8a"
               fill="url(#colorAmount)"
               strokeWidth={2}
             />

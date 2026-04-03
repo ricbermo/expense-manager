@@ -13,9 +13,9 @@ interface CategoryData {
 export function SpendingByCategory({ data }: { data: CategoryData[] }) {
   if (data.length === 0) {
     return (
-      <Card className="p-4">
-        <p className="text-sm font-medium mb-3">Gastos por categoria</p>
-        <p className="text-xs text-muted-foreground text-center py-6">
+      <Card className="section-card p-4 md:p-5">
+        <p className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</p>
+        <p className="py-6 text-center text-xs text-muted-foreground">
           Sin datos este mes
         </p>
       </Card>
@@ -23,8 +23,8 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
   }
 
   return (
-    <Card className="p-4">
-      <p className="text-sm font-medium mb-3">Gastos por categoria</p>
+    <Card className="section-card p-4 md:p-5">
+      <p className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</p>
       <div className="flex items-center gap-4">
         <div className="w-32 h-32">
           <ResponsiveContainer width="100%" height="100%">
@@ -56,7 +56,7 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
               <span className="truncate text-muted-foreground">
                 {cat.name}
               </span>
-              <span className="ml-auto font-medium shrink-0">
+              <span className="ml-auto shrink-0 font-semibold tabular-nums">
                 {formatCOP(cat.amount)}
               </span>
             </div>

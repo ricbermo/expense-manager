@@ -37,9 +37,10 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div>
+    <div className="pb-6">
       <PageHeader
         title="Movimientos"
+        description="Registra ingresos, gastos y transferencias por mes"
         action={
           <Button size="sm" onClick={() => setFormOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
@@ -48,12 +49,12 @@ export default function TransactionsPage() {
         }
       />
 
-      <div className="px-4 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="app-shell page-stack">
+        <div className="month-toolbar">
           <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <p className="text-sm font-medium capitalize">
+          <p className="text-sm font-semibold capitalize text-foreground">
             {formatMonthYear(`${month}-01`)}
           </p>
           <Button variant="ghost" size="icon" onClick={() => changeMonth(1)}>
@@ -66,13 +67,17 @@ export default function TransactionsPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-16 rounded-xl bg-card animate-pulse border border-border"
+                className="section-card h-16 animate-pulse"
               />
             ))}
           </div>
         ) : transactions.length === 0 ? (
-          <div className="rounded-xl bg-card p-6 border border-border text-center text-muted-foreground">
+          <div className="empty-state text-muted-foreground">
             <p>No hay movimientos este mes</p>
+            <Button className="mt-4" onClick={() => setFormOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Agregar movimiento
+            </Button>
           </div>
         ) : (
           <TransactionList

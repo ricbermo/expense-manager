@@ -21,6 +21,12 @@ const accountLabels = {
   loan: "Prestamo",
 } as const;
 
+const accentByType = {
+  savings: "bg-emerald-100 text-emerald-700",
+  credit_card: "bg-amber-100 text-amber-700",
+  loan: "bg-blue-100 text-blue-700",
+} as const;
+
 interface AccountCardProps {
   account: Account;
   onEdit: (account: Account) => void;
@@ -36,15 +42,17 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
       : null;
 
   return (
-    <Card className="p-4 gap-3">
+    <Card className="section-card gap-4 p-4">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-full ${accentByType[account.type]}`}
+          >
             <Icon className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-medium">{account.name}</p>
-            <Badge variant="secondary" className="text-xs">
+            <p className="font-semibold">{account.name}</p>
+            <Badge variant="secondary" className="mt-1 text-xs">
               {accountLabels[account.type]}
             </Badge>
           </div>
@@ -53,7 +61,7 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 transition-colors duration-200"
             onClick={() => onEdit(account)}
           >
             <Pencil className="h-4 w-4" />
@@ -61,7 +69,7 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive"
+            className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-destructive"
             onClick={() => onDelete(account.id)}
           >
             <Trash2 className="h-4 w-4" />
@@ -71,8 +79,8 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
 
       <div>
         <p
-          className={`text-2xl font-bold ${
-            normalizedBalance >= 0 ? "text-emerald-500" : "text-rose-500"
+          className={`text-2xl font-semibold tabular-nums ${
+            normalizedBalance >= 0 ? "text-emerald-600" : "text-rose-600"
           }`}
         >
           {formatCOP(normalizedBalance)}
@@ -82,7 +90,8 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Usado</span>
               <span>
-                {formatCOP(Math.abs(normalizedBalance))} / {formatCOP(account.credit_limit)}
+                {formatCOP(Math.abs(normalizedBalance))} /{" "}
+                {formatCOP(account.credit_limit)}
               </span>
             </div>
             <Progress value={utilization ?? 0} className="h-2" />

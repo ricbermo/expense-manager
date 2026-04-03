@@ -30,15 +30,18 @@ export default function DashboardPage() {
   const net = data.totalIncome - data.totalExpenses;
 
   return (
-    <div>
-      <PageHeader title="Dashboard" />
+    <div className="pb-6">
+      <PageHeader
+        title="Dashboard"
+        description="Resumen mensual de ingresos, gastos y balance"
+      />
 
-      <div className="px-4 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="app-shell page-stack">
+        <div className="month-toolbar">
           <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <p className="text-sm font-medium capitalize">
+          <p className="text-sm font-semibold capitalize text-foreground">
             {formatMonthYear(`${month}-01`)}
           </p>
           <Button variant="ghost" size="icon" onClick={() => changeMonth(1)}>
@@ -51,37 +54,45 @@ export default function DashboardPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-24 rounded-xl bg-card animate-pulse border border-border"
+                className="section-card h-24 animate-pulse"
               />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-card p-4 border border-border">
-                <p className="text-xs text-muted-foreground">Ingresos</p>
-                <p className="text-lg font-bold text-emerald-500">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="kpi-card">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Ingresos
+                </p>
+                <p className="mt-1 text-xl font-semibold text-emerald-600">
                   {formatCOP(data.totalIncome)}
                 </p>
               </div>
-              <div className="rounded-xl bg-card p-4 border border-border">
-                <p className="text-xs text-muted-foreground">Gastos</p>
-                <p className="text-lg font-bold text-rose-500">
+              <div className="kpi-card">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Gastos
+                </p>
+                <p className="mt-1 text-xl font-semibold text-rose-600">
                   {formatCOP(data.totalExpenses)}
                 </p>
               </div>
-              <div className="rounded-xl bg-card p-4 border border-border">
-                <p className="text-xs text-muted-foreground">Neto</p>
+              <div className="kpi-card">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Neto
+                </p>
                 <p
-                  className={`text-lg font-bold ${net >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                  className={`mt-1 text-xl font-semibold ${net >= 0 ? "text-emerald-600" : "text-rose-600"}`}
                 >
                   {formatCOP(net)}
                 </p>
               </div>
-              <div className="rounded-xl bg-card p-4 border border-border">
-                <p className="text-xs text-muted-foreground">Balance total</p>
+              <div className="kpi-card">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Balance total
+                </p>
                 <p
-                  className={`text-lg font-bold ${data.totalBalance >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                  className={`mt-1 text-xl font-semibold ${data.totalBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}
                 >
                   {formatCOP(data.totalBalance)}
                 </p>

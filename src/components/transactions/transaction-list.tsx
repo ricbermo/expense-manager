@@ -20,10 +20,17 @@ const typeIcons = {
 } as const;
 
 const typeColors = {
-  expense: "text-rose-500",
-  income: "text-emerald-500",
-  transfer: "text-blue-400",
-  payment: "text-amber-400",
+  expense: "text-rose-600",
+  income: "text-emerald-600",
+  transfer: "text-blue-700",
+  payment: "text-amber-700",
+} as const;
+
+const typeLabels = {
+  expense: "Gasto",
+  income: "Ingreso",
+  transfer: "Transferencia",
+  payment: "Pago",
 } as const;
 
 interface TransactionListProps {
@@ -48,23 +55,24 @@ export function TransactionList({
   return (
     <div className="space-y-4">
       {Object.entries(grouped).map(([date, items]) => (
-        <div key={date}>
-          <p className="text-xs text-muted-foreground mb-2 px-1">
+        <section key={date} className="space-y-2">
+          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {formatDate(date)}
           </p>
-          <div className="space-y-1">
+          <div className="space-y-2">
             {items.map((t) => {
               const Icon = typeIcons[t.type];
+
               return (
                 <div
                   key={t.id}
-                  className="flex items-center gap-3 rounded-xl bg-card p-3 border border-border"
+                  className="section-card flex items-center gap-3 p-3 transition-colors duration-200 hover:border-primary/30"
                 >
                   <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60"
                     style={{
                       backgroundColor: t.categories?.color
-                        ? `${t.categories.color}20`
+                        ? `${t.categories.color}22`
                         : undefined,
                     }}
                   >
@@ -78,18 +86,18 @@ export function TransactionList({
                       {t.description || t.categories?.name || t.type}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {t.accounts?.name}
+                      {typeLabels[t.type]} · {t.accounts?.name}
                     </p>
                   </div>
                   <div className="text-right flex items-center gap-2">
-                    <p className={`text-sm font-semibold ${typeColors[t.type]}`}>
+                    <p className={`text-sm font-semibold tabular-nums ${typeColors[t.type]}`}>
                       {t.type === "income" ? "+" : "-"}
                       {formatCOP(t.amount)}
                     </p>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-destructive"
                       onClick={() => onDelete(t.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -99,7 +107,7 @@ export function TransactionList({
               );
             })}
           </div>
-        </div>
+        </section>
       ))}
     </div>
   );
