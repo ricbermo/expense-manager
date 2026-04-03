@@ -1,0 +1,3 @@
+- mejorar Ui
+- borrar form on submit
+- mask format inputs numeros
