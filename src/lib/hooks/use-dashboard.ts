@@ -56,6 +56,7 @@ export function useDashboard(month: string) {
       amount: number;
       type: string;
       date: string;
+      to_account_id: string | null;
       categories: { name: string; color: string } | null;
     }[];
 
@@ -83,8 +84,10 @@ export function useDashboard(month: string) {
           catMap[key].amount += t.amount;
         }
 
-        // Daily spending
-        dayMap[t.date] = (dayMap[t.date] || 0) + t.amount;
+        // Daily spending (exclude internal payments like credit card payments)
+        if (!t.to_account_id) {
+          dayMap[t.date] = (dayMap[t.date] || 0) + t.amount;
+        }
       }
     });
 

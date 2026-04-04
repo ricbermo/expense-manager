@@ -1,5 +1,5 @@
 export type AccountType = "savings" | "cash" | "credit_card" | "loan";
-export type TransactionType = "expense" | "income" | "transfer" | "payment";
+export type TransactionType = "expense" | "income" | "transfer";
 export type CategoryType = "expense" | "income";
 
 export interface Category {

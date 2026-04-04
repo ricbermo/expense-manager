@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -67,6 +68,7 @@ export function TransactionForm({
   const [budgetId, setBudgetId] = useState("");
   const [accountId, setAccountId] = useState("");
   const [toAccountId, setToAccountId] = useState("");
+  const [isDebtPayment, setIsDebtPayment] = useState(false);
   const [budgets, setBudgets] = useState<BudgetWithCategory[]>([]);
   const [loadingBudgets, setLoadingBudgets] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -123,14 +125,24 @@ export function TransactionForm({
 
   const liquidAccounts = useMemo(() => accounts.filter(isLiquidAccount), [accounts]);
 
+  const expenseOriginAccounts = useMemo(
+    () => accounts.filter((a) => a.type !== "loan"),
+    [accounts]
+  );
+
   const originAccounts =
-    type === "income" || type === "transfer" || type === "payment"
+    type === "income" || type === "transfer"
       ? liquidAccounts
-      : accounts;
+      : expenseOriginAccounts;
 
   const destinationAccounts = useMemo(
     () => liquidAccounts.filter((a) => a.id !== accountId),
     [liquidAccounts, accountId]
+  );
+
+  const debtAccounts = useMemo(
+    () => accounts.filter((a) => a.type === "credit_card" || a.type === "loan"),
+    [accounts]
   );
 
   useEffect(() => {
@@ -152,19 +164,20 @@ export function TransactionForm({
     if (type !== "expense" && budgetId) {
       setBudgetId("");
     }
-    if (type !== "transfer" && type !== "payment" && toAccountId) {
+    if (type !== "transfer" && type !== "expense") {
       setToAccountId("");
     }
-  }, [type, categoryId, budgetId, toAccountId]);
+    setIsDebtPayment(false);
+  }, [type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
   const selectedIncomeCategory = incomeCategories.find((c) => c.id === categoryId);
   const selectedOriginAccount = originAccounts.find((a) => a.id === accountId);
-  const selectedDestinationAccount = destinationAccounts.find(
-    (a) => a.id === toAccountId
-  );
-  const requiresBudget = type === "expense";
-  const hasValidBudget = !requiresBudget || !!selectedBudget;
+  const selectedDebtAccount = debtAccounts.find((a) => a.id === toAccountId);
+  const selectedDestinationAccount =
+    type === "expense"
+      ? selectedDebtAccount
+      : destinationAccounts.find((a) => a.id === toAccountId);
   const hasValidDestination = isDestinationSelectionValid(
     type,
     accountId,
@@ -174,7 +187,6 @@ export function TransactionForm({
     !saving &&
     !!amount &&
     !!accountId &&
-    hasValidBudget &&
     hasValidDestination;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -194,7 +206,7 @@ export function TransactionForm({
               : null,
         account_id: accountId,
         to_account_id:
-          type === "transfer" || type === "payment"
+          type === "transfer" || type === "expense"
             ? toAccountId || null
             : null,
       });
@@ -205,6 +217,7 @@ export function TransactionForm({
       setCategoryId("");
       setBudgetId("");
       setToAccountId("");
+      setIsDebtPayment(false);
       setDate(getTodayLocalDate());
     } finally {
       setSaving(false);
@@ -215,7 +228,6 @@ export function TransactionForm({
     expense: "Gasto",
     income: "Ingreso",
     transfer: "Transferencia",
-    payment: "Pago",
   };
 
   return (
@@ -225,9 +237,9 @@ export function TransactionForm({
           <DialogTitle>Nuevo movimiento</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-3 gap-1">
             {(
-              ["expense", "income", "transfer", "payment"] as TransactionType[]
+              ["expense", "income", "transfer"] as TransactionType[]
             ).map((t) => (
               <Button
                 key={t}
@@ -258,21 +270,20 @@ export function TransactionForm({
 
           {type === "expense" && (
             <div className="space-y-2">
-              <Label htmlFor="budget">Budget</Label>
-              <Select value={budgetId} onValueChange={(v) => setBudgetId(v ?? "")}> 
+              <Label htmlFor="budget">Budget (opcional)</Label>
+              <Select value={budgetId} onValueChange={(v) => setBudgetId(v ?? "")}>
                 <SelectTrigger id="budget">
-                  <SelectValue placeholder="Selecciona budget">
-                    {() => selectedBudget?.categories?.name ?? "Selecciona budget"}
+                  <SelectValue placeholder="Sin budget">
+                    {() => selectedBudget?.categories?.name ?? "Sin budget"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="" label="Sin budget">
+                    Sin budget
+                  </SelectItem>
                   {loadingBudgets ? (
                     <SelectItem value="__loading" disabled>
                       Cargando budgets...
-                    </SelectItem>
-                  ) : budgets.length === 0 ? (
-                    <SelectItem value="__empty" disabled>
-                      No hay budgets para este mes
                     </SelectItem>
                   ) : (
                     budgets.map((b) => {
@@ -312,9 +323,11 @@ export function TransactionForm({
 
           <div className="space-y-2">
             <Label htmlFor="account">
-              {type === "transfer" || type === "payment"
+              {type === "transfer"
                 ? "Cuenta origen"
-                : "Cuenta"}
+                : type === "expense"
+                  ? "Cuenta para pagar"
+                  : "Cuenta"}
             </Label>
             <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
               <SelectTrigger id="account">
@@ -332,15 +345,52 @@ export function TransactionForm({
             </Select>
           </div>
 
-          {(type === "transfer" || type === "payment") && (
+          {type === "expense" && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="isDebtPayment"
+                  checked={isDebtPayment}
+                  onCheckedChange={(checked) => {
+                    setIsDebtPayment(!!checked);
+                    if (!checked) setToAccountId("");
+                  }}
+                />
+                <Label htmlFor="isDebtPayment" className="text-sm font-normal cursor-pointer">
+                  Es pago de deuda
+                </Label>
+              </div>
+              {isDebtPayment && (
+                <div className="space-y-2">
+                  <Label htmlFor="debtAccount">Deuda a pagar</Label>
+                  <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? "")}>
+                    <SelectTrigger id="debtAccount">
+                      <SelectValue placeholder="Selecciona deuda">
+                        {() => selectedDebtAccount?.name ?? "Selecciona deuda"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {debtAccounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id} label={a.name}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {type === "transfer" && (
             <div className="space-y-2">
-              <Label htmlFor="toAccount">Cuenta destino (opcional)</Label>
+              <Label htmlFor="toAccount">Cuenta destino</Label>
               <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? "")}>
                 <SelectTrigger id="toAccount">
-                  <SelectValue placeholder="Selecciona cuenta destino o dejalo vacio">
+                  <SelectValue placeholder="Selecciona cuenta destino">
                     {() =>
                       selectedDestinationAccount?.name ??
-                      "Selecciona cuenta destino o dejalo vacio"}
+                      "Selecciona cuenta destino"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -354,7 +404,7 @@ export function TransactionForm({
             </div>
           )}
 
-          {(type === "income" || type === "transfer" || type === "payment") &&
+          {(type === "income" || type === "transfer") &&
             liquidAccounts.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 No hay cuentas de ahorro o efectivo disponibles

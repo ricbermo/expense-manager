@@ -4,7 +4,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
-  CreditCard,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,21 +15,18 @@ const typeIcons = {
   expense: ArrowUpRight,
   income: ArrowDownLeft,
   transfer: ArrowLeftRight,
-  payment: CreditCard,
 } as const;
 
 const typeColors = {
   expense: "text-rose-600",
   income: "text-emerald-600",
   transfer: "text-blue-700",
-  payment: "text-amber-700",
 } as const;
 
 const typeLabels = {
   expense: "Gasto",
   income: "Ingreso",
   transfer: "Transferencia",
-  payment: "Pago",
 } as const;
 
 interface TransactionListProps {

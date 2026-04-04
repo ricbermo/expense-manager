@@ -27,7 +27,7 @@ CREATE TABLE transactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
   amount BIGINT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('expense', 'income', 'transfer', 'payment')),
+  type TEXT NOT NULL CHECK (type IN ('expense', 'income', 'transfer')),
   description TEXT,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   category_id UUID REFERENCES categories(id),
@@ -145,26 +145,22 @@ CREATE OR REPLACE FUNCTION update_account_balance()
 RETURNS TRIGGER AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    IF NEW.type = 'expense' THEN
-      UPDATE accounts SET balance = balance - NEW.amount WHERE id = NEW.account_id;
-    ELSIF NEW.type = 'income' THEN
-      UPDATE accounts SET balance = balance + NEW.amount WHERE id = NEW.account_id;
-    ELSIF NEW.type IN ('transfer', 'payment') THEN
+    IF NEW.type IN ('expense', 'transfer') THEN
       UPDATE accounts SET balance = balance - NEW.amount WHERE id = NEW.account_id;
       IF NEW.to_account_id IS NOT NULL THEN
         UPDATE accounts SET balance = balance + NEW.amount WHERE id = NEW.to_account_id;
       END IF;
+    ELSIF NEW.type = 'income' THEN
+      UPDATE accounts SET balance = balance + NEW.amount WHERE id = NEW.account_id;
     END IF;
   ELSIF TG_OP = 'DELETE' THEN
-    IF OLD.type = 'expense' THEN
-      UPDATE accounts SET balance = balance + OLD.amount WHERE id = OLD.account_id;
-    ELSIF OLD.type = 'income' THEN
-      UPDATE accounts SET balance = balance - OLD.amount WHERE id = OLD.account_id;
-    ELSIF OLD.type IN ('transfer', 'payment') THEN
+    IF OLD.type IN ('expense', 'transfer') THEN
       UPDATE accounts SET balance = balance + OLD.amount WHERE id = OLD.account_id;
       IF OLD.to_account_id IS NOT NULL THEN
         UPDATE accounts SET balance = balance - OLD.amount WHERE id = OLD.to_account_id;
       END IF;
+    ELSIF OLD.type = 'income' THEN
+      UPDATE accounts SET balance = balance - OLD.amount WHERE id = OLD.account_id;
     END IF;
   END IF;
   RETURN COALESCE(NEW, OLD);
