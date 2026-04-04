@@ -31,6 +31,7 @@ CREATE TABLE transactions (
   description TEXT,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   category_id UUID REFERENCES categories(id),
+  budget_id UUID,
   account_id UUID NOT NULL REFERENCES accounts(id),
   to_account_id UUID REFERENCES accounts(id),
   created_at TIMESTAMPTZ DEFAULT now()
@@ -46,6 +47,10 @@ CREATE TABLE budgets (
   limit_amount BIGINT NOT NULL
 );
 
+ALTER TABLE transactions
+ADD CONSTRAINT transactions_budget_id_fkey
+FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE SET NULL;
+
 -- Indexes
 CREATE INDEX idx_categories_user_id ON categories(user_id);
 CREATE INDEX idx_accounts_user_id ON accounts(user_id);
@@ -53,6 +58,7 @@ CREATE INDEX idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX idx_budgets_user_id ON budgets(user_id);
 CREATE INDEX idx_transactions_date ON transactions(date);
 CREATE INDEX idx_transactions_category ON transactions(category_id);
+CREATE INDEX idx_transactions_budget ON transactions(budget_id);
 CREATE INDEX idx_transactions_account ON transactions(account_id);
 CREATE INDEX idx_budgets_month ON budgets(month);
 CREATE UNIQUE INDEX idx_budgets_user_month_name ON budgets(user_id, month, lower(name));
@@ -64,6 +70,8 @@ DECLARE
   source_owner UUID;
   destination_owner UUID;
   category_owner UUID;
+  budget_owner UUID;
+  budget_category UUID;
 BEGIN
   SELECT user_id INTO source_owner
   FROM accounts
@@ -102,6 +110,28 @@ BEGIN
 
     IF category_owner <> NEW.user_id THEN
       RAISE EXCEPTION 'Category belongs to another user';
+    END IF;
+  END IF;
+
+  IF NEW.budget_id IS NOT NULL THEN
+    SELECT user_id, category_id INTO budget_owner, budget_category
+    FROM budgets
+    WHERE id = NEW.budget_id;
+
+    IF budget_owner IS NULL THEN
+      RAISE EXCEPTION 'Budget not found';
+    END IF;
+
+    IF budget_owner <> NEW.user_id THEN
+      RAISE EXCEPTION 'Budget belongs to another user';
+    END IF;
+
+    IF NEW.type <> 'expense' THEN
+      RAISE EXCEPTION 'Budget can only be used for expense transactions';
+    END IF;
+
+    IF NEW.category_id IS DISTINCT FROM budget_category THEN
+      RAISE EXCEPTION 'Budget category does not match transaction category';
     END IF;
   END IF;
 

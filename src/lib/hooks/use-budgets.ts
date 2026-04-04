@@ -48,24 +48,48 @@ export function useBudgets(month: string) {
 
     const { data: transactions } = await supabase
       .from("transactions")
-      .select("category_id, amount")
+      .select("category_id, budget_id, amount")
       .eq("type", "expense")
       .gte("date", startDate)
       .lt("date", endDate);
 
-    // Calculate spent per category
-    const spentMap: Record<string, number> = {};
-    (transactions as { category_id: string | null; amount: number }[] ?? []).forEach((t) => {
+    // Calculate spent per budget (preferred) and by category (legacy fallback)
+    const spentByBudgetMap: Record<string, number> = {};
+    const spentByCategoryMap: Record<string, number> = {};
+    (
+      transactions as {
+        category_id: string | null;
+        budget_id: string | null;
+        amount: number;
+      }[] ?? []
+    ).forEach((t) => {
+      if (t.budget_id) {
+        spentByBudgetMap[t.budget_id] = (spentByBudgetMap[t.budget_id] || 0) + t.amount;
+        return;
+      }
+
       if (t.category_id) {
-        spentMap[t.category_id] = (spentMap[t.category_id] || 0) + t.amount;
+        spentByCategoryMap[t.category_id] = (spentByCategoryMap[t.category_id] || 0) + t.amount;
       }
     });
 
+    const categoryUsageCount = (budgetData ?? []).reduce<Record<string, number>>((acc, b) => {
+      const row = b as unknown as Budget;
+      acc[row.category_id] = (acc[row.category_id] ?? 0) + 1;
+      return acc;
+    }, {});
+
     const enriched = (budgetData ?? []).map((b) => {
       const raw = b as unknown as Budget & { categories: Category };
+      const directSpent = spentByBudgetMap[raw.id] ?? 0;
+      const canApplyLegacyCategorySpent = categoryUsageCount[raw.category_id] === 1;
+      const legacyCategorySpent = canApplyLegacyCategorySpent
+        ? spentByCategoryMap[raw.category_id] ?? 0
+        : 0;
+
       return {
         ...raw,
-        spent: spentMap[raw.category_id] || 0,
+        spent: directSpent + legacyCategorySpent,
       };
     }) as BudgetWithCategory[];
 

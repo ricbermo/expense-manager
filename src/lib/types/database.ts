@@ -29,6 +29,7 @@ export interface Transaction {
   description: string | null;
   date: string;
   category_id: string | null;
+  budget_id: string | null;
   account_id: string;
   to_account_id: string | null;
   created_at: string;

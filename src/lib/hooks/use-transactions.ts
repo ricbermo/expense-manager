@@ -108,6 +108,7 @@ export function useTransactions(month?: string) {
       description: `Reembolso: ${expense.description || "gasto compartido"}`,
       date: expense.date,
       category_id: reembolsoCategoryId,
+      budget_id: null,
       account_id: expense.account_id,
       to_account_id: null,
     };

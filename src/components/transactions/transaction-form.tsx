@@ -104,7 +104,7 @@ function getDefaultValues(
     description: editTransaction.description ?? "",
     date: editTransaction.date,
     categoryId: editTransaction.category_id ?? "",
-    budgetId: "",
+    budgetId: editTransaction.budget_id ?? "",
     accountId: editTransaction.account_id,
     toAccountId: editTransaction.to_account_id ?? "",
     isDebtPayment:
@@ -157,6 +157,7 @@ export function TransactionForm({
   const splitBetween = watchedSplitBetween ?? 2;
 
   const previousTypeRef = useRef<TransactionType | null>(null);
+  const hydratedBudgetFromEditRef = useRef(false);
   const { categories: incomeCategories } = useCategories("income");
   const isEditing = !!editTransaction;
 
@@ -190,14 +191,62 @@ export function TransactionForm({
 
     const nextValues = getDefaultValues(editTransaction);
     previousTypeRef.current = nextValues.type;
+    hydratedBudgetFromEditRef.current = false;
     reset(nextValues);
   }, [open, editTransaction, reset]);
 
   useEffect(() => {
+    if (loadingBudgets) {
+      return;
+    }
+
     if (budgetId && !budgets.some((b) => b.id === budgetId)) {
       setValue("budgetId", "");
     }
-  }, [budgetId, budgets, setValue]);
+  }, [budgetId, budgets, loadingBudgets, setValue]);
+
+  useEffect(() => {
+    if (!open || !isEditing || hydratedBudgetFromEditRef.current) {
+      return;
+    }
+
+    if (type !== "expense") {
+      hydratedBudgetFromEditRef.current = true;
+      return;
+    }
+
+    if (loadingBudgets) {
+      return;
+    }
+
+    if (budgetId) {
+      hydratedBudgetFromEditRef.current = true;
+      return;
+    }
+
+    const editCategoryId = editTransaction?.category_id;
+    if (!editCategoryId) {
+      hydratedBudgetFromEditRef.current = true;
+      return;
+    }
+
+    const matchingBudgets = budgets.filter((b) => b.category_id === editCategoryId);
+
+    if (matchingBudgets.length === 1) {
+      setValue("budgetId", matchingBudgets[0].id);
+    }
+
+    hydratedBudgetFromEditRef.current = true;
+  }, [
+    budgets,
+    editTransaction?.category_id,
+    isEditing,
+    loadingBudgets,
+    open,
+    setValue,
+    type,
+    budgetId,
+  ]);
 
   const liquidAccounts = useMemo(
     () => accounts.filter(isLiquidAccount),
@@ -307,6 +356,7 @@ export function TransactionForm({
       amount: parseIntegerInput(values.amount),
       description: values.description || null,
       date: values.date,
+      budget_id: values.type === "expense" ? values.budgetId || null : null,
       category_id:
         values.type === "expense"
           ? selectedBudget?.category_id ?? null
