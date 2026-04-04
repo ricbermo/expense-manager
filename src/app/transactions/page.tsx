@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
-import { useTransactions } from "@/lib/hooks/use-transactions";
+import { useTransactions, type TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { useAccounts } from "@/lib/hooks/use-accounts";
 import { formatMonthYear } from "@/lib/utils/dates";
 
@@ -18,6 +18,7 @@ function getCurrentMonth() {
 export default function TransactionsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<TransactionWithRelations | null>(null);
   const {
     transactions,
     loading,
@@ -25,6 +26,7 @@ export default function TransactionsPage() {
     refetch,
     createTransaction,
     createSharedExpense,
+    updateTransaction,
     deleteTransaction,
   } = useTransactions(month);
   const { accounts } = useAccounts();
@@ -35,6 +37,16 @@ export default function TransactionsPage() {
     setMonth(
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
     );
+  };
+
+  const handleEdit = (transaction: TransactionWithRelations) => {
+    setEditingTransaction(transaction);
+    setFormOpen(true);
+  };
+
+  const handleFormClose = (open: boolean) => {
+    setFormOpen(open);
+    if (!open) setEditingTransaction(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -112,6 +124,7 @@ export default function TransactionsPage() {
             ) : null}
             <TransactionList
               transactions={transactions}
+              onEdit={handleEdit}
               onDelete={handleDelete}
             />
           </div>
@@ -120,10 +133,12 @@ export default function TransactionsPage() {
 
       <TransactionForm
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={handleFormClose}
         onSubmit={createTransaction}
         onSubmitShared={createSharedExpense}
+        onUpdate={updateTransaction}
         accounts={accounts}
+        editTransaction={editingTransaction}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,11 +32,13 @@ const typeLabels = {
 
 interface TransactionListProps {
   transactions: TransactionWithRelations[];
+  onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (id: string) => void;
 }
 
 export function TransactionList({
   transactions,
+  onEdit,
   onDelete,
 }: TransactionListProps) {
   // Group by date
@@ -85,11 +88,19 @@ export function TransactionList({
                       {typeLabels[t.type]} · {t.accounts?.name}
                     </p>
                   </div>
-                  <div className="text-right flex items-center gap-2">
+                  <div className="text-right flex items-center gap-1">
                     <p className={`text-sm font-semibold tabular-nums ${typeColors[t.type]}`}>
                       {t.type === "income" ? "+" : "-"}
                       {formatCOP(t.amount)}
                     </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-primary"
+                      onClick={() => onEdit(t)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"

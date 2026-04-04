@@ -72,12 +72,22 @@ export function useTransactions(month?: string) {
     const supabase = createClient();
     const reimbursementAmount =
       expense.amount - Math.floor(expense.amount / splitBetween);
+
+    // Look up Reembolso category
+    const { data: reembolsoCats } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("name", "Reembolso")
+      .eq("type", "income")
+      .limit(1);
+    const reembolsoCategoryId = (reembolsoCats as { id: string }[] | null)?.[0]?.id ?? null;
+
     const reimbursement: Omit<Transaction, "id" | "created_at"> = {
       type: "income",
       amount: reimbursementAmount,
       description: `Reembolso: ${expense.description || "gasto compartido"}`,
       date: expense.date,
-      category_id: null,
+      category_id: reembolsoCategoryId,
       account_id: expense.account_id,
       to_account_id: null,
     };
@@ -94,6 +104,22 @@ export function useTransactions(month?: string) {
     if (reimbursementError) {
       setError(getTransactionsErrorMessage(reimbursementError));
       throw reimbursementError;
+    }
+    await fetchTransactions();
+  };
+
+  const updateTransaction = async (
+    id: string,
+    updates: Partial<Omit<Transaction, "id" | "created_at">>
+  ) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("transactions")
+      .update(updates as never)
+      .eq("id", id);
+    if (error) {
+      setError(getTransactionsErrorMessage(error));
+      throw error;
     }
     await fetchTransactions();
   };
@@ -117,6 +143,7 @@ export function useTransactions(month?: string) {
     error,
     createTransaction,
     createSharedExpense,
+    updateTransaction,
     deleteTransaction,
     refetch: fetchTransactions,
   };

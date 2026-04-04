@@ -29,4 +29,5 @@ INSERT INTO categories (user_id, name, icon, color, type) VALUES
 INSERT INTO categories (user_id, name, icon, color, type) VALUES
   ((SELECT id FROM auth.users WHERE lower(email) = lower('rickardoberdejo@gmail.com') LIMIT 1), 'Salario', 'banknote', '#10b981', 'income'),
   ((SELECT id FROM auth.users WHERE lower(email) = lower('rickardoberdejo@gmail.com') LIMIT 1), 'Freelance', 'laptop', '#14b8a6', 'income'),
+  ((SELECT id FROM auth.users WHERE lower(email) = lower('rickardoberdejo@gmail.com') LIMIT 1), 'Reembolso', 'rotate-ccw', '#64748b', 'income'),
   ((SELECT id FROM auth.users WHERE lower(email) = lower('rickardoberdejo@gmail.com') LIMIT 1), 'Otros ingresos', 'plus-circle', '#22c55e', 'income');

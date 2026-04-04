@@ -52,7 +52,9 @@ interface TransactionFormProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: Omit<Transaction, "id" | "created_at">) => Promise<void>;
   onSubmitShared: (data: Omit<Transaction, "id" | "created_at">, splitBetween: number) => Promise<void>;
+  onUpdate?: (id: string, data: Partial<Omit<Transaction, "id" | "created_at">>) => Promise<void>;
   accounts: Account[];
+  editTransaction?: (Transaction & { categories?: Category | null }) | null;
 }
 
 export function TransactionForm({
@@ -60,7 +62,9 @@ export function TransactionForm({
   onOpenChange,
   onSubmit,
   onSubmitShared,
+  onUpdate,
   accounts,
+  editTransaction,
 }: TransactionFormProps) {
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
@@ -86,11 +90,22 @@ export function TransactionForm({
     return `${getTodayLocalDate().slice(0, 7)}-01`;
   }, [date]);
 
+  const isEditing = !!editTransaction;
+
   useEffect(() => {
-    if (open) {
+    if (open && editTransaction) {
+      setType(editTransaction.type);
+      setAmount(formatIntegerInput(String(editTransaction.amount)));
+      setDescription(editTransaction.description ?? "");
+      setDate(editTransaction.date);
+      setCategoryId(editTransaction.category_id ?? "");
+      setAccountId(editTransaction.account_id);
+      setToAccountId(editTransaction.to_account_id ?? "");
+      setIsDebtPayment(editTransaction.type === "expense" && !!editTransaction.to_account_id);
+    } else if (open) {
       setDate(getTodayLocalDate());
     }
-  }, [open]);
+  }, [open, editTransaction]);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,7 +231,9 @@ export function TransactionForm({
             ? toAccountId || null
             : null,
       };
-      if (isSharedExpense && type === "expense") {
+      if (isEditing && onUpdate) {
+        await onUpdate(editTransaction!.id, transaction);
+      } else if (isSharedExpense && type === "expense") {
         await onSubmitShared(transaction, splitBetween);
       } else {
         await onSubmit(transaction);
@@ -246,7 +263,7 @@ export function TransactionForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nuevo movimiento</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar movimiento" : "Nuevo movimiento"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-3 gap-1.5">
@@ -389,36 +406,40 @@ export function TransactionForm({
                   </Select>
                 </div>
               )}
-              <label htmlFor="isSharedExpense" className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50">
-                <Checkbox
-                  id="isSharedExpense"
-                  checked={isSharedExpense}
-                  onCheckedChange={(checked) => {
-                    setIsSharedExpense(!!checked);
-                    if (checked) { setIsDebtPayment(false); setToAccountId(""); }
-                    if (!checked) setSplitBetween(2);
-                  }}
-                />
-                <span className="text-sm">Gasto compartido</span>
-              </label>
-              {isSharedExpense && (
-                <div className="space-y-2">
-                  <Label htmlFor="splitBetween">Dividir entre</Label>
-                  <Input
-                    id="splitBetween"
-                    type="number"
-                    min={2}
-                    max={10}
-                    value={splitBetween}
-                    onChange={(e) => setSplitBetween(Math.max(2, Math.min(10, Number(e.target.value) || 2)))}
-                  />
-                  {amount && (
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                      <p>Tu parte: {formatIntegerInput(String(Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
-                      <p>Reembolso: {formatIntegerInput(String(parseIntegerInput(amount) - Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
+              {!isEditing && (
+                <>
+                  <label htmlFor="isSharedExpense" className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50">
+                    <Checkbox
+                      id="isSharedExpense"
+                      checked={isSharedExpense}
+                      onCheckedChange={(checked) => {
+                        setIsSharedExpense(!!checked);
+                        if (checked) { setIsDebtPayment(false); setToAccountId(""); }
+                        if (!checked) setSplitBetween(2);
+                      }}
+                    />
+                    <span className="text-sm">Gasto compartido</span>
+                  </label>
+                  {isSharedExpense && (
+                    <div className="space-y-2">
+                      <Label htmlFor="splitBetween">Dividir entre</Label>
+                      <Input
+                        id="splitBetween"
+                        type="number"
+                        min={2}
+                        max={10}
+                        value={splitBetween}
+                        onChange={(e) => setSplitBetween(Math.max(2, Math.min(10, Number(e.target.value) || 2)))}
+                      />
+                      {amount && (
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          <p>Tu parte: {formatIntegerInput(String(Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
+                          <p>Reembolso: {formatIntegerInput(String(parseIntegerInput(amount) - Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           )}
@@ -477,7 +498,7 @@ export function TransactionForm({
             className="w-full"
             disabled={!canSave}
           >
-            {saving ? "Guardando..." : "Guardar"}
+            {saving ? "Guardando..." : isEditing ? "Actualizar" : "Guardar"}
           </Button>
         </form>
       </DialogContent>

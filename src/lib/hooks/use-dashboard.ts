@@ -67,7 +67,10 @@ export function useDashboard(month: string) {
 
     txns.forEach((t) => {
       if (t.type === "income") {
-        totalIncome += t.amount;
+        // Exclude reimbursements from income total
+        if (t.categories?.name !== "Reembolso") {
+          totalIncome += t.amount;
+        }
       } else if (t.type === "expense") {
         totalExpenses += t.amount;
 
