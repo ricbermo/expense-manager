@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
+import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
 import type { Budget, Category } from "@/lib/types/database";
 
 export interface BudgetWithCategory extends Budget {
@@ -10,10 +12,9 @@ export interface BudgetWithCategory extends Budget {
 }
 
 export function useBudgets(month: string) {
-  const [budgets, setBudgets] = useState<BudgetWithCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { mutate: globalMutate } = useSWRConfig();
 
-  const fetchBudgets = useCallback(async () => {
+  const fetchBudgets = useCallback(async (): Promise<BudgetWithCategory[]> => {
     const supabase = createClient();
 
     // Fetch budgets with categories
@@ -50,13 +51,26 @@ export function useBudgets(month: string) {
       };
     }) as BudgetWithCategory[];
 
-    setBudgets(enriched);
-    setLoading(false);
+    return enriched;
   }, [month]);
 
-  useEffect(() => {
-    fetchBudgets();
-  }, [fetchBudgets]);
+  const {
+    data: budgets = [],
+    isLoading: loading,
+    mutate,
+  } = useSWR(swrKeys.budgets(month), fetchBudgets);
+
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
+
+  const revalidateDashboard = useCallback(async () => {
+    await globalMutate(
+      (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
+      undefined,
+      { revalidate: true }
+    );
+  }, [globalMutate]);
 
   const upsertBudget = async (categoryId: string, limitAmount: number) => {
     const supabase = createClient();
@@ -69,14 +83,16 @@ export function useBudgets(month: string) {
       { onConflict: "category_id,month" }
     );
     if (error) throw error;
-    await fetchBudgets();
+    await mutate();
+    await revalidateDashboard();
   };
 
   const deleteBudget = async (id: string) => {
     const supabase = createClient();
     const { error } = await supabase.from("budgets").delete().eq("id", id);
     if (error) throw error;
-    setBudgets((prev) => prev.filter((b) => b.id !== id));
+    await mutate();
+    await revalidateDashboard();
   };
 
   const copyFromPreviousMonth = async () => {
@@ -100,7 +116,8 @@ export function useBudgets(month: string) {
       await supabase
         .from("budgets")
         .upsert(inserts as never[], { onConflict: "category_id,month" });
-      await fetchBudgets();
+      await mutate();
+      await revalidateDashboard();
     }
   };
 
@@ -110,6 +127,6 @@ export function useBudgets(month: string) {
     upsertBudget,
     deleteBudget,
     copyFromPreviousMonth,
-    refetch: fetchBudgets,
+    refetch,
   };
 }

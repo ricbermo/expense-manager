@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,72 +63,71 @@ interface AccountFormProps {
   initialData?: Account;
 }
 
+interface AccountFormValues {
+  name: string;
+  type: AccountType;
+  balance: string;
+  creditLimit: string;
+  interestRate: string;
+  dueDay: string;
+}
+
 export function AccountForm({
   open,
   onOpenChange,
   onSubmit,
   initialData,
 }: AccountFormProps) {
-  const initialValues = getAccountFormValues(initialData);
-  const [name, setName] = useState(initialValues.name);
-  const [type, setType] = useState<AccountType>(initialValues.type);
-  const [balance, setBalance] = useState(initialValues.balance);
-  const [creditLimit, setCreditLimit] = useState(initialValues.creditLimit);
-  const [interestRate, setInterestRate] = useState(initialValues.interestRate);
-  const [dueDay, setDueDay] = useState(initialValues.dueDay);
-  const [saving, setSaving] = useState(false);
+  const initialValues = getAccountFormValues(initialData) as AccountFormValues;
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { isSubmitting },
+  } = useForm<AccountFormValues>({
+    defaultValues: initialValues,
+  });
+
+  const type = useWatch({ control, name: "type" });
+  const name = useWatch({ control, name: "name" });
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    const values = getAccountFormValues(initialData);
-    setName(values.name);
-    setType(values.type);
-    setBalance(values.balance);
-    setCreditLimit(values.creditLimit);
-    setInterestRate(values.interestRate);
-    setDueDay(values.dueDay);
-  }, [open, initialData]);
+    reset(getAccountFormValues(initialData) as AccountFormValues);
+  }, [open, initialData, reset]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-
-    const parsedBalance = parseIntegerInput(balance);
+  const onFormSubmit = async (values: AccountFormValues) => {
+    const parsedBalance = parseIntegerInput(values.balance);
     const parsedCreditLimit =
-      type === "credit_card" ? parseIntegerInput(creditLimit) || null : null;
+      values.type === "credit_card"
+        ? parseIntegerInput(values.creditLimit) || null
+        : null;
     const parsedInterestRate =
-      type === "credit_card" || type === "loan"
-        ? parseDecimalInput(interestRate) || null
+      values.type === "credit_card" || values.type === "loan"
+        ? parseDecimalInput(values.interestRate) || null
         : null;
     const parsedDueDay =
-      type === "credit_card" || type === "loan"
-        ? parseDueDayInput(dueDay)
+      values.type === "credit_card" || values.type === "loan"
+        ? parseDueDayInput(values.dueDay)
         : null;
 
-    try {
-      await onSubmit({
-        name: name.trim(),
-        type,
-        balance: normalizeStoredBalance(type, parsedBalance),
-        credit_limit: parsedCreditLimit,
-        interest_rate: parsedInterestRate,
-        due_day: parsedDueDay,
-      });
+    await onSubmit({
+      name: values.name.trim(),
+      type: values.type,
+      balance: normalizeStoredBalance(values.type, parsedBalance),
+      credit_limit: parsedCreditLimit,
+      interest_rate: parsedInterestRate,
+      due_day: parsedDueDay,
+    });
 
-      const values = getAccountFormValues();
-      setName(values.name);
-      setType(values.type);
-      setBalance(values.balance);
-      setCreditLimit(values.creditLimit);
-      setInterestRate(values.interestRate);
-      setDueDay(values.dueDay);
-      onOpenChange(false);
-    } finally {
-      setSaving(false);
-    }
+    reset(getAccountFormValues() as AccountFormValues);
+    onOpenChange(false);
   };
 
   return (
@@ -138,13 +138,12 @@ export function AccountForm({
             {initialData ? "Editar cuenta" : "Nueva cuenta"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nombre</Label>
             <Input
               id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...register("name", { required: true })}
               placeholder="Ej: Bancolombia Ahorros"
               required
             />
@@ -152,32 +151,38 @@ export function AccountForm({
 
           <div className="space-y-2">
             <Label htmlFor="type">Tipo</Label>
-            <Select
-              value={type}
-              onValueChange={(v) => {
-                const nextType = v as AccountType;
-                setType(nextType);
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => {
+                    const nextType = v as AccountType;
+                    field.onChange(nextType);
 
-                if (nextType !== "credit_card") {
-                  setCreditLimit("");
-                }
+                    if (nextType !== "credit_card") {
+                      setValue("creditLimit", "");
+                    }
 
-                if (nextType === "savings" || nextType === "cash") {
-                  setInterestRate("");
-                  setDueDay("");
-                }
-              }}
-            >
-              <SelectTrigger id="type">
-                <SelectValue>{accountTypeLabels[type]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="savings">Ahorros</SelectItem>
-                <SelectItem value="cash">Efectivo</SelectItem>
-                <SelectItem value="credit_card">Tarjeta de Credito</SelectItem>
-                <SelectItem value="loan">Prestamo</SelectItem>
-              </SelectContent>
-            </Select>
+                    if (nextType === "savings" || nextType === "cash") {
+                      setValue("interestRate", "");
+                      setValue("dueDay", "");
+                    }
+                  }}
+                >
+                  <SelectTrigger id="type">
+                    <SelectValue>{accountTypeLabels[type]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="savings">Ahorros</SelectItem>
+                    <SelectItem value="cash">Efectivo</SelectItem>
+                    <SelectItem value="credit_card">Tarjeta de Credito</SelectItem>
+                    <SelectItem value="loan">Prestamo</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
@@ -192,8 +197,8 @@ export function AccountForm({
               id="balance"
               type="text"
               inputMode="numeric"
-              value={balance}
-              onChange={(e) => setBalance(formatIntegerInput(e.target.value))}
+              {...register("balance")}
+              onChange={(e) => setValue("balance", formatIntegerInput(e.target.value))}
               placeholder="0"
             />
           </div>
@@ -205,8 +210,10 @@ export function AccountForm({
                 id="creditLimit"
                 type="text"
                 inputMode="numeric"
-                value={creditLimit}
-                onChange={(e) => setCreditLimit(formatIntegerInput(e.target.value))}
+                {...register("creditLimit")}
+                onChange={(e) =>
+                  setValue("creditLimit", formatIntegerInput(e.target.value))
+                }
                 placeholder="5.000.000"
               />
             </div>
@@ -220,29 +227,38 @@ export function AccountForm({
                   id="interestRate"
                   type="text"
                   inputMode="decimal"
-                  value={interestRate}
+                  {...register("interestRate")}
                   onChange={(e) =>
-                    setInterestRate(sanitizeDecimalInput(e.target.value, 2))
+                    setValue(
+                      "interestRate",
+                      sanitizeDecimalInput(e.target.value, 2)
+                    )
                   }
                   placeholder="28.5"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dueDay">Dia de pago</Label>
-                <Input
-                  id="dueDay"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={dueDay}
-                  onChange={(e) =>
-                    setDueDay(e.target.value.replace(/\D/g, "").slice(0, 2))
-                  }
-                  onBlur={() => {
-                    const parsed = parseDueDayInput(dueDay);
-                    setDueDay(parsed ? String(parsed) : "");
-                  }}
-                  placeholder="15"
+                <Controller
+                  name="dueDay"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="dueDay"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={field.value}
+                      onChange={(e) =>
+                        field.onChange(e.target.value.replace(/\D/g, "").slice(0, 2))
+                      }
+                      onBlur={() => {
+                        const parsed = parseDueDayInput(field.value);
+                        field.onChange(parsed ? String(parsed) : "");
+                      }}
+                      placeholder="15"
+                    />
+                  )}
                 />
               </div>
             </>
@@ -251,9 +267,9 @@ export function AccountForm({
           <Button
             type="submit"
             className="w-full"
-            disabled={saving || !name.trim()}
+            disabled={isSubmitting || !name?.trim()}
           >
-            {saving ? "Guardando..." : initialData ? "Actualizar" : "Crear"}
+            {isSubmitting ? "Guardando..." : initialData ? "Actualizar" : "Crear"}
           </Button>
         </form>
       </DialogContent>

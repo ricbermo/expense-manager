@@ -43,8 +43,8 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
   return (
     <Card className="section-card p-4 md:p-5">
       <p className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</p>
-      <div className="h-40">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="min-w-0">
+        <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={160}>
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">

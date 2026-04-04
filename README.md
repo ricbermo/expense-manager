@@ -18,7 +18,7 @@ cp .env.local.example .env.local
 2. Completa en `.env.local`:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `ALLOWED_USER_EMAIL` (por defecto: `rickardoberdejo@gmail.com`)
 
 3. Instala dependencias y ejecuta:

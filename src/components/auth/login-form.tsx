@@ -2,48 +2,56 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
 import { createClient } from "@/lib/supabase/client";
 import { FALLBACK_ALLOWED_USER_EMAIL } from "@/lib/auth/allowed-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState(FALLBACK_ALLOWED_USER_EMAIL);
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<LoginFormValues>({
+    defaultValues: {
+      email: FALLBACK_ALLOWED_USER_EMAIL,
+      password: "",
+    },
+  });
 
   const unauthorized = searchParams.get("error") === "unauthorized";
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onSubmit = async (values: LoginFormValues) => {
     setError(null);
-    setLoading(true);
 
-    try {
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: values.email.trim(),
+      password: values.password,
+    });
 
-      if (signInError) {
-        setError("Credenciales inválidas. Verifica correo y contraseña.");
-        return;
-      }
-
-      router.replace("/");
-      router.refresh();
-    } finally {
-      setLoading(false);
+    if (signInError) {
+      setError("Credenciales inválidas. Verifica correo y contraseña.");
+      return;
     }
+
+    router.replace("/");
+    router.refresh();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {unauthorized && !error ? (
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
           Usuario no autorizado. Solo el correo permitido puede ingresar.
@@ -62,8 +70,7 @@ export function LoginForm() {
           id="email"
           type="email"
           autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          {...register("email", { required: true })}
           required
         />
       </div>
@@ -74,14 +81,13 @@ export function LoginForm() {
           id="password"
           type="password"
           autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          {...register("password", { required: true })}
           required
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Ingresando..." : "Ingresar"}
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? "Ingresando..." : "Ingresar"}
       </Button>
     </form>
   );

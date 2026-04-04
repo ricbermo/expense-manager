@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,15 +30,33 @@ interface BudgetFormProps {
   existingCategoryIds: string[];
 }
 
+interface BudgetFormValues {
+  categoryId: string;
+  limitAmount: string;
+}
+
 export function BudgetForm({
   open,
   onOpenChange,
   onSubmit,
   existingCategoryIds,
 }: BudgetFormProps) {
-  const [categoryId, setCategoryId] = useState("");
-  const [limitAmount, setLimitAmount] = useState("");
-  const [saving, setSaving] = useState(false);
+  const {
+    control,
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<BudgetFormValues>({
+    defaultValues: {
+      categoryId: "",
+      limitAmount: "",
+    },
+  });
+
+  const categoryId = useWatch({ control, name: "categoryId" });
+  const limitAmount = useWatch({ control, name: "limitAmount" });
   const { categories } = useCategories("expense");
 
   const availableCategories = categories.filter(
@@ -46,17 +64,10 @@ export function BudgetForm({
   );
   const selectedCategory = categories.find((c) => c.id === categoryId);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await onSubmit(categoryId, parseIntegerInput(limitAmount));
-      onOpenChange(false);
-      setCategoryId("");
-      setLimitAmount("");
-    } finally {
-      setSaving(false);
-    }
+  const onFormSubmit = async (values: BudgetFormValues) => {
+    await onSubmit(values.categoryId, parseIntegerInput(values.limitAmount));
+    onOpenChange(false);
+    reset({ categoryId: "", limitAmount: "" });
   };
 
   return (
@@ -65,23 +76,29 @@ export function BudgetForm({
         <DialogHeader>
           <DialogTitle>Nuevo presupuesto</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="budget-category">Categoria</Label>
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
-              <SelectTrigger id="budget-category">
-                <SelectValue placeholder="Selecciona categoria">
-                  {() => selectedCategory?.name ?? "Selecciona categoria"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {availableCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.id} label={c.name}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="categoryId"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                  <SelectTrigger id="budget-category">
+                    <SelectValue placeholder="Selecciona categoria">
+                      {() => selectedCategory?.name ?? "Selecciona categoria"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCategories.map((c) => (
+                      <SelectItem key={c.id} value={c.id} label={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
@@ -90,8 +107,8 @@ export function BudgetForm({
               id="limit"
               type="text"
               inputMode="numeric"
-              value={limitAmount}
-              onChange={(e) => setLimitAmount(formatIntegerInput(e.target.value))}
+              {...register("limitAmount")}
+              onChange={(e) => setValue("limitAmount", formatIntegerInput(e.target.value))}
               placeholder="500.000"
               required
             />
@@ -100,9 +117,9 @@ export function BudgetForm({
           <Button
             type="submit"
             className="w-full"
-            disabled={saving || !categoryId || !limitAmount}
+            disabled={isSubmitting || !categoryId || !limitAmount}
           >
-            {saving ? "Guardando..." : "Crear presupuesto"}
+            {isSubmitting ? "Guardando..." : "Crear presupuesto"}
           </Button>
         </form>
       </DialogContent>

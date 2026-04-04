@@ -1,6 +1,6 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell } from "recharts";
 import { Card } from "@/components/ui/card";
 import { formatCOP } from "@/lib/utils/currency";
 
@@ -27,24 +27,22 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
       <p className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</p>
       <div className="flex items-center gap-4">
         <div className="w-32 h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="amount"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={30}
-                outerRadius={55}
-                paddingAngle={2}
-              >
-                {data.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+          <PieChart width={128} height={128}>
+            <Pie
+              data={data}
+              dataKey="amount"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={30}
+              outerRadius={55}
+              paddingAngle={2}
+            >
+              {data.map((entry, i) => (
+                <Cell key={i} fill={entry.color} />
+              ))}
+            </Pie>
+          </PieChart>
         </div>
         <div className="flex-1 space-y-2 overflow-hidden">
           {data.slice(0, 5).map((cat) => (

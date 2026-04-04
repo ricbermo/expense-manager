@@ -1,6 +1,7 @@
 import type { TransactionType } from "@/lib/types/database";
 
-export function isDestinationRequired(type: TransactionType): boolean {
+export function isDestinationRequired(_type: TransactionType): boolean {
+  void _type;
   return false;
 }
 

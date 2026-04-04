@@ -1,24 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR from "swr";
 import { createClient } from "@/lib/supabase/client";
 import type { Category, CategoryType } from "@/lib/types/database";
+import { swrKeys } from "@/lib/swr/keys";
 
 export function useCategories(type?: CategoryType) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  const fetchCategories = useCallback(async (): Promise<Category[]> => {
     const supabase = createClient();
     let query = supabase.from("categories").select("*").order("name");
     if (type) {
       query = query.eq("type", type);
     }
-    query.then(({ data }) => {
-      setCategories(data ?? []);
-      setLoading(false);
-    });
+
+    const { data } = await query;
+    return (data ?? []) as Category[];
   }, [type]);
 
-  return { categories, loading };
+  const {
+    data: categories = [],
+    isLoading: loading,
+    mutate,
+  } = useSWR(swrKeys.categories(type), fetchCategories);
+
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
+
+  return { categories, loading, refetch };
 }

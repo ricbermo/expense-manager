@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR from "swr";
 import { createClient } from "@/lib/supabase/client";
 import type { AccountType } from "@/lib/types/database";
+import { swrKeys } from "@/lib/swr/keys";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
 interface CategorySpending {
@@ -25,16 +27,15 @@ interface DashboardData {
 }
 
 export function useDashboard(month: string) {
-  const [data, setData] = useState<DashboardData>({
+  const defaultData: DashboardData = {
     totalIncome: 0,
     totalExpenses: 0,
     totalBalance: 0,
     categorySpending: [],
     dailySpending: [],
-  });
-  const [loading, setLoading] = useState(true);
+  };
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = useCallback(async (): Promise<DashboardData> => {
     const supabase = createClient();
     const startDate = `${month}-01`;
     const [y, m] = month.split("-").map(Number);
@@ -113,19 +114,24 @@ export function useDashboard(month: string) {
       .map(([date, amount]) => ({ date, amount }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    setData({
+    return {
       totalIncome,
       totalExpenses,
       totalBalance,
       categorySpending,
       dailySpending,
-    });
-    setLoading(false);
+    };
   }, [month]);
 
-  useEffect(() => {
-    fetchDashboard();
-  }, [fetchDashboard]);
+  const {
+    data = defaultData,
+    isLoading: loading,
+    mutate,
+  } = useSWR(swrKeys.dashboard(month), fetchDashboard);
 
-  return { data, loading, refetch: fetchDashboard };
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
+
+  return { data, loading, refetch };
 }

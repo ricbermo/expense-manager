@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
+import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
 import type { Transaction, Category, Account } from "@/lib/types/database";
 import { getTransactionsErrorMessage } from "@/lib/utils/transactions-error";
 
@@ -11,14 +13,9 @@ export interface TransactionWithRelations extends Transaction {
 }
 
 export function useTransactions(month?: string) {
-  const [transactions, setTransactions] = useState<TransactionWithRelations[]>(
-    []
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { mutate: globalMutate } = useSWRConfig();
 
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true);
+  const fetchTransactions = useCallback(async (): Promise<TransactionWithRelations[]> => {
     const supabase = createClient();
     let query = supabase
       .from("transactions")
@@ -37,19 +34,43 @@ export function useTransactions(month?: string) {
 
     const { data, error: queryError } = await query;
     if (queryError) {
-      setError(getTransactionsErrorMessage(queryError));
-      setLoading(false);
-      return;
+      throw queryError;
     }
 
-    setTransactions((data as TransactionWithRelations[]) ?? []);
-    setError(null);
-    setLoading(false);
+    return (data as TransactionWithRelations[]) ?? [];
   }, [month]);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+  const {
+    data: transactions = [],
+    isLoading: loading,
+    error,
+    mutate,
+  } = useSWR(swrKeys.transactions(month), fetchTransactions);
+
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
+
+  const revalidateRelatedData = useCallback(async () => {
+    await Promise.all([
+      mutate(),
+      globalMutate(
+        (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
+        undefined,
+        { revalidate: true }
+      ),
+      globalMutate(
+        (key) => Array.isArray(key) && key[0] === swrKeyPrefix.budgets,
+        undefined,
+        { revalidate: true }
+      ),
+      globalMutate(
+        (key) => Array.isArray(key) && key[0] === swrKeys.accounts[0],
+        undefined,
+        { revalidate: true }
+      ),
+    ]);
+  }, [globalMutate, mutate]);
 
   const createTransaction = async (
     transaction: Omit<Transaction, "id" | "created_at">
@@ -59,10 +80,9 @@ export function useTransactions(month?: string) {
       .from("transactions")
       .insert(transaction as never);
     if (error) {
-      setError(getTransactionsErrorMessage(error));
       throw error;
     }
-    await fetchTransactions();
+    await revalidateRelatedData();
   };
 
   const createSharedExpense = async (
@@ -95,17 +115,15 @@ export function useTransactions(month?: string) {
       .from("transactions")
       .insert(expense as never);
     if (expenseError) {
-      setError(getTransactionsErrorMessage(expenseError));
       throw expenseError;
     }
     const { error: reimbursementError } = await supabase
       .from("transactions")
       .insert(reimbursement as never);
     if (reimbursementError) {
-      setError(getTransactionsErrorMessage(reimbursementError));
       throw reimbursementError;
     }
-    await fetchTransactions();
+    await revalidateRelatedData();
   };
 
   const updateTransaction = async (
@@ -118,10 +136,9 @@ export function useTransactions(month?: string) {
       .update(updates as never)
       .eq("id", id);
     if (error) {
-      setError(getTransactionsErrorMessage(error));
       throw error;
     }
-    await fetchTransactions();
+    await revalidateRelatedData();
   };
 
   const deleteTransaction = async (id: string) => {
@@ -131,20 +148,21 @@ export function useTransactions(month?: string) {
       .delete()
       .eq("id", id);
     if (error) {
-      setError(getTransactionsErrorMessage(error));
       throw error;
     }
-    await fetchTransactions();
+    await revalidateRelatedData();
   };
+
+  const normalizedError = error ? getTransactionsErrorMessage(error) : null;
 
   return {
     transactions,
     loading,
-    error,
+    error: normalizedError,
     createTransaction,
     createSharedExpense,
     updateTransaction,
     deleteTransaction,
-    refetch: fetchTransactions,
+    refetch,
   };
 }

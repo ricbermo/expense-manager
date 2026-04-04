@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,10 +53,65 @@ interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: Omit<Transaction, "id" | "created_at">) => Promise<void>;
-  onSubmitShared: (data: Omit<Transaction, "id" | "created_at">, splitBetween: number) => Promise<void>;
-  onUpdate?: (id: string, data: Partial<Omit<Transaction, "id" | "created_at">>) => Promise<void>;
+  onSubmitShared: (
+    data: Omit<Transaction, "id" | "created_at">,
+    splitBetween: number
+  ) => Promise<void>;
+  onUpdate?: (
+    id: string,
+    data: Partial<Omit<Transaction, "id" | "created_at">>
+  ) => Promise<void>;
   accounts: Account[];
   editTransaction?: (Transaction & { categories?: Category | null }) | null;
+}
+
+interface TransactionFormValues {
+  type: TransactionType;
+  amount: string;
+  description: string;
+  date: string;
+  categoryId: string;
+  budgetId: string;
+  accountId: string;
+  toAccountId: string;
+  isDebtPayment: boolean;
+  isSharedExpense: boolean;
+  splitBetween: number;
+}
+
+function getDefaultValues(
+  editTransaction?: (Transaction & { categories?: Category | null }) | null
+): TransactionFormValues {
+  if (!editTransaction) {
+    return {
+      type: "expense",
+      amount: "",
+      description: "",
+      date: getTodayLocalDate(),
+      categoryId: "",
+      budgetId: "",
+      accountId: "",
+      toAccountId: "",
+      isDebtPayment: false,
+      isSharedExpense: false,
+      splitBetween: 2,
+    };
+  }
+
+  return {
+    type: editTransaction.type,
+    amount: formatIntegerInput(String(editTransaction.amount)),
+    description: editTransaction.description ?? "",
+    date: editTransaction.date,
+    categoryId: editTransaction.category_id ?? "",
+    budgetId: "",
+    accountId: editTransaction.account_id,
+    toAccountId: editTransaction.to_account_id ?? "",
+    isDebtPayment:
+      editTransaction.type === "expense" && !!editTransaction.to_account_id,
+    isSharedExpense: false,
+    splitBetween: 2,
+  };
 }
 
 export function TransactionForm({
@@ -66,83 +123,86 @@ export function TransactionForm({
   accounts,
   editTransaction,
 }: TransactionFormProps) {
-  const [type, setType] = useState<TransactionType>("expense");
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState(getTodayLocalDate);
-  const [categoryId, setCategoryId] = useState("");
-  const [budgetId, setBudgetId] = useState("");
-  const [accountId, setAccountId] = useState("");
-  const [toAccountId, setToAccountId] = useState("");
-  const [isDebtPayment, setIsDebtPayment] = useState(false);
-  const [isSharedExpense, setIsSharedExpense] = useState(false);
-  const [splitBetween, setSplitBetween] = useState(2);
-  const [budgets, setBudgets] = useState<BudgetWithCategory[]>([]);
-  const [loadingBudgets, setLoadingBudgets] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { isSubmitting },
+  } = useForm<TransactionFormValues>({
+    defaultValues: getDefaultValues(editTransaction),
+  });
 
+  const watchedType = useWatch({ control, name: "type" });
+  const watchedAmount = useWatch({ control, name: "amount" });
+  const watchedDate = useWatch({ control, name: "date" });
+  const watchedCategoryId = useWatch({ control, name: "categoryId" });
+  const watchedBudgetId = useWatch({ control, name: "budgetId" });
+  const watchedAccountId = useWatch({ control, name: "accountId" });
+  const watchedToAccountId = useWatch({ control, name: "toAccountId" });
+  const watchedIsDebtPayment = useWatch({ control, name: "isDebtPayment" });
+  const watchedIsSharedExpense = useWatch({ control, name: "isSharedExpense" });
+  const watchedSplitBetween = useWatch({ control, name: "splitBetween" });
+
+  const type = watchedType ?? "expense";
+  const amount = watchedAmount ?? "";
+  const date = watchedDate ?? getTodayLocalDate();
+  const categoryId = watchedCategoryId ?? "";
+  const budgetId = watchedBudgetId ?? "";
+  const accountId = watchedAccountId ?? "";
+  const toAccountId = watchedToAccountId ?? "";
+  const isDebtPayment = watchedIsDebtPayment ?? false;
+  const isSharedExpense = watchedIsSharedExpense ?? false;
+  const splitBetween = watchedSplitBetween ?? 2;
+
+  const previousTypeRef = useRef<TransactionType | null>(null);
   const { categories: incomeCategories } = useCategories("income");
+  const isEditing = !!editTransaction;
 
   const selectedMonth = useMemo(() => {
     if (date.length >= 7) {
-      return `${date.slice(0, 7)}-01`;
+      return date.slice(0, 7);
     }
-    return `${getTodayLocalDate().slice(0, 7)}-01`;
+
+    return getTodayLocalDate().slice(0, 7);
   }, [date]);
 
-  const isEditing = !!editTransaction;
+  const fetchBudgets = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("budgets")
+      .select("*, categories(*)")
+      .eq("month", `${selectedMonth}-01`);
 
-  useEffect(() => {
-    if (open && editTransaction) {
-      setType(editTransaction.type);
-      setAmount(formatIntegerInput(String(editTransaction.amount)));
-      setDescription(editTransaction.description ?? "");
-      setDate(editTransaction.date);
-      setCategoryId(editTransaction.category_id ?? "");
-      setAccountId(editTransaction.account_id);
-      setToAccountId(editTransaction.to_account_id ?? "");
-      setIsDebtPayment(editTransaction.type === "expense" && !!editTransaction.to_account_id);
-    } else if (open) {
-      setDate(getTodayLocalDate());
-    }
-  }, [open, editTransaction]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchBudgets = async () => {
-      setLoadingBudgets(true);
-      try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from("budgets")
-          .select("*, categories(*)")
-          .eq("month", selectedMonth);
-
-        if (!cancelled) {
-          setBudgets((data as BudgetWithCategory[]) ?? []);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingBudgets(false);
-        }
-      }
-    };
-
-    fetchBudgets();
-
-    return () => {
-      cancelled = true;
-    };
+    return (data as BudgetWithCategory[]) ?? [];
   }, [selectedMonth]);
+
+  const { data: budgets = [], isLoading: loadingBudgets } = useSWR(
+    ["budgets-options", selectedMonth],
+    fetchBudgets
+  );
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const nextValues = getDefaultValues(editTransaction);
+    previousTypeRef.current = nextValues.type;
+    reset(nextValues);
+  }, [open, editTransaction, reset]);
 
   useEffect(() => {
     if (budgetId && !budgets.some((b) => b.id === budgetId)) {
-      setBudgetId("");
+      setValue("budgetId", "");
     }
-  }, [budgetId, budgets]);
+  }, [budgetId, budgets, setValue]);
 
-  const liquidAccounts = useMemo(() => accounts.filter(isLiquidAccount), [accounts]);
+  const liquidAccounts = useMemo(
+    () => accounts.filter(isLiquidAccount),
+    [accounts]
+  );
 
   const expenseOriginAccounts = useMemo(
     () => accounts.filter((a) => a.type !== "loan"),
@@ -160,36 +220,65 @@ export function TransactionForm({
   );
 
   const debtAccounts = useMemo(
-    () => accounts.filter((a) => a.type === "credit_card" || a.type === "loan"),
+    () =>
+      accounts.filter((a) => a.type === "credit_card" || a.type === "loan"),
     [accounts]
   );
 
   useEffect(() => {
     if (accountId && !originAccounts.some((a) => a.id === accountId)) {
-      setAccountId("");
+      setValue("accountId", "");
     }
-  }, [accountId, originAccounts]);
+  }, [accountId, originAccounts, setValue]);
 
   useEffect(() => {
-    if (toAccountId && !destinationAccounts.some((a) => a.id === toAccountId)) {
-      setToAccountId("");
+    const allowedDestinations =
+      type === "expense" && isDebtPayment ? debtAccounts : destinationAccounts;
+
+    if (toAccountId && !allowedDestinations.some((a) => a.id === toAccountId)) {
+      setValue("toAccountId", "");
     }
-  }, [toAccountId, destinationAccounts]);
+  }, [
+    debtAccounts,
+    destinationAccounts,
+    isDebtPayment,
+    setValue,
+    toAccountId,
+    type,
+  ]);
 
   useEffect(() => {
+    if (!type) {
+      return;
+    }
+
+    if (previousTypeRef.current === null) {
+      previousTypeRef.current = type;
+      return;
+    }
+
+    if (previousTypeRef.current === type) {
+      return;
+    }
+
+    previousTypeRef.current = type;
+
     if (type !== "income" && categoryId) {
-      setCategoryId("");
+      setValue("categoryId", "");
     }
+
     if (type !== "expense" && budgetId) {
-      setBudgetId("");
+      setValue("budgetId", "");
     }
+
     if (type !== "transfer" && type !== "expense") {
-      setToAccountId("");
+      setValue("toAccountId", "");
     }
-    setIsDebtPayment(false);
-    setIsSharedExpense(false);
-    setSplitBetween(2);
-  }, [type]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    setValue("isDebtPayment", false);
+    setValue("isSharedExpense", false);
+    setValue("splitBetween", 2);
+  }, [budgetId, categoryId, setValue, type]);
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
   const selectedIncomeCategory = incomeCategories.find((c) => c.id === categoryId);
@@ -199,58 +288,44 @@ export function TransactionForm({
     type === "expense"
       ? selectedDebtAccount
       : destinationAccounts.find((a) => a.id === toAccountId);
+
   const hasValidDestination = isDestinationSelectionValid(
     type,
     accountId,
     toAccountId
   );
-  const canSave =
-    !saving &&
-    !!amount &&
-    !!accountId &&
-    hasValidDestination;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const transaction = {
-        type,
-        amount: parseIntegerInput(amount),
-        description: description || null,
-        date,
-        category_id:
-          type === "expense"
-            ? selectedBudget?.category_id ?? null
-            : type === "income"
-              ? categoryId || null
-              : null,
-        account_id: accountId,
-        to_account_id:
-          type === "transfer" || type === "expense"
-            ? toAccountId || null
+  const canSave = !isSubmitting && !!amount && !!accountId && hasValidDestination;
+
+  const onFormSubmit = async (values: TransactionFormValues) => {
+    const transaction = {
+      type: values.type,
+      amount: parseIntegerInput(values.amount),
+      description: values.description || null,
+      date: values.date,
+      category_id:
+        values.type === "expense"
+          ? selectedBudget?.category_id ?? null
+          : values.type === "income"
+            ? values.categoryId || null
             : null,
-      };
-      if (isEditing && onUpdate) {
-        await onUpdate(editTransaction!.id, transaction);
-      } else if (isSharedExpense && type === "expense") {
-        await onSubmitShared(transaction, splitBetween);
-      } else {
-        await onSubmit(transaction);
-      }
-      onOpenChange(false);
-      setAmount("");
-      setDescription("");
-      setCategoryId("");
-      setBudgetId("");
-      setToAccountId("");
-      setIsDebtPayment(false);
-      setIsSharedExpense(false);
-      setSplitBetween(2);
-      setDate(getTodayLocalDate());
-    } finally {
-      setSaving(false);
+      account_id: values.accountId,
+      to_account_id:
+        values.type === "transfer" || values.type === "expense"
+          ? values.toAccountId || null
+          : null,
+    };
+
+    if (isEditing && onUpdate) {
+      await onUpdate(editTransaction!.id, transaction);
+    } else if (!isEditing && values.isSharedExpense && values.type === "expense") {
+      await onSubmitShared(transaction, values.splitBetween);
+    } else {
+      await onSubmit(transaction);
     }
+
+    reset(getDefaultValues());
+    onOpenChange(false);
   };
 
   const typeLabels: Record<TransactionType, string> = {
@@ -265,7 +340,7 @@ export function TransactionForm({
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar movimiento" : "Nuevo movimiento"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="grid grid-cols-3 gap-1.5">
             {(
               ["expense", "income", "transfer"] as TransactionType[]
@@ -275,7 +350,7 @@ export function TransactionForm({
                 type="button"
                 variant={type === t ? "default" : "outline"}
                 className="h-11 text-sm font-medium"
-                onClick={() => setType(t)}
+                onClick={() => setValue("type", t)}
               >
                 {typeLabels[t]}
               </Button>
@@ -284,68 +359,94 @@ export function TransactionForm({
 
           <div className="space-y-2">
             <Label htmlFor="amount">Monto (COP)</Label>
-            <Input
-              id="amount"
-              type="text"
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(formatIntegerInput(e.target.value))}
-              placeholder="50.000"
-              required
-              className="text-2xl font-bold h-14"
+            <Controller
+              name="amount"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="amount"
+                  type="text"
+                  inputMode="numeric"
+                  value={field.value}
+                  onChange={(e) =>
+                    field.onChange(formatIntegerInput(e.target.value))
+                  }
+                  placeholder="50.000"
+                  required
+                  className="text-2xl font-bold h-14"
+                />
+              )}
             />
           </div>
 
           {type === "expense" && (
             <div className="space-y-2">
               <Label htmlFor="budget">Budget (opcional)</Label>
-              <Select value={budgetId} onValueChange={(v) => setBudgetId(v ?? "")}>
-                <SelectTrigger id="budget">
-                  <SelectValue placeholder="Sin budget">
-                    {() => selectedBudget?.categories?.name ?? "Sin budget"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="" label="Sin budget">
-                    Sin budget
-                  </SelectItem>
-                  {loadingBudgets ? (
-                    <SelectItem value="__loading" disabled>
-                      Cargando budgets...
-                    </SelectItem>
-                  ) : (
-                    budgets.map((b) => {
-                      const budgetLabel = b.categories?.name ?? "Sin categoria";
-
-                      return (
-                        <SelectItem key={b.id} value={b.id} label={budgetLabel}>
-                          {budgetLabel}
+              <Controller
+                name="budgetId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) => field.onChange(v ?? "")}
+                  >
+                    <SelectTrigger id="budget">
+                      <SelectValue placeholder="Sin budget">
+                        {() => selectedBudget?.categories?.name ?? "Sin budget"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="" label="Sin budget">
+                        Sin budget
+                      </SelectItem>
+                      {loadingBudgets ? (
+                        <SelectItem value="__loading" disabled>
+                          Cargando budgets...
                         </SelectItem>
-                      );
-                    })
-                  )}
-                </SelectContent>
-              </Select>
+                      ) : (
+                        budgets.map((b) => {
+                          const budgetLabel = b.categories?.name ?? "Sin categoria";
+
+                          return (
+                            <SelectItem key={b.id} value={b.id} label={budgetLabel}>
+                              {budgetLabel}
+                            </SelectItem>
+                          );
+                        })
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
           )}
 
           {type === "income" && (
             <div className="space-y-2">
               <Label htmlFor="category">Categoria</Label>
-              <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Selecciona categoria">
-                    {() => selectedIncomeCategory?.name ?? "Selecciona categoria"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {incomeCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.id} label={c.name}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                name="categoryId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) => field.onChange(v ?? "")}
+                  >
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Selecciona categoria">
+                        {() => selectedIncomeCategory?.name ?? "Selecciona categoria"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {incomeCategories.map((c) => (
+                        <SelectItem key={c.id} value={c.id} label={c.name}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
           )}
 
@@ -357,84 +458,168 @@ export function TransactionForm({
                   ? "Cuenta para pagar"
                   : "Cuenta"}
             </Label>
-            <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
-              <SelectTrigger id="account">
-                <SelectValue placeholder="Selecciona cuenta">
-                  {() => selectedOriginAccount?.name ?? "Selecciona cuenta"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {originAccounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id} label={a.name}>
-                    {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="accountId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v ?? "")}
+                >
+                  <SelectTrigger id="account">
+                    <SelectValue placeholder="Selecciona cuenta">
+                      {() => selectedOriginAccount?.name ?? "Selecciona cuenta"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {originAccounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id} label={a.name}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {type === "expense" && (
             <div className="space-y-3">
-              <label htmlFor="isDebtPayment" className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50">
-                <Checkbox
-                  id="isDebtPayment"
-                  checked={isDebtPayment}
-                  onCheckedChange={(checked) => {
-                    setIsDebtPayment(!!checked);
-                    if (!checked) setToAccountId("");
-                    if (checked) { setIsSharedExpense(false); setSplitBetween(2); }
-                  }}
+              <label
+                htmlFor="isDebtPayment"
+                className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+              >
+                <Controller
+                  name="isDebtPayment"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      id="isDebtPayment"
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        const nextChecked = !!checked;
+                        field.onChange(nextChecked);
+
+                        if (!nextChecked) {
+                          setValue("toAccountId", "");
+                        }
+
+                        if (nextChecked) {
+                          setValue("isSharedExpense", false);
+                          setValue("splitBetween", 2);
+                        }
+                      }}
+                    />
+                  )}
                 />
                 <span className="text-sm">Es pago de deuda</span>
               </label>
+
               {isDebtPayment && (
                 <div className="space-y-2">
                   <Label htmlFor="debtAccount">Deuda a pagar</Label>
-                  <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? "")}>
-                    <SelectTrigger id="debtAccount">
-                      <SelectValue placeholder="Selecciona deuda">
-                        {() => selectedDebtAccount?.name ?? "Selecciona deuda"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {debtAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id} label={a.name}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="toAccountId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v ?? "")}
+                      >
+                        <SelectTrigger id="debtAccount">
+                          <SelectValue placeholder="Selecciona deuda">
+                            {() => selectedDebtAccount?.name ?? "Selecciona deuda"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {debtAccounts.map((a) => (
+                            <SelectItem key={a.id} value={a.id} label={a.name}>
+                              {a.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               )}
+
               {!isEditing && (
                 <>
-                  <label htmlFor="isSharedExpense" className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50">
-                    <Checkbox
-                      id="isSharedExpense"
-                      checked={isSharedExpense}
-                      onCheckedChange={(checked) => {
-                        setIsSharedExpense(!!checked);
-                        if (checked) { setIsDebtPayment(false); setToAccountId(""); }
-                        if (!checked) setSplitBetween(2);
-                      }}
+                  <label
+                    htmlFor="isSharedExpense"
+                    className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+                  >
+                    <Controller
+                      name="isSharedExpense"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isSharedExpense"
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            const nextChecked = !!checked;
+                            field.onChange(nextChecked);
+
+                            if (nextChecked) {
+                              setValue("isDebtPayment", false);
+                              setValue("toAccountId", "");
+                            }
+
+                            if (!nextChecked) {
+                              setValue("splitBetween", 2);
+                            }
+                          }}
+                        />
+                      )}
                     />
                     <span className="text-sm">Gasto compartido</span>
                   </label>
+
                   {isSharedExpense && (
                     <div className="space-y-2">
                       <Label htmlFor="splitBetween">Dividir entre</Label>
-                      <Input
-                        id="splitBetween"
-                        type="number"
-                        min={2}
-                        max={10}
-                        value={splitBetween}
-                        onChange={(e) => setSplitBetween(Math.max(2, Math.min(10, Number(e.target.value) || 2)))}
+                      <Controller
+                        name="splitBetween"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            id="splitBetween"
+                            type="number"
+                            min={2}
+                            max={10}
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(
+                                Math.max(
+                                  2,
+                                  Math.min(10, Number(e.target.value) || 2)
+                                )
+                              )
+                            }
+                          />
+                        )}
                       />
+
                       {amount && (
                         <div className="text-xs text-muted-foreground space-y-0.5">
-                          <p>Tu parte: {formatIntegerInput(String(Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
-                          <p>Reembolso: {formatIntegerInput(String(parseIntegerInput(amount) - Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
+                          <p>
+                            Tu parte:{" "}
+                            {formatIntegerInput(
+                              String(
+                                Math.floor(parseIntegerInput(amount) / splitBetween)
+                              )
+                            )}
+                          </p>
+                          <p>
+                            Reembolso:{" "}
+                            {formatIntegerInput(
+                              String(
+                                parseIntegerInput(amount) -
+                                  Math.floor(parseIntegerInput(amount) / splitBetween)
+                              )
+                            )}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -447,22 +632,31 @@ export function TransactionForm({
           {type === "transfer" && (
             <div className="space-y-2">
               <Label htmlFor="toAccount">Cuenta destino</Label>
-              <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? "")}>
-                <SelectTrigger id="toAccount">
-                  <SelectValue placeholder="Selecciona cuenta destino">
-                    {() =>
-                      selectedDestinationAccount?.name ??
-                      "Selecciona cuenta destino"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {destinationAccounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id} label={a.name}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                name="toAccountId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) => field.onChange(v ?? "")}
+                  >
+                    <SelectTrigger id="toAccount">
+                      <SelectValue placeholder="Selecciona cuenta destino">
+                        {() =>
+                          selectedDestinationAccount?.name ??
+                          "Selecciona cuenta destino"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {destinationAccounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id} label={a.name}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
           )}
 
@@ -475,30 +669,20 @@ export function TransactionForm({
 
           <div className="space-y-2">
             <Label htmlFor="date">Fecha</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <Input id="date" type="date" {...register("date")} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Descripcion (opcional)</Label>
             <Input
               id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              {...register("description")}
               placeholder="Ej: Almuerzo en restaurante"
             />
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={!canSave}
-          >
-            {saving ? "Guardando..." : isEditing ? "Actualizar" : "Guardar"}
+          <Button type="submit" className="w-full" disabled={!canSave}>
+            {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Guardar"}
           </Button>
         </form>
       </DialogContent>

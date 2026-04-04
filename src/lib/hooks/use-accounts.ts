@@ -1,27 +1,41 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
 import type { Account } from "@/lib/types/database";
+import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
 export function useAccounts() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { mutate: globalMutate } = useSWRConfig();
 
-  const fetchAccounts = useCallback(async () => {
+  const fetchAccounts = useCallback(async (): Promise<Account[]> => {
     const supabase = createClient();
     const { data } = await supabase
       .from("accounts")
       .select("*")
       .order("created_at", { ascending: false });
-    setAccounts(data ?? []);
-    setLoading(false);
+    return (data ?? []) as Account[];
   }, []);
 
-  useEffect(() => {
-    fetchAccounts();
-  }, [fetchAccounts]);
+  const {
+    data: accounts = [],
+    isLoading: loading,
+    mutate,
+  } = useSWR(swrKeys.accounts, fetchAccounts);
+
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
+
+  const revalidateDashboard = useCallback(async () => {
+    await globalMutate(
+      (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
+      undefined,
+      { revalidate: true }
+    );
+  }, [globalMutate]);
 
   const createAccount = async (
     account: Omit<Account, "id" | "created_at">
@@ -37,7 +51,8 @@ export function useAccounts() {
       .select()
       .single();
     if (error) throw error;
-    setAccounts((prev) => [data, ...prev]);
+    await mutate();
+    await revalidateDashboard();
     return data;
   };
 
@@ -61,7 +76,8 @@ export function useAccounts() {
       .select()
       .single();
     if (error) throw error;
-    setAccounts((prev) => prev.map((a) => (a.id === id ? data : a)));
+    await mutate();
+    await revalidateDashboard();
     return data;
   };
 
@@ -69,8 +85,9 @@ export function useAccounts() {
     const supabase = createClient();
     const { error } = await supabase.from("accounts").delete().eq("id", id);
     if (error) throw error;
-    setAccounts((prev) => prev.filter((a) => a.id !== id));
+    await mutate();
+    await revalidateDashboard();
   };
 
-  return { accounts, loading, createAccount, updateAccount, deleteAccount, refetch: fetchAccounts };
+  return { accounts, loading, createAccount, updateAccount, deleteAccount, refetch };
 }
