@@ -24,6 +24,7 @@ export default function TransactionsPage() {
     error,
     refetch,
     createTransaction,
+    createSharedExpense,
     deleteTransaction,
   } = useTransactions(month);
   const { accounts } = useAccounts();
@@ -121,6 +122,7 @@ export default function TransactionsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         onSubmit={createTransaction}
+        onSubmitShared={createSharedExpense}
         accounts={accounts}
       />
     </div>

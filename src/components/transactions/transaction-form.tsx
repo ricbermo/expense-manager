@@ -51,6 +51,7 @@ interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: Omit<Transaction, "id" | "created_at">) => Promise<void>;
+  onSubmitShared: (data: Omit<Transaction, "id" | "created_at">, splitBetween: number) => Promise<void>;
   accounts: Account[];
 }
 
@@ -58,6 +59,7 @@ export function TransactionForm({
   open,
   onOpenChange,
   onSubmit,
+  onSubmitShared,
   accounts,
 }: TransactionFormProps) {
   const [type, setType] = useState<TransactionType>("expense");
@@ -69,6 +71,8 @@ export function TransactionForm({
   const [accountId, setAccountId] = useState("");
   const [toAccountId, setToAccountId] = useState("");
   const [isDebtPayment, setIsDebtPayment] = useState(false);
+  const [isSharedExpense, setIsSharedExpense] = useState(false);
+  const [splitBetween, setSplitBetween] = useState(2);
   const [budgets, setBudgets] = useState<BudgetWithCategory[]>([]);
   const [loadingBudgets, setLoadingBudgets] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -168,6 +172,8 @@ export function TransactionForm({
       setToAccountId("");
     }
     setIsDebtPayment(false);
+    setIsSharedExpense(false);
+    setSplitBetween(2);
   }, [type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
@@ -193,7 +199,7 @@ export function TransactionForm({
     e.preventDefault();
     setSaving(true);
     try {
-      await onSubmit({
+      const transaction = {
         type,
         amount: parseIntegerInput(amount),
         description: description || null,
@@ -209,15 +215,21 @@ export function TransactionForm({
           type === "transfer" || type === "expense"
             ? toAccountId || null
             : null,
-      });
+      };
+      if (isSharedExpense && type === "expense") {
+        await onSubmitShared(transaction, splitBetween);
+      } else {
+        await onSubmit(transaction);
+      }
       onOpenChange(false);
-      // Reset form
       setAmount("");
       setDescription("");
       setCategoryId("");
       setBudgetId("");
       setToAccountId("");
       setIsDebtPayment(false);
+      setIsSharedExpense(false);
+      setSplitBetween(2);
       setDate(getTodayLocalDate());
     } finally {
       setSaving(false);
@@ -354,6 +366,7 @@ export function TransactionForm({
                   onCheckedChange={(checked) => {
                     setIsDebtPayment(!!checked);
                     if (!checked) setToAccountId("");
+                    if (checked) { setIsSharedExpense(false); setSplitBetween(2); }
                   }}
                 />
                 <Label htmlFor="isDebtPayment" className="text-sm font-normal cursor-pointer">
@@ -377,6 +390,38 @@ export function TransactionForm({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="isSharedExpense"
+                  checked={isSharedExpense}
+                  onCheckedChange={(checked) => {
+                    setIsSharedExpense(!!checked);
+                    if (checked) { setIsDebtPayment(false); setToAccountId(""); }
+                    if (!checked) setSplitBetween(2);
+                  }}
+                />
+                <Label htmlFor="isSharedExpense" className="text-sm font-normal cursor-pointer">
+                  Gasto compartido
+                </Label>
+              </div>
+              {isSharedExpense && (
+                <div className="space-y-2">
+                  <Label htmlFor="splitBetween">Dividir entre</Label>
+                  <Input
+                    id="splitBetween"
+                    type="number"
+                    min={2}
+                    max={10}
+                    value={splitBetween}
+                    onChange={(e) => setSplitBetween(Math.max(2, Math.min(10, Number(e.target.value) || 2)))}
+                  />
+                  {amount && (
+                    <p className="text-xs text-muted-foreground">
+                      Tu parte: {formatIntegerInput(String(Math.floor(parseIntegerInput(amount) / splitBetween)))} · Reembolso: {formatIntegerInput(String(parseIntegerInput(amount) - Math.floor(parseIntegerInput(amount) / splitBetween)))}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

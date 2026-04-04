@@ -65,6 +65,39 @@ export function useTransactions(month?: string) {
     await fetchTransactions();
   };
 
+  const createSharedExpense = async (
+    expense: Omit<Transaction, "id" | "created_at">,
+    splitBetween: number
+  ) => {
+    const supabase = createClient();
+    const reimbursementAmount =
+      expense.amount - Math.floor(expense.amount / splitBetween);
+    const reimbursement: Omit<Transaction, "id" | "created_at"> = {
+      type: "income",
+      amount: reimbursementAmount,
+      description: `Reembolso: ${expense.description || "gasto compartido"}`,
+      date: expense.date,
+      category_id: null,
+      account_id: expense.account_id,
+      to_account_id: null,
+    };
+    const { error: expenseError } = await supabase
+      .from("transactions")
+      .insert(expense as never);
+    if (expenseError) {
+      setError(getTransactionsErrorMessage(expenseError));
+      throw expenseError;
+    }
+    const { error: reimbursementError } = await supabase
+      .from("transactions")
+      .insert(reimbursement as never);
+    if (reimbursementError) {
+      setError(getTransactionsErrorMessage(reimbursementError));
+      throw reimbursementError;
+    }
+    await fetchTransactions();
+  };
+
   const deleteTransaction = async (id: string) => {
     const supabase = createClient();
     const { error } = await supabase
@@ -83,6 +116,7 @@ export function useTransactions(month?: string) {
     loading,
     error,
     createTransaction,
+    createSharedExpense,
     deleteTransaction,
     refetch: fetchTransactions,
   };
