@@ -36,6 +36,7 @@ export interface Transaction {
 
 export interface Budget {
   id: string;
+  name: string;
   category_id: string;
   month: string;
   limit_amount: number;

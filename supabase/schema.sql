@@ -40,10 +40,10 @@ CREATE TABLE transactions (
 CREATE TABLE budgets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
   category_id UUID NOT NULL REFERENCES categories(id),
   month DATE NOT NULL,
-  limit_amount BIGINT NOT NULL,
-  UNIQUE(category_id, month)
+  limit_amount BIGINT NOT NULL
 );
 
 -- Indexes
@@ -55,6 +55,7 @@ CREATE INDEX idx_transactions_date ON transactions(date);
 CREATE INDEX idx_transactions_category ON transactions(category_id);
 CREATE INDEX idx_transactions_account ON transactions(account_id);
 CREATE INDEX idx_budgets_month ON budgets(month);
+CREATE UNIQUE INDEX idx_budgets_user_month_name ON budgets(user_id, month, lower(name));
 
 -- Trigger: enforce referenced row ownership for transactions
 CREATE OR REPLACE FUNCTION ensure_transaction_user_ownership()

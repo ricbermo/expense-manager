@@ -11,6 +11,24 @@ export interface BudgetWithCategory extends Budget {
   spent: number;
 }
 
+interface SaveBudgetInput {
+  name: string;
+  categoryId: string;
+  limitAmount: number;
+}
+
+function mapBudgetError(error: { code?: string; message?: string } | null): Error | null {
+  if (!error) {
+    return null;
+  }
+
+  if (error.code === "23505") {
+    return new Error("Ya existe un presupuesto con ese nombre para este mes.");
+  }
+
+  return new Error(error.message ?? "No se pudo guardar el presupuesto.");
+}
+
 export function useBudgets(month: string) {
   const { mutate: globalMutate } = useSWRConfig();
 
@@ -72,17 +90,40 @@ export function useBudgets(month: string) {
     );
   }, [globalMutate]);
 
-  const upsertBudget = async (categoryId: string, limitAmount: number) => {
+  const createBudget = async ({ name, categoryId, limitAmount }: SaveBudgetInput) => {
     const supabase = createClient();
-    const { error } = await supabase.from("budgets").upsert(
+    const { error } = await supabase.from("budgets").insert(
       {
+        name: name.trim(),
         category_id: categoryId,
         month: `${month}-01`,
         limit_amount: limitAmount,
-      } as never,
-      { onConflict: "category_id,month" }
+      } as never
     );
-    if (error) throw error;
+    const mappedError = mapBudgetError(error);
+    if (mappedError) throw mappedError;
+    await mutate();
+    await revalidateDashboard();
+  };
+
+  const updateBudget = async ({
+    id,
+    name,
+    categoryId,
+    limitAmount,
+  }: SaveBudgetInput & { id: string }) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("budgets")
+      .update({
+        name: name.trim(),
+        category_id: categoryId,
+        limit_amount: limitAmount,
+      } as never)
+      .eq("id", id);
+
+    const mappedError = mapBudgetError(error);
+    if (mappedError) throw mappedError;
     await mutate();
     await revalidateDashboard();
   };
@@ -103,28 +144,57 @@ export function useBudgets(month: string) {
     const supabase = createClient();
     const { data: prevBudgets } = await supabase
       .from("budgets")
-      .select("category_id, limit_amount")
+      .select("name, category_id, limit_amount")
       .eq("month", `${prevMonth}-01`);
 
     if (prevBudgets && prevBudgets.length > 0) {
-      const prev = prevBudgets as unknown as { category_id: string; limit_amount: number }[];
+      const prev = prevBudgets as unknown as {
+        name: string;
+        category_id: string;
+        limit_amount: number;
+      }[];
+
+      const { data: currentBudgets } = await supabase
+        .from("budgets")
+        .select("name")
+        .eq("month", `${month}-01`);
+
+      const existingNames = new Set(
+        (currentBudgets as { name: string }[] | null)?.map((b) =>
+          b.name.trim().toLowerCase()
+        ) ?? []
+      );
+
       const inserts = prev.map((b) => ({
+        name: b.name,
         category_id: b.category_id,
         month: `${month}-01`,
         limit_amount: b.limit_amount,
-      }));
-      await supabase
-        .from("budgets")
-        .upsert(inserts as never[], { onConflict: "category_id,month" });
-      await mutate();
-      await revalidateDashboard();
+      }))
+        .filter((b) => {
+          const normalized = b.name.trim().toLowerCase();
+          if (existingNames.has(normalized)) {
+            return false;
+          }
+          existingNames.add(normalized);
+          return true;
+        });
+
+      if (inserts.length > 0) {
+        const { error } = await supabase.from("budgets").insert(inserts as never[]);
+        const mappedError = mapBudgetError(error);
+        if (mappedError) throw mappedError;
+        await mutate();
+        await revalidateDashboard();
+      }
     }
   };
 
   return {
     budgets,
     loading,
-    upsertBudget,
+    createBudget,
+    updateBudget,
     deleteBudget,
     copyFromPreviousMonth,
     refetch,

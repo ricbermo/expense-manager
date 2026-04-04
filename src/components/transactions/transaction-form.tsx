@@ -281,6 +281,10 @@ export function TransactionForm({
   }, [budgetId, categoryId, setValue, type]);
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
+  const getBudgetLabel = useCallback((budget: BudgetWithCategory) => {
+    const categoryLabel = budget.categories?.name ?? "Sin categoria";
+    return `${budget.name} · ${categoryLabel}`;
+  }, []);
   const selectedIncomeCategory = incomeCategories.find((c) => c.id === categoryId);
   const selectedOriginAccount = originAccounts.find((a) => a.id === accountId);
   const selectedDebtAccount = debtAccounts.find((a) => a.id === toAccountId);
@@ -390,11 +394,13 @@ export function TransactionForm({
                     value={field.value}
                     onValueChange={(v) => field.onChange(v ?? "")}
                   >
-                    <SelectTrigger id="budget">
-                      <SelectValue placeholder="Sin budget">
-                        {() => selectedBudget?.categories?.name ?? "Sin budget"}
-                      </SelectValue>
-                    </SelectTrigger>
+                      <SelectTrigger id="budget">
+                        <SelectValue placeholder="Sin budget">
+                          {() =>
+                            selectedBudget ? getBudgetLabel(selectedBudget) : "Sin budget"
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="" label="Sin budget">
                         Sin budget
@@ -403,9 +409,9 @@ export function TransactionForm({
                         <SelectItem value="__loading" disabled>
                           Cargando budgets...
                         </SelectItem>
-                      ) : (
+                        ) : (
                         budgets.map((b) => {
-                          const budgetLabel = b.categories?.name ?? "Sin categoria";
+                          const budgetLabel = getBudgetLabel(b);
 
                           return (
                             <SelectItem key={b.id} value={b.id} label={budgetLabel}>

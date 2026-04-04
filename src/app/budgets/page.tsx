@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { BudgetCard } from "@/components/budgets/budget-card";
 import { BudgetForm } from "@/components/budgets/budget-form";
-import { useBudgets } from "@/lib/hooks/use-budgets";
+import { useBudgets, type BudgetWithCategory } from "@/lib/hooks/use-budgets";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatMonthYear } from "@/lib/utils/dates";
 
@@ -18,7 +18,9 @@ function getCurrentMonth() {
 export default function BudgetsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [formOpen, setFormOpen] = useState(false);
-  const { budgets, loading, upsertBudget, deleteBudget, copyFromPreviousMonth } =
+  const [editingBudget, setEditingBudget] =
+    useState<BudgetWithCategory | null>(null);
+  const { budgets, loading, createBudget, updateBudget, deleteBudget, copyFromPreviousMonth } =
     useBudgets(month);
 
   const changeMonth = (delta: number) => {
@@ -33,6 +35,46 @@ export default function BudgetsPage() {
     if (confirm("Eliminar este presupuesto?")) {
       await deleteBudget(id);
     }
+  };
+
+  const handleEdit = (budget: BudgetWithCategory) => {
+    setEditingBudget(budget);
+    setFormOpen(true);
+  };
+
+  const handleCreate = () => {
+    setEditingBudget(null);
+    setFormOpen(true);
+  };
+
+  const handleFormOpenChange = (open: boolean) => {
+    setFormOpen(open);
+    if (!open) {
+      setEditingBudget(null);
+    }
+  };
+
+  const handleSaveBudget = async (values: {
+    id?: string;
+    name: string;
+    categoryId: string;
+    limitAmount: number;
+  }) => {
+    if (values.id) {
+      await updateBudget({
+        id: values.id,
+        name: values.name,
+        categoryId: values.categoryId,
+        limitAmount: values.limitAmount,
+      });
+      return;
+    }
+
+    await createBudget({
+      name: values.name,
+      categoryId: values.categoryId,
+      limitAmount: values.limitAmount,
+    });
   };
 
   const totalBudget = budgets.reduce((s, b) => s + b.limit_amount, 0);
@@ -53,7 +95,7 @@ export default function BudgetsPage() {
             >
               <Copy className="h-4 w-4" />
             </Button>
-            <Button size="sm" onClick={() => setFormOpen(true)}>
+            <Button size="sm" onClick={handleCreate}>
               <Plus className="h-4 w-4 mr-1" />
               Nuevo
             </Button>
@@ -106,7 +148,7 @@ export default function BudgetsPage() {
           <div className="empty-state text-muted-foreground">
             <p>No hay presupuestos configurados</p>
             <p className="text-xs mt-1">Define limites de gasto por categoria</p>
-            <Button className="mt-4" onClick={() => setFormOpen(true)}>
+            <Button className="mt-4" onClick={handleCreate}>
               <Plus className="mr-1 h-4 w-4" />
               Crear presupuesto
             </Button>
@@ -117,6 +159,7 @@ export default function BudgetsPage() {
               <BudgetCard
                 key={budget.id}
                 budget={budget}
+                onEdit={handleEdit}
                 onDelete={handleDelete}
               />
             ))}
@@ -126,9 +169,19 @@ export default function BudgetsPage() {
 
       <BudgetForm
         open={formOpen}
-        onOpenChange={setFormOpen}
-        onSubmit={upsertBudget}
-        existingCategoryIds={budgets.map((b) => b.category_id)}
+        onOpenChange={handleFormOpenChange}
+        mode={editingBudget ? "edit" : "create"}
+        initialValues={
+          editingBudget
+            ? {
+                id: editingBudget.id,
+                name: editingBudget.name,
+                categoryId: editingBudget.category_id,
+                limitAmount: editingBudget.limit_amount,
+              }
+            : null
+        }
+        onSubmit={handleSaveBudget}
       />
     </div>
   );
