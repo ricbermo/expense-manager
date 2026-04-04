@@ -30,6 +30,7 @@ export interface Transaction {
   date: string;
   category_id: string | null;
   budget_id: string | null;
+  related_expense_id: string | null;
   account_id: string;
   to_account_id: string | null;
   created_at: string;

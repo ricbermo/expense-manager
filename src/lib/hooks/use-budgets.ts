@@ -41,35 +41,66 @@ export function useBudgets(month: string) {
       .select("*, categories(*)")
       .eq("month", `${month}-01`);
 
-    // Fetch spending per category for this month
+    // Fetch expenses for this month
     const startDate = `${month}-01`;
     const [y, m] = month.split("-").map(Number);
     const endDate = `${y}-${String(m + 1).padStart(2, "0")}-01`;
 
-    const { data: transactions } = await supabase
+    const { data: expenses } = await supabase
       .from("transactions")
-      .select("category_id, budget_id, amount")
+      .select("id, category_id, budget_id, amount")
       .eq("type", "expense")
       .gte("date", startDate)
       .lt("date", endDate);
 
-    // Calculate spent per budget (preferred) and by category (legacy fallback)
-    const spentByBudgetMap: Record<string, number> = {};
-    const spentByCategoryMap: Record<string, number> = {};
-    (
-      transactions as {
+    const expenseRows =
+      (expenses as {
+        id: string;
         category_id: string | null;
         budget_id: string | null;
         amount: number;
-      }[] ?? []
-    ).forEach((t) => {
+      }[] | null) ?? [];
+
+    const expenseIds = expenseRows.map((expense) => expense.id);
+
+    let reimbursementsByExpenseId: Record<string, number> = {};
+    if (expenseIds.length > 0) {
+      const { data: reimbursements } = await supabase
+        .from("transactions")
+        .select("related_expense_id, amount")
+        .eq("type", "income")
+        .in("related_expense_id", expenseIds);
+
+      reimbursementsByExpenseId =
+        (reimbursements as {
+          related_expense_id: string | null;
+          amount: number;
+        }[] | null)?.reduce<Record<string, number>>((acc, reimbursement) => {
+          if (!reimbursement.related_expense_id) {
+            return acc;
+          }
+
+          acc[reimbursement.related_expense_id] =
+            (acc[reimbursement.related_expense_id] ?? 0) + reimbursement.amount;
+
+          return acc;
+        }, {}) ?? {};
+    }
+
+    // Calculate spent per budget (preferred) and by category (legacy fallback)
+    const spentByBudgetMap: Record<string, number> = {};
+    const spentByCategoryMap: Record<string, number> = {};
+    expenseRows.forEach((t) => {
+      const reimbursedAmount = reimbursementsByExpenseId[t.id] ?? 0;
+      const netAmount = Math.max(0, t.amount - reimbursedAmount);
+
       if (t.budget_id) {
-        spentByBudgetMap[t.budget_id] = (spentByBudgetMap[t.budget_id] || 0) + t.amount;
+        spentByBudgetMap[t.budget_id] = (spentByBudgetMap[t.budget_id] || 0) + netAmount;
         return;
       }
 
       if (t.category_id) {
-        spentByCategoryMap[t.category_id] = (spentByCategoryMap[t.category_id] || 0) + t.amount;
+        spentByCategoryMap[t.category_id] = (spentByCategoryMap[t.category_id] || 0) + netAmount;
       }
     });
 

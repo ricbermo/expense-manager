@@ -364,6 +364,7 @@ export function TransactionForm({
             ? values.categoryId || null
             : null,
       account_id: values.accountId,
+      related_expense_id: isEditing ? (editTransaction?.related_expense_id ?? null) : null,
       to_account_id:
         values.type === "transfer" || values.type === "expense"
           ? values.toAccountId || null
@@ -444,14 +445,14 @@ export function TransactionForm({
                     value={field.value}
                     onValueChange={(v) => field.onChange(v ?? "")}
                   >
-                      <SelectTrigger id="budget">
+                      <SelectTrigger id="budget" className="w-full">
                         <SelectValue placeholder="Sin budget">
                           {() =>
                             selectedBudget ? getBudgetLabel(selectedBudget) : "Sin budget"
                           }
                         </SelectValue>
                       </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-[min(92vw,34rem)] min-w-[var(--anchor-width)]">
                       <SelectItem value="" label="Sin budget">
                         Sin budget
                       </SelectItem>

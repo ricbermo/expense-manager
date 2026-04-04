@@ -9,6 +9,7 @@ import { getTransactionsErrorMessage } from "@/lib/utils/transactions-error";
 
 export interface TransactionWithRelations extends Transaction {
   categories: Category | null;
+  budgets: { name: string } | null;
   accounts: Account | null;
 }
 
@@ -20,7 +21,7 @@ export function useTransactions(month?: string) {
     let query = supabase
       .from("transactions")
       .select(
-        "*, categories(*), accounts:accounts!transactions_account_id_fkey(*)"
+        "*, categories(*), budgets(name), accounts:accounts!transactions_account_id_fkey(*)"
       )
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
@@ -109,15 +110,26 @@ export function useTransactions(month?: string) {
       date: expense.date,
       category_id: reembolsoCategoryId,
       budget_id: null,
+      related_expense_id: null,
       account_id: expense.account_id,
       to_account_id: null,
     };
-    const { error: expenseError } = await supabase
+    const { data: createdExpense, error: expenseError } = await supabase
       .from("transactions")
-      .insert(expense as never);
+      .insert(expense as never)
+      .select("id")
+      .single();
     if (expenseError) {
       throw expenseError;
     }
+
+    const expenseId = (createdExpense as { id: string } | null)?.id;
+    if (!expenseId) {
+      throw new Error("No se pudo crear el gasto compartido.");
+    }
+
+    reimbursement.related_expense_id = expenseId;
+
     const { error: reimbursementError } = await supabase
       .from("transactions")
       .insert(reimbursement as never);

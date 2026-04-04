@@ -32,6 +32,7 @@ CREATE TABLE transactions (
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   category_id UUID REFERENCES categories(id),
   budget_id UUID,
+  related_expense_id UUID,
   account_id UUID NOT NULL REFERENCES accounts(id),
   to_account_id UUID REFERENCES accounts(id),
   created_at TIMESTAMPTZ DEFAULT now()
@@ -51,6 +52,10 @@ ALTER TABLE transactions
 ADD CONSTRAINT transactions_budget_id_fkey
 FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE SET NULL;
 
+ALTER TABLE transactions
+ADD CONSTRAINT transactions_related_expense_id_fkey
+FOREIGN KEY (related_expense_id) REFERENCES transactions(id) ON DELETE SET NULL;
+
 -- Indexes
 CREATE INDEX idx_categories_user_id ON categories(user_id);
 CREATE INDEX idx_accounts_user_id ON accounts(user_id);
@@ -59,6 +64,7 @@ CREATE INDEX idx_budgets_user_id ON budgets(user_id);
 CREATE INDEX idx_transactions_date ON transactions(date);
 CREATE INDEX idx_transactions_category ON transactions(category_id);
 CREATE INDEX idx_transactions_budget ON transactions(budget_id);
+CREATE INDEX idx_transactions_related_expense ON transactions(related_expense_id);
 CREATE INDEX idx_transactions_account ON transactions(account_id);
 CREATE INDEX idx_budgets_month ON budgets(month);
 CREATE UNIQUE INDEX idx_budgets_user_month_name ON budgets(user_id, month, lower(name));
@@ -72,6 +78,8 @@ DECLARE
   category_owner UUID;
   budget_owner UUID;
   budget_category UUID;
+  related_owner UUID;
+  related_type TEXT;
 BEGIN
   SELECT user_id INTO source_owner
   FROM accounts
@@ -132,6 +140,28 @@ BEGIN
 
     IF NEW.category_id IS DISTINCT FROM budget_category THEN
       RAISE EXCEPTION 'Budget category does not match transaction category';
+    END IF;
+  END IF;
+
+  IF NEW.related_expense_id IS NOT NULL THEN
+    SELECT user_id, type INTO related_owner, related_type
+    FROM transactions
+    WHERE id = NEW.related_expense_id;
+
+    IF related_owner IS NULL THEN
+      RAISE EXCEPTION 'Related expense not found';
+    END IF;
+
+    IF related_owner <> NEW.user_id THEN
+      RAISE EXCEPTION 'Related expense belongs to another user';
+    END IF;
+
+    IF NEW.type <> 'income' THEN
+      RAISE EXCEPTION 'Related expense can only be set on income transactions';
+    END IF;
+
+    IF related_type <> 'expense' THEN
+      RAISE EXCEPTION 'Related transaction must be an expense';
     END IF;
   END IF;
 
