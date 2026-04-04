@@ -244,12 +244,12 @@ export function TransactionForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-sm w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuevo movimiento</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-3 gap-1.5">
             {(
               ["expense", "income", "transfer"] as TransactionType[]
             ).map((t) => (
@@ -257,8 +257,7 @@ export function TransactionForm({
                 key={t}
                 type="button"
                 variant={type === t ? "default" : "outline"}
-                size="sm"
-                className="text-xs"
+                className="h-11 text-sm font-medium"
                 onClick={() => setType(t)}
               >
                 {typeLabels[t]}
@@ -359,7 +358,7 @@ export function TransactionForm({
 
           {type === "expense" && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
+              <label htmlFor="isDebtPayment" className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50">
                 <Checkbox
                   id="isDebtPayment"
                   checked={isDebtPayment}
@@ -369,10 +368,8 @@ export function TransactionForm({
                     if (checked) { setIsSharedExpense(false); setSplitBetween(2); }
                   }}
                 />
-                <Label htmlFor="isDebtPayment" className="text-sm font-normal cursor-pointer">
-                  Es pago de deuda
-                </Label>
-              </div>
+                <span className="text-sm">Es pago de deuda</span>
+              </label>
               {isDebtPayment && (
                 <div className="space-y-2">
                   <Label htmlFor="debtAccount">Deuda a pagar</Label>
@@ -392,7 +389,7 @@ export function TransactionForm({
                   </Select>
                 </div>
               )}
-              <div className="flex items-center gap-2">
+              <label htmlFor="isSharedExpense" className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50">
                 <Checkbox
                   id="isSharedExpense"
                   checked={isSharedExpense}
@@ -402,10 +399,8 @@ export function TransactionForm({
                     if (!checked) setSplitBetween(2);
                   }}
                 />
-                <Label htmlFor="isSharedExpense" className="text-sm font-normal cursor-pointer">
-                  Gasto compartido
-                </Label>
-              </div>
+                <span className="text-sm">Gasto compartido</span>
+              </label>
               {isSharedExpense && (
                 <div className="space-y-2">
                   <Label htmlFor="splitBetween">Dividir entre</Label>
@@ -418,9 +413,10 @@ export function TransactionForm({
                     onChange={(e) => setSplitBetween(Math.max(2, Math.min(10, Number(e.target.value) || 2)))}
                   />
                   {amount && (
-                    <p className="text-xs text-muted-foreground">
-                      Tu parte: {formatIntegerInput(String(Math.floor(parseIntegerInput(amount) / splitBetween)))} · Reembolso: {formatIntegerInput(String(parseIntegerInput(amount) - Math.floor(parseIntegerInput(amount) / splitBetween)))}
-                    </p>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <p>Tu parte: {formatIntegerInput(String(Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
+                      <p>Reembolso: {formatIntegerInput(String(parseIntegerInput(amount) - Math.floor(parseIntegerInput(amount) / splitBetween)))}</p>
+                    </div>
                   )}
                 </div>
               )}

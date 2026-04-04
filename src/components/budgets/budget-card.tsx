@@ -2,7 +2,6 @@
 
 import { Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { formatCOP } from "@/lib/utils/currency";
 import type { BudgetWithCategory } from "@/lib/hooks/use-budgets";
@@ -49,12 +48,13 @@ export function BudgetCard({ budget, onDelete }: BudgetCardProps) {
           </Button>
         </div>
       </div>
-      <div className="relative space-y-1">
-        <Progress value={Math.min(percentage, 100)} className="h-2" />
-        <div
-          className={`absolute inset-0 h-2 rounded-full ${progressColor}`}
-          style={{ width: `${Math.min(percentage, 100)}%` }}
-        />
+      <div className="space-y-1">
+        <div className="h-2 w-full rounded-full bg-muted">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
+            style={{ width: `${Math.min(percentage, 100)}%` }}
+          />
+        </div>
         <p className="text-xs text-muted-foreground">{percentage}% del limite</p>
       </div>
       <div className="flex justify-between text-xs">
