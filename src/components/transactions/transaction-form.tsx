@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -371,16 +372,22 @@ export function TransactionForm({
           : null,
     };
 
-    if (isEditing && onUpdate) {
-      await onUpdate(editTransaction!.id, transaction);
-    } else if (!isEditing && values.isSharedExpense && values.type === "expense") {
-      await onSubmitShared(transaction, values.splitBetween);
-    } else {
-      await onSubmit(transaction);
+    try {
+      if (isEditing && onUpdate) {
+        await onUpdate(editTransaction!.id, transaction);
+        toast.success("Movimiento actualizado");
+      } else if (!isEditing && values.isSharedExpense && values.type === "expense") {
+        await onSubmitShared(transaction, values.splitBetween);
+        toast.success("Gasto compartido registrado");
+      } else {
+        await onSubmit(transaction);
+        toast.success("Movimiento registrado");
+      }
+      reset(getDefaultValues());
+      onOpenChange(false);
+    } catch {
+      toast.error("No se pudo guardar el movimiento");
     }
-
-    reset(getDefaultValues());
-    onOpenChange(false);
   };
 
   const typeLabels: Record<TransactionType, string> = {

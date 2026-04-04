@@ -16,7 +16,7 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
       <Card className="section-card p-4 md:p-5">
         <p className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</p>
         <p className="py-6 text-center text-xs text-muted-foreground">
-          Sin datos este mes
+          Registra gastos para ver el desglose por categoria
         </p>
       </Card>
     );

@@ -1,8 +1,9 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { InlineConfirm } from "@/components/ui/inline-confirm";
 import { formatCOP } from "@/lib/utils/currency";
 import type { BudgetWithCategory } from "@/lib/hooks/use-budgets";
 
@@ -43,21 +44,16 @@ export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            className="h-11 w-11 text-muted-foreground transition-colors duration-200 hover:text-foreground"
             onClick={() => onEdit(budget)}
             aria-label={`Editar presupuesto ${budget.name}`}
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-destructive"
-            onClick={() => onDelete(budget.id)}
-            aria-label={`Eliminar presupuesto ${budget.name}`}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <InlineConfirm
+            onConfirm={() => onDelete(budget.id)}
+            label="Eliminar"
+          />
         </div>
       </div>
       <div className="space-y-1">

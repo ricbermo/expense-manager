@@ -5,9 +5,9 @@ import {
   ArrowUpRight,
   ArrowLeftRight,
   Pencil,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InlineConfirm } from "@/components/ui/inline-confirm";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
 import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
@@ -101,19 +101,16 @@ export function TransactionList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-primary"
+                      className="h-11 w-11 text-muted-foreground transition-colors duration-200 hover:text-primary"
                       onClick={() => onEdit(t)}
+                      aria-label={`Editar ${t.description || t.categories?.name || "movimiento"}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-destructive"
-                      onClick={() => onDelete(t.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <InlineConfirm
+                      onConfirm={() => onDelete(t.id)}
+                      label="Eliminar"
+                    />
                   </div>
                 </div>
               );

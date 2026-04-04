@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { AccountCard } from "@/components/accounts/account-card";
@@ -37,8 +38,11 @@ export default function AccountsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Eliminar esta cuenta?")) {
+    try {
       await deleteAccount(id);
+      toast.success("Cuenta eliminada");
+    } catch {
+      toast.error("No se pudo eliminar la cuenta");
     }
   };
 
@@ -84,11 +88,11 @@ export default function AccountsPage() {
           </div>
         ) : accounts.length === 0 ? (
           <div className="empty-state text-muted-foreground">
-            <p>No hay cuentas registradas</p>
-            <p className="text-xs mt-1">Agrega tu primera cuenta</p>
+            <p className="font-medium text-foreground">Sin cuentas registradas</p>
+            <p className="text-xs mt-1">Agrega tus cuentas de ahorro, tarjetas o efectivo para llevar el control de tu balance</p>
             <Button className="mt-4" onClick={() => setFormOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
-              Nueva cuenta
+              Agregar primera cuenta
             </Button>
           </div>
         ) : (

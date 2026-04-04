@@ -18,12 +18,24 @@ interface DailySpending {
   amount: number;
 }
 
+interface BudgetAlert {
+  name: string;
+  categoryName: string;
+  percentage: number;
+  spent: number;
+  limit: number;
+}
+
 interface DashboardData {
   totalIncome: number;
   totalExpenses: number;
   totalBalance: number;
   categorySpending: CategorySpending[];
   dailySpending: DailySpending[];
+  prevTotalIncome: number;
+  prevTotalExpenses: number;
+  topGrowthCategory: { name: string; growth: number } | null;
+  budgetAlerts: BudgetAlert[];
 }
 
 export function useDashboard(month: string) {
@@ -33,6 +45,10 @@ export function useDashboard(month: string) {
     totalBalance: 0,
     categorySpending: [],
     dailySpending: [],
+    prevTotalIncome: 0,
+    prevTotalExpenses: 0,
+    topGrowthCategory: null,
+    budgetAlerts: [],
   };
 
   const fetchDashboard = useCallback(async (): Promise<DashboardData> => {
@@ -41,25 +57,46 @@ export function useDashboard(month: string) {
     const [y, m] = month.split("-").map(Number);
     const endDate = `${y}-${String(m + 1).padStart(2, "0")}-01`;
 
-    // Fetch all transactions for the month
-    const { data: transactions } = await supabase
-      .from("transactions")
-      .select("*, categories(name, color)")
-      .gte("date", startDate)
-      .lt("date", endDate);
+    // Previous month range
+    const prevDate = new Date(y, m - 2, 1);
+    const prevStartDate = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}-01`;
+    const prevEndDate = startDate;
 
-    // Fetch all account balances
-    const { data: accounts } = await supabase
-      .from("accounts")
-      .select("balance, type");
+    // Fetch current + previous month transactions, accounts, and budgets in parallel
+    const [
+      { data: transactions },
+      { data: prevTransactions },
+      { data: accounts },
+      { data: budgetData },
+    ] = await Promise.all([
+      supabase
+        .from("transactions")
+        .select("*, categories(name, color)")
+        .gte("date", startDate)
+        .lt("date", endDate),
+      supabase
+        .from("transactions")
+        .select("*, categories(name, color)")
+        .gte("date", prevStartDate)
+        .lt("date", prevEndDate),
+      supabase
+        .from("accounts")
+        .select("balance, type"),
+      supabase
+        .from("budgets")
+        .select("id, name, limit_amount, category_id, categories(name)")
+        .eq("month", startDate),
+    ]);
 
-    const txns = (transactions ?? []) as unknown as {
+    type TxnRow = {
       amount: number;
       type: string;
       date: string;
       to_account_id: string | null;
       categories: { name: string; color: string } | null;
-    }[];
+    };
+
+    const txns = (transactions ?? []) as unknown as TxnRow[];
 
     let totalIncome = 0;
     let totalExpenses = 0;
@@ -68,14 +105,12 @@ export function useDashboard(month: string) {
 
     txns.forEach((t) => {
       if (t.type === "income") {
-        // Exclude reimbursements from income total
         if (t.categories?.name !== "Reembolso") {
           totalIncome += t.amount;
         }
       } else if (t.type === "expense") {
         totalExpenses += t.amount;
 
-        // Category spending
         if (t.categories) {
           const key = t.categories.name;
           if (!catMap[key]) {
@@ -88,12 +123,42 @@ export function useDashboard(month: string) {
           catMap[key].amount += t.amount;
         }
 
-        // Daily spending (exclude internal payments like credit card payments)
         if (!t.to_account_id) {
           dayMap[t.date] = (dayMap[t.date] || 0) + t.amount;
         }
       }
     });
+
+    // Previous month totals
+    const prevTxns = (prevTransactions ?? []) as unknown as TxnRow[];
+    let prevTotalIncome = 0;
+    let prevTotalExpenses = 0;
+    const prevCatMap: Record<string, number> = {};
+
+    prevTxns.forEach((t) => {
+      if (t.type === "income") {
+        if (t.categories?.name !== "Reembolso") {
+          prevTotalIncome += t.amount;
+        }
+      } else if (t.type === "expense") {
+        prevTotalExpenses += t.amount;
+        if (t.categories) {
+          prevCatMap[t.categories.name] = (prevCatMap[t.categories.name] || 0) + t.amount;
+        }
+      }
+    });
+
+    // Find top growth category (biggest increase vs previous month)
+    let topGrowthCategory: { name: string; growth: number } | null = null;
+    let maxGrowth = 0;
+    for (const [name, catData] of Object.entries(catMap)) {
+      const prev = prevCatMap[name] || 0;
+      const growth = catData.amount - prev;
+      if (growth > maxGrowth) {
+        maxGrowth = growth;
+        topGrowthCategory = { name, growth };
+      }
+    }
 
     const totalBalance = (accounts ?? []).reduce(
       (sum, a) => {
@@ -114,12 +179,44 @@ export function useDashboard(month: string) {
       .map(([date, amount]) => ({ date, amount }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    // Budget alerts: budgets at >= 80% usage
+    type BudgetRow = {
+      id: string;
+      name: string;
+      limit_amount: number;
+      category_id: string;
+      categories: { name: string } | null;
+    };
+    const budgets = (budgetData ?? []) as unknown as BudgetRow[];
+
+    // Build spending by category for budget matching
+    const expenseByCat: Record<string, number> = {};
+    txns.forEach((t) => {
+      if (t.type === "expense" && t.categories) {
+        expenseByCat[t.categories.name] = (expenseByCat[t.categories.name] || 0) + t.amount;
+      }
+    });
+
+    const budgetAlerts: BudgetAlert[] = budgets
+      .map((b) => {
+        const catName = b.categories?.name ?? "";
+        const spent = expenseByCat[catName] ?? 0;
+        const percentage = b.limit_amount > 0 ? Math.round((spent / b.limit_amount) * 100) : 0;
+        return { name: b.name, categoryName: catName, percentage, spent, limit: b.limit_amount };
+      })
+      .filter((a) => a.percentage >= 80)
+      .sort((a, b) => b.percentage - a.percentage);
+
     return {
       totalIncome,
       totalExpenses,
       totalBalance,
       categorySpending,
       dailySpending,
+      prevTotalIncome,
+      prevTotalExpenses,
+      topGrowthCategory,
+      budgetAlerts,
     };
   }, [month]);
 

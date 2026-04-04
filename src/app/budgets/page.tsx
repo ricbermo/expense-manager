@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { BudgetCard } from "@/components/budgets/budget-card";
@@ -32,8 +33,11 @@ export default function BudgetsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Eliminar este presupuesto?")) {
+    try {
       await deleteBudget(id);
+      toast.success("Presupuesto eliminado");
+    } catch {
+      toast.error("No se pudo eliminar el presupuesto");
     }
   };
 
@@ -90,7 +94,14 @@ export default function BudgetsPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={copyFromPreviousMonth}
+              onClick={async () => {
+                try {
+                  await copyFromPreviousMonth();
+                  toast.success("Presupuestos copiados del mes anterior");
+                } catch {
+                  toast.error("No se pudieron copiar los presupuestos");
+                }
+              }}
               title="Copiar del mes anterior"
             >
               <Copy className="h-4 w-4" />
@@ -105,13 +116,13 @@ export default function BudgetsPage() {
 
       <div className="app-shell page-stack">
         <div className="month-toolbar">
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)} aria-label="Mes anterior">
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <p className="text-sm font-semibold capitalize text-foreground">
             {formatMonthYear(`${month}-01`)}
           </p>
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(1)}>
+          <Button variant="ghost" size="icon" onClick={() => changeMonth(1)} aria-label="Mes siguiente">
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
@@ -146,12 +157,28 @@ export default function BudgetsPage() {
           </div>
         ) : budgets.length === 0 ? (
           <div className="empty-state text-muted-foreground">
-            <p>No hay presupuestos configurados</p>
-            <p className="text-xs mt-1">Define limites de gasto por categoria</p>
-            <Button className="mt-4" onClick={handleCreate}>
-              <Plus className="mr-1 h-4 w-4" />
-              Crear presupuesto
-            </Button>
+            <p className="font-medium text-foreground">Sin presupuestos este mes</p>
+            <p className="text-xs mt-1">Define limites de gasto por categoria para detectar cuando te excedes y poder ahorrar mas</p>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handleCreate}>
+                <Plus className="mr-1 h-4 w-4" />
+                Crear presupuesto
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await copyFromPreviousMonth();
+                    toast.success("Presupuestos copiados del mes anterior");
+                  } catch {
+                    toast.error("No se pudieron copiar los presupuestos");
+                  }
+                }}
+              >
+                <Copy className="mr-1 h-4 w-4" />
+                Copiar del mes anterior
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">

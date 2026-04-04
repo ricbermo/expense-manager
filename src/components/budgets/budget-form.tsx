@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -120,10 +121,16 @@ export function BudgetForm({
         categoryId: values.categoryId,
         limitAmount: parseIntegerInput(values.limitAmount),
       });
+      toast.success(mode === "edit" ? "Presupuesto actualizado" : "Presupuesto creado");
       onOpenChange(false);
       reset({ name: "", categoryId: "", limitAmount: "" });
       setSubmitError(null);
     } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar el presupuesto."
+      );
       setSubmitError(
         error instanceof Error
           ? error.message

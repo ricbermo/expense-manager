@@ -22,7 +22,7 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
       <Card className="section-card p-4 md:p-5">
         <p className="mb-3 text-sm font-semibold text-foreground">Tendencia diaria</p>
         <p className="py-6 text-center text-xs text-muted-foreground">
-          Sin datos este mes
+          Registra gastos para ver la tendencia de gasto acumulado
         </p>
       </Card>
     );

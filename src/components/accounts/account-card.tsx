@@ -1,9 +1,10 @@
 "use client";
 
-import { Wallet, Banknote, CreditCard, Landmark, Trash2, Pencil } from "lucide-react";
+import { Wallet, Banknote, CreditCard, Landmark, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { InlineConfirm } from "@/components/ui/inline-confirm";
 import { formatCOP } from "@/lib/utils/currency";
 import type { Account } from "@/lib/types/database";
 import { Progress } from "@/components/ui/progress";
@@ -64,19 +65,16 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 transition-colors duration-200"
+            className="h-11 w-11 transition-colors duration-200"
             onClick={() => onEdit(account)}
+            aria-label={`Editar cuenta ${account.name}`}
           >
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-destructive"
-            onClick={() => onDelete(account.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <InlineConfirm
+            onConfirm={() => onDelete(account.id)}
+            label="Eliminar"
+          />
         </div>
       </div>
 

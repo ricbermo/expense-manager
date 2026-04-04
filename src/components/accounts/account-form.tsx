@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,17 +118,21 @@ export function AccountForm({
         ? parseDueDayInput(values.dueDay)
         : null;
 
-    await onSubmit({
-      name: values.name.trim(),
-      type: values.type,
-      balance: normalizeStoredBalance(values.type, parsedBalance),
-      credit_limit: parsedCreditLimit,
-      interest_rate: parsedInterestRate,
-      due_day: parsedDueDay,
-    });
-
-    reset(getAccountFormValues() as AccountFormValues);
-    onOpenChange(false);
+    try {
+      await onSubmit({
+        name: values.name.trim(),
+        type: values.type,
+        balance: normalizeStoredBalance(values.type, parsedBalance),
+        credit_limit: parsedCreditLimit,
+        interest_rate: parsedInterestRate,
+        due_day: parsedDueDay,
+      });
+      toast.success(initialData ? "Cuenta actualizada" : "Cuenta creada");
+      reset(getAccountFormValues() as AccountFormValues);
+      onOpenChange(false);
+    } catch {
+      toast.error("No se pudo guardar la cuenta");
+    }
   };
 
   return (
