@@ -444,14 +444,14 @@ export function TransactionForm({
                     value={field.value}
                     onValueChange={(v) => field.onChange(v ?? "")}
                   >
-                      <SelectTrigger id="budget">
+                      <SelectTrigger id="budget" className="w-full">
                         <SelectValue placeholder="Sin budget">
                           {() =>
                             selectedBudget ? getBudgetLabel(selectedBudget) : "Sin budget"
                           }
                         </SelectValue>
                       </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-[min(92vw,34rem)] min-w-[var(--anchor-width)]">
                       <SelectItem value="" label="Sin budget">
                         Sin budget
                       </SelectItem>

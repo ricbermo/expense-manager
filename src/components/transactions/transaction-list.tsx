@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
 import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
+import { buildTransactionMetaLine } from "@/lib/utils/transaction-list-meta";
 
 const typeIcons = {
   expense: ArrowUpRight,
@@ -85,7 +86,11 @@ export function TransactionList({
                       {t.description || t.categories?.name || t.type}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {typeLabels[t.type]} · {t.accounts?.name}
+                      {buildTransactionMetaLine({
+                        typeLabel: typeLabels[t.type],
+                        accountName: t.accounts?.name ?? "Sin cuenta",
+                        budgetName: t.budgets?.name ?? null,
+                      })}
                     </p>
                   </div>
                   <div className="text-right flex items-center gap-1">

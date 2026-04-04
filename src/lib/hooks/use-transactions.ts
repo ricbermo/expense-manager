@@ -9,6 +9,7 @@ import { getTransactionsErrorMessage } from "@/lib/utils/transactions-error";
 
 export interface TransactionWithRelations extends Transaction {
   categories: Category | null;
+  budgets: { name: string } | null;
   accounts: Account | null;
 }
 
@@ -20,7 +21,7 @@ export function useTransactions(month?: string) {
     let query = supabase
       .from("transactions")
       .select(
-        "*, categories(*), accounts:accounts!transactions_account_id_fkey(*)"
+        "*, categories(*), budgets(name), accounts:accounts!transactions_account_id_fkey(*)"
       )
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
