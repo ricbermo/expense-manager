@@ -89,10 +89,13 @@ export function useDashboard(month: string) {
     ]);
 
     type TxnRow = {
+      id: string;
       amount: number;
       type: string;
       date: string;
       to_account_id: string | null;
+      budget_id: string | null;
+      category_id: string | null;
       categories: { name: string; color: string } | null;
     };
 
@@ -189,18 +192,32 @@ export function useDashboard(month: string) {
     };
     const budgets = (budgetData ?? []) as unknown as BudgetRow[];
 
-    // Build spending by category for budget matching
-    const expenseByCat: Record<string, number> = {};
+    // Mirror use-budgets logic: prefer budget_id linkage, fall back to category_id
+    // only when exactly one budget owns that category (avoids double-counting).
+    const spentByBudgetId: Record<string, number> = {};
+    const spentByCategoryId: Record<string, number> = {};
     txns.forEach((t) => {
-      if (t.type === "expense" && t.categories) {
-        expenseByCat[t.categories.name] = (expenseByCat[t.categories.name] || 0) + t.amount;
+      if (t.type !== "expense") return;
+      if (t.budget_id) {
+        spentByBudgetId[t.budget_id] = (spentByBudgetId[t.budget_id] || 0) + t.amount;
+      } else if (t.category_id) {
+        spentByCategoryId[t.category_id] = (spentByCategoryId[t.category_id] || 0) + t.amount;
       }
     });
+
+    const categoryUsageCount = budgets.reduce<Record<string, number>>((acc, b) => {
+      acc[b.category_id] = (acc[b.category_id] ?? 0) + 1;
+      return acc;
+    }, {});
 
     const budgetAlerts: BudgetAlert[] = budgets
       .map((b) => {
         const catName = b.categories?.name ?? "";
-        const spent = expenseByCat[catName] ?? 0;
+        const directSpent = spentByBudgetId[b.id] ?? 0;
+        const legacySpent = categoryUsageCount[b.category_id] === 1
+          ? (spentByCategoryId[b.category_id] ?? 0)
+          : 0;
+        const spent = directSpent + legacySpent;
         const percentage = b.limit_amount > 0 ? Math.round((spent / b.limit_amount) * 100) : 0;
         return { name: b.name, categoryName: catName, percentage, spent, limit: b.limit_amount };
       })
