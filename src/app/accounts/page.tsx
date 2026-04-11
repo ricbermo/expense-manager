@@ -8,13 +8,21 @@ import { Button } from "@/components/ui/button";
 import { AccountCard } from "@/components/accounts/account-card";
 import { AccountForm } from "@/components/accounts/account-form";
 import { useAccounts } from "@/lib/hooks/use-accounts";
+import { useAccountActivity } from "@/lib/hooks/use-account-activity";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 import { formatCOP } from "@/lib/utils/currency";
 import type { Account } from "@/lib/types/database";
 
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export default function AccountsPage() {
   const { accounts, loading, createAccount, updateAccount, deleteAccount } =
     useAccounts();
+  const [month] = useState(getCurrentMonth);
+  const { activity } = useAccountActivity(month);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Account | undefined>();
 
@@ -101,6 +109,7 @@ export default function AccountsPage() {
               <AccountCard
                 key={account.id}
                 account={account}
+                activity={activity[account.id]}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />

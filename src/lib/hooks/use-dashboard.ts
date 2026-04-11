@@ -31,6 +31,7 @@ interface DashboardData {
   totalExpenses: number;
   totalBalance: number;
   categorySpending: CategorySpending[];
+  incomeByCategory: CategorySpending[];
   dailySpending: DailySpending[];
   prevTotalIncome: number;
   prevTotalExpenses: number;
@@ -44,6 +45,7 @@ export function useDashboard(month: string) {
     totalExpenses: 0,
     totalBalance: 0,
     categorySpending: [],
+    incomeByCategory: [],
     dailySpending: [],
     prevTotalIncome: 0,
     prevTotalExpenses: 0,
@@ -104,12 +106,24 @@ export function useDashboard(month: string) {
     let totalIncome = 0;
     let totalExpenses = 0;
     const catMap: Record<string, CategorySpending> = {};
+    const incomeCatMap: Record<string, CategorySpending> = {};
     const dayMap: Record<string, number> = {};
 
     txns.forEach((t) => {
       if (t.type === "income") {
         if (t.categories?.name !== "Reembolso") {
           totalIncome += t.amount;
+          if (t.categories) {
+            const key = t.categories.name;
+            if (!incomeCatMap[key]) {
+              incomeCatMap[key] = {
+                name: t.categories.name,
+                color: t.categories.color,
+                amount: 0,
+              };
+            }
+            incomeCatMap[key].amount += t.amount;
+          }
         }
       } else if (t.type === "expense") {
         totalExpenses += t.amount;
@@ -178,6 +192,10 @@ export function useDashboard(month: string) {
       (a, b) => b.amount - a.amount
     );
 
+    const incomeByCategory = Object.values(incomeCatMap).sort(
+      (a, b) => b.amount - a.amount
+    );
+
     const dailySpending = Object.entries(dayMap)
       .map(([date, amount]) => ({ date, amount }))
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -229,6 +247,7 @@ export function useDashboard(month: string) {
       totalExpenses,
       totalBalance,
       categorySpending,
+      incomeByCategory,
       dailySpending,
       prevTotalIncome,
       prevTotalExpenses,

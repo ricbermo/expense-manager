@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { SpendingByCategory } from "@/components/dashboard/spending-by-category";
+import { IncomeByCategory } from "@/components/dashboard/income-by-category";
 import { MonthlyTrend } from "@/components/dashboard/monthly-trend";
+import { MonthlyComparison } from "@/components/dashboard/monthly-comparison";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatMonthYear } from "@/lib/utils/dates";
@@ -179,7 +181,9 @@ export default function DashboardPage() {
             )}
 
             <SpendingByCategory data={data.categorySpending} />
+            <IncomeByCategory data={data.incomeByCategory} />
             <MonthlyTrend data={data.dailySpending} />
+            <MonthlyComparison />
           </>
         )}
       </div>

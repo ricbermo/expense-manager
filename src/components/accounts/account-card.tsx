@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/ui/inline-confirm";
 import { formatCOP } from "@/lib/utils/currency";
 import type { Account } from "@/lib/types/database";
+import type { AccountActivity } from "@/lib/hooks/use-account-activity";
 import { Progress } from "@/components/ui/progress";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
@@ -33,11 +34,12 @@ const accentByType = {
 
 interface AccountCardProps {
   account: Account;
+  activity?: AccountActivity;
   onEdit: (account: Account) => void;
   onDelete: (id: string) => void;
 }
 
-export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
+export function AccountCard({ account, activity, onEdit, onDelete }: AccountCardProps) {
   const Icon = accountIcons[account.type];
   const normalizedBalance = normalizeStoredBalance(account.type, account.balance);
   const utilization =
@@ -107,6 +109,17 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
           <p className="text-xs text-muted-foreground">
             Dia de pago: {account.due_day}
           </p>
+        )}
+        {activity && (activity.income > 0 || activity.expense > 0) && (
+          <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
+            {activity.income > 0 && (
+              <span className="text-emerald-600 font-medium">+{formatCOP(activity.income)}</span>
+            )}
+            {activity.expense > 0 && (
+              <span className="text-rose-600 font-medium">−{formatCOP(activity.expense)}</span>
+            )}
+            <span>este mes</span>
+          </div>
         )}
       </div>
     </Card>

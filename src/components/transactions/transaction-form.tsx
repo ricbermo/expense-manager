@@ -78,6 +78,7 @@ interface TransactionFormValues {
   isDebtPayment: boolean;
   isSharedExpense: boolean;
   splitBetween: number;
+  tags: string;
 }
 
 function getDefaultValues(
@@ -96,6 +97,7 @@ function getDefaultValues(
       isDebtPayment: false,
       isSharedExpense: false,
       splitBetween: 2,
+      tags: "",
     };
   }
 
@@ -112,6 +114,7 @@ function getDefaultValues(
       editTransaction.type === "expense" && !!editTransaction.to_account_id,
     isSharedExpense: false,
     splitBetween: 2,
+    tags: (editTransaction.tags ?? []).join(", "),
   };
 }
 
@@ -370,6 +373,10 @@ export function TransactionForm({
         values.type === "transfer" || values.type === "expense"
           ? values.toAccountId || null
           : null,
+      tags: values.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
     };
 
     try {
@@ -743,6 +750,16 @@ export function TransactionForm({
               {...register("description")}
               placeholder="Ej: Almuerzo en restaurante"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tags">Etiquetas (opcional)</Label>
+            <Input
+              id="tags"
+              {...register("tags")}
+              placeholder="Ej: trabajo, ocio, fijo"
+            />
+            <p className="text-xs text-muted-foreground">Separa con comas</p>
           </div>
 
           <Button type="submit" className="w-full" disabled={!canSave}>

@@ -1,11 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Search, X, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { useTransactions, type TransactionWithRelations } from "@/lib/hooks/use-transactions";
@@ -36,11 +44,28 @@ export default function TransactionsPage() {
   const { accounts } = useAccounts();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [accountFilter, setAccountFilter] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const activeFilterCount = [accountFilter, minAmount, maxAmount].filter(Boolean).length;
 
   const filteredTransactions = useMemo(() => {
     let result = transactions;
     if (typeFilter !== "all") {
       result = result.filter((t) => t.type === typeFilter);
+    }
+    if (accountFilter) {
+      result = result.filter((t) => t.account_id === accountFilter);
+    }
+    if (minAmount) {
+      const min = Number(minAmount.replace(/\D/g, ""));
+      if (!isNaN(min)) result = result.filter((t) => t.amount >= min);
+    }
+    if (maxAmount) {
+      const max = Number(maxAmount.replace(/\D/g, ""));
+      if (!isNaN(max)) result = result.filter((t) => t.amount <= max);
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -49,11 +74,12 @@ export default function TransactionsPage() {
           t.description?.toLowerCase().includes(q) ||
           t.categories?.name?.toLowerCase().includes(q) ||
           t.accounts?.name?.toLowerCase().includes(q) ||
-          t.budgets?.name?.toLowerCase().includes(q)
+          t.budgets?.name?.toLowerCase().includes(q) ||
+          t.tags?.some((tag) => tag.toLowerCase().includes(q))
       );
     }
     return result;
-  }, [transactions, search, typeFilter]);
+  }, [transactions, search, typeFilter, accountFilter, minAmount, maxAmount]);
 
   const changeMonth = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
@@ -127,24 +153,97 @@ export default function TransactionsPage() {
                 </button>
               )}
             </div>
-            <div className="flex gap-1">
-              {([
-                ["all", "Todos"],
-                ["expense", "Gastos"],
-                ["income", "Ingresos"],
-                ["transfer", "Transferencias"],
-              ] as const).map(([value, label]) => (
-                <Button
-                  key={value}
-                  variant={typeFilter === value ? "default" : "ghost"}
-                  size="sm"
-                  className="h-7 px-2.5 text-xs"
-                  onClick={() => setTypeFilter(value)}
-                >
-                  {label}
-                </Button>
-              ))}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-1 flex-1 overflow-x-auto">
+                {([
+                  ["all", "Todos"],
+                  ["expense", "Gastos"],
+                  ["income", "Ingresos"],
+                  ["transfer", "Transferencias"],
+                ] as const).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    variant={typeFilter === value ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-2.5 text-xs shrink-0"
+                    onClick={() => setTypeFilter(value)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                size="sm"
+                className="h-7 px-2.5 text-xs shrink-0 gap-1"
+                onClick={() => setShowFilters((v) => !v)}
+              >
+                <Filter className="h-3.5 w-3.5" />
+                Filtros
+                {activeFilterCount > 0 && (
+                  <Badge className="h-4 w-4 rounded-full p-0 text-[10px] flex items-center justify-center ml-0.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
             </div>
+
+            {showFilters && (
+              <div className="rounded-lg border border-border/60 p-3 space-y-3">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">Cuenta</p>
+                  <Select value={accountFilter} onValueChange={(v) => setAccountFilter(v ?? "")}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Todas las cuentas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todas las cuentas</SelectItem>
+                      {accounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id} label={a.name}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">Monto mínimo</p>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={minAmount}
+                      onChange={(e) => setMinAmount(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">Monto máximo</p>
+                    <Input
+                      type="number"
+                      placeholder="Sin límite"
+                      value={maxAmount}
+                      onChange={(e) => setMaxAmount(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs w-full"
+                    onClick={() => {
+                      setAccountFilter("");
+                      setMinAmount("");
+                      setMaxAmount("");
+                    }}
+                  >
+                    Limpiar filtros
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
 

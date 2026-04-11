@@ -113,6 +113,7 @@ export function useTransactions(month?: string) {
       related_expense_id: null,
       account_id: expense.account_id,
       to_account_id: null,
+      tags: [],
     };
     const { data: createdExpense, error: expenseError } = await supabase
       .from("transactions")

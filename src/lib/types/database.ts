@@ -33,6 +33,7 @@ export interface Transaction {
   related_expense_id: string | null;
   account_id: string;
   to_account_id: string | null;
+  tags: string[];
   created_at: string;
 }
 

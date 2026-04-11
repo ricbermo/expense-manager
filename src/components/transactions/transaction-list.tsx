@@ -6,6 +6,7 @@ import {
   ArrowLeftRight,
   Pencil,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/ui/inline-confirm";
 import { formatCOP } from "@/lib/utils/currency";
@@ -92,6 +93,15 @@ export function TransactionList({
                         budgetName: t.budgets?.name ?? null,
                       })}
                     </p>
+                    {t.tags && t.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {t.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-4">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right flex items-center gap-1">
                     <p className={`text-sm font-semibold tabular-nums ${typeColors[t.type]}`}>
