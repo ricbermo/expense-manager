@@ -26,6 +26,16 @@ interface BudgetAlert {
   limit: number;
 }
 
+export interface CreditCardAlert {
+  id: string;
+  accountId: string;
+  accountName: string;
+  minimumPayment: number;
+  totalBalance: number;
+  dueDate: string;
+  daysUntilDue: number;
+}
+
 interface DashboardData {
   totalIncome: number;
   totalExpenses: number;
@@ -37,6 +47,7 @@ interface DashboardData {
   prevTotalExpenses: number;
   topGrowthCategory: { name: string; growth: number } | null;
   budgetAlerts: BudgetAlert[];
+  creditCardAlerts: CreditCardAlert[];
 }
 
 export function useDashboard(month: string) {
@@ -51,6 +62,7 @@ export function useDashboard(month: string) {
     prevTotalExpenses: 0,
     topGrowthCategory: null,
     budgetAlerts: [],
+    creditCardAlerts: [],
   };
 
   const fetchDashboard = useCallback(async (): Promise<DashboardData> => {
@@ -64,12 +76,13 @@ export function useDashboard(month: string) {
     const prevStartDate = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}-01`;
     const prevEndDate = startDate;
 
-    // Fetch current + previous month transactions, accounts, and budgets in parallel
+    // Fetch current + previous month transactions, accounts, budgets, and CC statements in parallel
     const [
       { data: transactions },
       { data: prevTransactions },
       { data: accounts },
       { data: budgetData },
+      { data: ccStatementData },
     ] = await Promise.all([
       supabase
         .from("transactions")
@@ -88,6 +101,10 @@ export function useDashboard(month: string) {
         .from("budgets")
         .select("id, name, limit_amount, category_id, categories(name)")
         .eq("month", startDate),
+      supabase
+        .from("credit_card_statements")
+        .select("id, account_id, minimum_payment, total_balance, due_date, accounts(name)")
+        .is("paid_at", null),
     ]);
 
     type TxnRow = {
@@ -242,6 +259,33 @@ export function useDashboard(month: string) {
       .filter((a) => a.percentage >= 80)
       .sort((a, b) => b.percentage - a.percentage);
 
+    // Credit card payment alerts: all unpaid statements
+    type CCStatementRow = {
+      id: string;
+      account_id: string;
+      minimum_payment: number;
+      total_balance: number;
+      due_date: string;
+      accounts: { name: string } | null;
+    };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const creditCardAlerts: CreditCardAlert[] = ((ccStatementData ?? []) as unknown as CCStatementRow[])
+      .map((s) => {
+        const due = new Date(s.due_date + "T00:00:00");
+        const daysUntilDue = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return {
+          id: s.id,
+          accountId: s.account_id,
+          accountName: s.accounts?.name ?? "Tarjeta",
+          minimumPayment: s.minimum_payment,
+          totalBalance: s.total_balance,
+          dueDate: s.due_date,
+          daysUntilDue,
+        };
+      })
+      .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+
     return {
       totalIncome,
       totalExpenses,
@@ -253,6 +297,7 @@ export function useDashboard(month: string) {
       prevTotalExpenses,
       topGrowthCategory,
       budgetAlerts,
+      creditCardAlerts,
     };
   }, [month]);
 

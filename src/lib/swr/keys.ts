@@ -6,6 +6,7 @@ export const swrKeyPrefix = {
   categories: "categories",
   dashboard: "dashboard",
   transactions: "transactions",
+  creditCardStatements: "credit-card-statements",
 } as const;
 
 export const swrKeys = {
@@ -16,4 +17,5 @@ export const swrKeys = {
   dashboard: (month: string) => [swrKeyPrefix.dashboard, month] as const,
   monthlyComparison: () => [swrKeyPrefix.dashboard, "monthly-comparison"] as const,
   transactions: (month?: string) => [swrKeyPrefix.transactions, month ?? "all"] as const,
+  creditCardStatements: [swrKeyPrefix.creditCardStatements] as const,
 };

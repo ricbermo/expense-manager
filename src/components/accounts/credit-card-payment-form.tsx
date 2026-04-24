@@ -1,0 +1,195 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatIntegerInput, parseIntegerInput } from "@/lib/utils/number-input-format";
+import { formatCOP } from "@/lib/utils/currency";
+import type { Account } from "@/lib/types/database";
+import type { StatementWithAccount } from "@/lib/hooks/use-credit-card-statements";
+
+interface PaymentFormValues {
+  amount: string;
+  sourceAccountId: string;
+  date: string;
+  description: string;
+}
+
+interface CreditCardPaymentFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  creditCardAccount: Account;
+  pendingStatement: StatementWithAccount | null;
+  sourceAccounts: Account[];
+  onSubmit: (data: {
+    amount: number;
+    sourceAccountId: string;
+    date: string;
+    description: string;
+    statementId: string | null;
+  }) => Promise<void>;
+}
+
+function getTodayLocalDate() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+}
+
+export function CreditCardPaymentForm({
+  open,
+  onOpenChange,
+  creditCardAccount,
+  pendingStatement,
+  sourceAccounts,
+  onSubmit,
+}: CreditCardPaymentFormProps) {
+  const defaultAmount = pendingStatement
+    ? formatIntegerInput(String(pendingStatement.minimum_payment))
+    : "";
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { isSubmitting },
+  } = useForm<PaymentFormValues>({
+    defaultValues: {
+      amount: defaultAmount,
+      sourceAccountId: "",
+      date: getTodayLocalDate(),
+      description: `Pago ${creditCardAccount.name}`,
+    },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    reset({
+      amount: pendingStatement
+        ? formatIntegerInput(String(pendingStatement.minimum_payment))
+        : "",
+      sourceAccountId: sourceAccounts[0]?.id ?? "",
+      date: getTodayLocalDate(),
+      description: `Pago ${creditCardAccount.name}`,
+    });
+  }, [open, pendingStatement, creditCardAccount.name, sourceAccounts, reset]);
+
+  const watchedSourceId = watch("sourceAccountId");
+  const selectedSource = useMemo(
+    () => sourceAccounts.find((a) => a.id === watchedSourceId),
+    [sourceAccounts, watchedSourceId]
+  );
+
+  const onFormSubmit = async (values: PaymentFormValues) => {
+    await onSubmit({
+      amount: parseIntegerInput(values.amount),
+      sourceAccountId: values.sourceAccountId,
+      date: values.date,
+      description: values.description,
+      statementId: pendingStatement?.id ?? null,
+    });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm w-[calc(100%-2rem)]">
+        <DialogHeader>
+          <DialogTitle>Pagar {creditCardAccount.name}</DialogTitle>
+        </DialogHeader>
+
+        {pendingStatement && (
+          <div className="rounded-lg bg-muted/50 border border-border/60 p-3 space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Saldo extracto</span>
+              <span className="font-medium">{formatCOP(pendingStatement.total_balance)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Pago mínimo</span>
+              <span className="font-medium text-amber-600">{formatCOP(pendingStatement.minimum_payment)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Vence</span>
+              <span className="font-medium">{pendingStatement.due_date}</span>
+            </div>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pay-amount">Monto a pagar (COP)</Label>
+            <Controller
+              name="amount"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="pay-amount"
+                  type="text"
+                  inputMode="numeric"
+                  value={field.value}
+                  onChange={(e) => field.onChange(formatIntegerInput(e.target.value))}
+                  placeholder="50.000"
+                  required
+                  className="text-2xl font-bold h-14"
+                />
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pay-source">Cuenta de origen</Label>
+            <Controller
+              name="sourceAccountId"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                  <SelectTrigger id="pay-source">
+                    <SelectValue placeholder="Selecciona cuenta">
+                      {() => selectedSource?.name ?? "Selecciona cuenta"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sourceAccounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id} label={a.name}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pay-date">Fecha del pago</Label>
+            <Input id="pay-date" type="date" {...register("date")} required />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pay-description">Descripción</Label>
+            <Input id="pay-description" {...register("description")} />
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting || !watchedSourceId}
+          >
+            {isSubmitting ? "Procesando..." : "Confirmar pago"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

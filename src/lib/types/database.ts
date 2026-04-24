@@ -45,6 +45,18 @@ export interface Budget {
   limit_amount: number;
 }
 
+export interface CreditCardStatement {
+  id: string;
+  account_id: string;
+  statement_date: string;
+  total_balance: number;
+  minimum_payment: number;
+  due_date: string;
+  paid_at: string | null;
+  payment_transaction_id: string | null;
+  created_at: string;
+}
+
 // Supabase Database type for client typing
 export type Database = {
   public: {

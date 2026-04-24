@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, CreditCard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { MonthlyComparison } from "@/components/dashboard/monthly-comparison";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatMonthYear } from "@/lib/utils/dates";
+import type { CreditCardAlert } from "@/lib/hooks/use-dashboard";
 
 function KpiChange({ current, previous, invertColor = false }: { current: number; previous: number; invertColor?: boolean }) {
   if (previous === 0) return null;
@@ -148,6 +149,41 @@ export default function DashboardPage() {
                   </span>
                   {" "}vs mes anterior
                 </p>
+              </div>
+            )}
+
+            {data.creditCardAlerts.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground px-1">Pagos de tarjeta pendientes</p>
+                {data.creditCardAlerts.map((alert: CreditCardAlert) => {
+                  const overdue = alert.daysUntilDue < 0;
+                  const urgent = alert.daysUntilDue <= 7;
+                  const color = overdue ? "text-rose-600" : urgent ? "text-amber-500" : "text-blue-600";
+                  const label = overdue
+                    ? `Vencida hace ${Math.abs(alert.daysUntilDue)} días`
+                    : alert.daysUntilDue === 0
+                      ? "Vence hoy"
+                      : `Vence en ${alert.daysUntilDue} días`;
+                  return (
+                    <button
+                      key={alert.id}
+                      className="section-card flex items-center gap-3 p-3 w-full text-left transition-colors hover:border-primary/30 cursor-pointer"
+                      onClick={() => router.push("/accounts")}
+                    >
+                      <CreditCard className={`h-4 w-4 shrink-0 ${color}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{alert.accountName}</p>
+                        <p className={`text-xs ${color}`}>{label}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-semibold tabular-nums ${color}`}>
+                          {formatCOP(alert.minimumPayment)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">pago mínimo</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
 

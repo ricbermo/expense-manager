@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, Banknote, CreditCard, Landmark, Pencil } from "lucide-react";
+import { Wallet, Banknote, CreditCard, Landmark, Pencil, FileText, ArrowUpFromLine } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { InlineConfirm } from "@/components/ui/inline-confirm";
 import { formatCOP } from "@/lib/utils/currency";
 import type { Account } from "@/lib/types/database";
 import type { AccountActivity } from "@/lib/hooks/use-account-activity";
+import type { StatementWithAccount } from "@/lib/hooks/use-credit-card-statements";
 import { Progress } from "@/components/ui/progress";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
@@ -35,11 +36,14 @@ const accentByType = {
 interface AccountCardProps {
   account: Account;
   activity?: AccountActivity;
+  pendingStatement?: StatementWithAccount;
   onEdit: (account: Account) => void;
   onDelete: (id: string) => void;
+  onRegisterStatement?: (account: Account) => void;
+  onPayCC?: (account: Account) => void;
 }
 
-export function AccountCard({ account, activity, onEdit, onDelete }: AccountCardProps) {
+export function AccountCard({ account, activity, pendingStatement, onEdit, onDelete, onRegisterStatement, onPayCC }: AccountCardProps) {
   const Icon = accountIcons[account.type];
   const normalizedBalance = normalizeStoredBalance(account.type, account.balance);
   const utilization =
@@ -105,10 +109,41 @@ export function AccountCard({ account, activity, onEdit, onDelete }: AccountCard
             Tasa: {account.interest_rate}%
           </p>
         )}
-        {account.due_day && (
-          <p className="text-xs text-muted-foreground">
-            Dia de pago: {account.due_day}
-          </p>
+        {account.type === "credit_card" && pendingStatement && (
+          <div className="mt-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-amber-800">Extracto pendiente</span>
+              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-0">
+                Vence {pendingStatement.due_date}
+              </Badge>
+            </div>
+            <div className="flex justify-between text-xs text-amber-700">
+              <span>Pago mínimo</span>
+              <span className="font-semibold">{formatCOP(pendingStatement.minimum_payment)}</span>
+            </div>
+          </div>
+        )}
+        {account.type === "credit_card" && (
+          <div className="mt-2 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 h-9 text-xs gap-1.5"
+              onClick={() => onRegisterStatement?.(account)}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Registrar extracto
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 h-9 text-xs gap-1.5"
+              onClick={() => onPayCC?.(account)}
+            >
+              <ArrowUpFromLine className="h-3.5 w-3.5" />
+              Pagar TC
+            </Button>
+          </div>
         )}
         {activity && (activity.income > 0 || activity.expense > 0) && (
           <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
