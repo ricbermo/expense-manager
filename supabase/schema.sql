@@ -35,7 +35,10 @@ CREATE TABLE transactions (
   related_expense_id UUID,
   account_id UUID NOT NULL REFERENCES accounts(id),
   to_account_id UUID REFERENCES accounts(id),
-  created_at TIMESTAMPTZ DEFAULT now()
+  installments SMALLINT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT transactions_installments_range
+    CHECK (installments IS NULL OR installments BETWEEN 1 AND 48)
 );
 
 -- Budgets
@@ -66,6 +69,9 @@ CREATE INDEX idx_transactions_category ON transactions(category_id);
 CREATE INDEX idx_transactions_budget ON transactions(budget_id);
 CREATE INDEX idx_transactions_related_expense ON transactions(related_expense_id);
 CREATE INDEX idx_transactions_account ON transactions(account_id);
+CREATE INDEX idx_transactions_installments
+  ON transactions(account_id, date)
+  WHERE installments IS NOT NULL;
 CREATE INDEX idx_budgets_month ON budgets(month);
 CREATE UNIQUE INDEX idx_budgets_user_month_name ON budgets(user_id, month, lower(name));
 
@@ -74,6 +80,7 @@ CREATE OR REPLACE FUNCTION ensure_transaction_user_ownership()
 RETURNS TRIGGER AS $$
 DECLARE
   source_owner UUID;
+  source_type TEXT;
   destination_owner UUID;
   category_owner UUID;
   budget_owner UUID;
@@ -81,7 +88,7 @@ DECLARE
   related_owner UUID;
   related_type TEXT;
 BEGIN
-  SELECT user_id INTO source_owner
+  SELECT user_id, type INTO source_owner, source_type
   FROM accounts
   WHERE id = NEW.account_id;
 
@@ -165,6 +172,16 @@ BEGIN
     END IF;
   END IF;
 
+  IF NEW.installments IS NOT NULL THEN
+    IF NEW.type <> 'expense' THEN
+      RAISE EXCEPTION 'Installments can only be set on expense transactions';
+    END IF;
+
+    IF source_type <> 'credit_card' THEN
+      RAISE EXCEPTION 'Installments can only be set when paying with a credit card account';
+    END IF;
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -231,6 +248,29 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_update_account_balance
 AFTER INSERT OR DELETE ON transactions
 FOR EACH ROW EXECUTE FUNCTION update_account_balance();
+
+-- Monthly installment projection: explodes each installment purchase into one
+-- row per scheduled month with the per-cuota amount.
+CREATE OR REPLACE VIEW transaction_installments_projection AS
+SELECT
+  t.id AS transaction_id,
+  t.user_id,
+  t.account_id,
+  t.description,
+  t.amount AS total_amount,
+  t.installments,
+  t.date AS purchase_date,
+  gs.installment_number,
+  (date_trunc('month', t.date) + (gs.installment_number - 1) * INTERVAL '1 month')::date
+    AS scheduled_month,
+  CASE
+    WHEN gs.installment_number < t.installments
+      THEN t.amount / t.installments
+    ELSE t.amount - (t.amount / t.installments) * (t.installments - 1)
+  END AS scheduled_amount
+FROM transactions t
+CROSS JOIN LATERAL generate_series(1, t.installments) AS gs(installment_number)
+WHERE t.installments IS NOT NULL AND t.installments >= 2;
 
 -- Row-level security
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;

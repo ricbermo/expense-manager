@@ -79,7 +79,10 @@ interface TransactionFormValues {
   isSharedExpense: boolean;
   splitBetween: number;
   tags: string;
+  installments: string;
 }
+
+const INSTALLMENT_OPTIONS = [1, 3, 6, 9, 12, 18, 24, 36, 48];
 
 function getDefaultValues(
   editTransaction?: (Transaction & { categories?: Category | null }) | null
@@ -98,6 +101,7 @@ function getDefaultValues(
       isSharedExpense: false,
       splitBetween: 2,
       tags: "",
+      installments: "1",
     };
   }
 
@@ -115,6 +119,9 @@ function getDefaultValues(
     isSharedExpense: false,
     splitBetween: 2,
     tags: (editTransaction.tags ?? []).join(", "),
+    installments: editTransaction.installments
+      ? String(editTransaction.installments)
+      : "1",
   };
 }
 
@@ -148,6 +155,7 @@ export function TransactionForm({
   const watchedIsDebtPayment = useWatch({ control, name: "isDebtPayment" });
   const watchedIsSharedExpense = useWatch({ control, name: "isSharedExpense" });
   const watchedSplitBetween = useWatch({ control, name: "splitBetween" });
+  const watchedInstallments = useWatch({ control, name: "installments" });
 
   const type = watchedType ?? "expense";
   const amount = watchedAmount ?? "";
@@ -159,6 +167,7 @@ export function TransactionForm({
   const isDebtPayment = watchedIsDebtPayment ?? false;
   const isSharedExpense = watchedIsSharedExpense ?? false;
   const splitBetween = watchedSplitBetween ?? 2;
+  const installments = watchedInstallments ?? "";
 
   const previousTypeRef = useRef<TransactionType | null>(null);
   const hydratedBudgetFromEditRef = useRef(false);
@@ -331,6 +340,7 @@ export function TransactionForm({
     setValue("isDebtPayment", false);
     setValue("isSharedExpense", false);
     setValue("splitBetween", 2);
+    setValue("installments", "1");
   }, [budgetId, categoryId, setValue, type]);
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
@@ -352,6 +362,17 @@ export function TransactionForm({
     toAccountId
   );
 
+  const isCreditCardPurchase =
+    type === "expense" &&
+    !isDebtPayment &&
+    selectedOriginAccount?.type === "credit_card";
+
+  useEffect(() => {
+    if (!isCreditCardPurchase && installments !== "1") {
+      setValue("installments", "1");
+    }
+  }, [isCreditCardPurchase, installments, setValue]);
+
   const canSave = !isSubmitting && !!amount && !!accountId && hasValidDestination;
 
   const onFormSubmit = async (values: TransactionFormValues) => {
@@ -364,6 +385,15 @@ export function TransactionForm({
     const effectiveType: TransactionType = isCreditCardPayment
       ? "transfer"
       : values.type;
+
+    const originAccount = accounts.find((a) => a.id === values.accountId);
+    const installmentsValue =
+      effectiveType === "expense" &&
+      !values.isDebtPayment &&
+      originAccount?.type === "credit_card" &&
+      values.installments
+        ? Number(values.installments)
+        : null;
 
     const transaction = {
       type: effectiveType,
@@ -387,6 +417,7 @@ export function TransactionForm({
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      installments: installmentsValue,
     };
 
     try {
@@ -622,6 +653,53 @@ export function TransactionForm({
                       </Select>
                     )}
                   />
+                </div>
+              )}
+
+              {isCreditCardPurchase && (
+                <div className="space-y-2">
+                  <Label htmlFor="installments">Cuotas</Label>
+                  <Controller
+                    name="installments"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || "1"}
+                        onValueChange={(v) => field.onChange(v)}
+                      >
+                        <SelectTrigger id="installments">
+                          <SelectValue>
+                            {() => {
+                              const n = Number(field.value || "1");
+                              return n === 1 ? "1 cuota" : `${n} cuotas`;
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INSTALLMENT_OPTIONS.map((n) => {
+                            const label = n === 1 ? "1 cuota" : `${n} cuotas`;
+                            return (
+                              <SelectItem key={n} value={String(n)} label={label}>
+                                {label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {amount && Number(installments) >= 2 && (
+                    <p className="text-xs text-muted-foreground">
+                      Cuota mensual:{" "}
+                      {formatIntegerInput(
+                        String(
+                          Math.floor(
+                            parseIntegerInput(amount) / Number(installments)
+                          )
+                        )
+                      )}
+                    </p>
+                  )}
                 </div>
               )}
 

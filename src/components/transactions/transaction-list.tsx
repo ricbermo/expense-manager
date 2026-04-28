@@ -93,9 +93,17 @@ export function TransactionList({
                         budgetName: t.budgets?.name ?? null,
                       })}
                     </p>
-                    {t.tags && t.tags.length > 0 && (
+                    {((t.tags && t.tags.length > 0) ||
+                      (t.installments && t.installments >= 2)) && (
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {t.tags.map((tag) => (
+                        {t.installments && t.installments >= 2 && (
+                          <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
+                            {t.installments} cuotas ·{" "}
+                            {formatCOP(Math.floor(t.amount / t.installments))}
+                            /mes
+                          </Badge>
+                        )}
+                        {t.tags?.map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-4">
                             {tag}
                           </Badge>
