@@ -355,22 +355,32 @@ export function TransactionForm({
   const canSave = !isSubmitting && !!amount && !!accountId && hasValidDestination;
 
   const onFormSubmit = async (values: TransactionFormValues) => {
+    const debtAccount = debtAccounts.find((a) => a.id === values.toAccountId);
+    const isCreditCardPayment =
+      values.type === "expense" &&
+      values.isDebtPayment &&
+      debtAccount?.type === "credit_card";
+
+    const effectiveType: TransactionType = isCreditCardPayment
+      ? "transfer"
+      : values.type;
+
     const transaction = {
-      type: values.type,
+      type: effectiveType,
       amount: parseIntegerInput(values.amount),
       description: values.description || null,
       date: values.date,
-      budget_id: values.type === "expense" ? values.budgetId || null : null,
+      budget_id: effectiveType === "expense" ? values.budgetId || null : null,
       category_id:
-        values.type === "expense"
+        effectiveType === "expense"
           ? selectedBudget?.category_id ?? null
-          : values.type === "income"
+          : effectiveType === "income"
             ? values.categoryId || null
             : null,
       account_id: values.accountId,
       related_expense_id: isEditing ? (editTransaction?.related_expense_id ?? null) : null,
       to_account_id:
-        values.type === "transfer" || values.type === "expense"
+        effectiveType === "transfer" || effectiveType === "expense"
           ? values.toAccountId || null
           : null,
       tags: values.tags

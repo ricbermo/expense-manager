@@ -96,7 +96,7 @@ export default function AccountsPage() {
       const { data: txnData, error } = await supabase
         .from("transactions")
         .insert({
-          type: "expense",
+          type: "transfer",
           amount: data.amount,
           description: data.description || null,
           date: data.date,

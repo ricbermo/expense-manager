@@ -96,7 +96,7 @@ export function useDashboard(month: string) {
         .lt("date", prevEndDate),
       supabase
         .from("accounts")
-        .select("balance, type"),
+        .select("id, balance, type"),
       supabase
         .from("budgets")
         .select("id, name, limit_amount, category_id, categories(name)")
@@ -119,6 +119,14 @@ export function useDashboard(month: string) {
     };
 
     const txns = (transactions ?? []) as unknown as TxnRow[];
+
+    type AccountRow = { id: string; balance: number; type: AccountType };
+    const accountRows = (accounts ?? []) as unknown as AccountRow[];
+    const creditCardAccountIds = new Set(
+      accountRows.filter((a) => a.type === "credit_card").map((a) => a.id)
+    );
+    const isCreditCardPayment = (t: TxnRow) =>
+      !!t.to_account_id && creditCardAccountIds.has(t.to_account_id);
 
     let totalIncome = 0;
     let totalExpenses = 0;
@@ -143,6 +151,8 @@ export function useDashboard(month: string) {
           }
         }
       } else if (t.type === "expense") {
+        if (isCreditCardPayment(t)) return;
+
         totalExpenses += t.amount;
 
         if (t.categories) {
@@ -175,6 +185,7 @@ export function useDashboard(month: string) {
           prevTotalIncome += t.amount;
         }
       } else if (t.type === "expense") {
+        if (isCreditCardPayment(t)) return;
         prevTotalExpenses += t.amount;
         if (t.categories) {
           prevCatMap[t.categories.name] = (prevCatMap[t.categories.name] || 0) + t.amount;
@@ -194,14 +205,8 @@ export function useDashboard(month: string) {
       }
     }
 
-    const totalBalance = (accounts ?? []).reduce(
-      (sum, a) => {
-        const account = a as unknown as {
-          balance: number;
-          type: AccountType;
-        };
-        return sum + normalizeStoredBalance(account.type, account.balance ?? 0);
-      },
+    const totalBalance = accountRows.reduce(
+      (sum, a) => sum + normalizeStoredBalance(a.type, a.balance ?? 0),
       0
     );
 
@@ -233,6 +238,7 @@ export function useDashboard(month: string) {
     const spentByCategoryId: Record<string, number> = {};
     txns.forEach((t) => {
       if (t.type !== "expense") return;
+      if (isCreditCardPayment(t)) return;
       if (t.budget_id) {
         spentByBudgetId[t.budget_id] = (spentByBudgetId[t.budget_id] || 0) + t.amount;
       } else if (t.category_id) {

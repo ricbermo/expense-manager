@@ -9,6 +9,8 @@ import { SpendingByCategory } from "@/components/dashboard/spending-by-category"
 import { IncomeByCategory } from "@/components/dashboard/income-by-category";
 import { MonthlyTrend } from "@/components/dashboard/monthly-trend";
 import { MonthlyComparison } from "@/components/dashboard/monthly-comparison";
+import { SavingsRateCard } from "@/components/dashboard/savings-rate-card";
+import { ExpenseProjectionCard } from "@/components/dashboard/expense-projection-card";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatMonthYear } from "@/lib/utils/dates";
@@ -136,6 +138,18 @@ export default function DashboardPage() {
                   {formatCOP(data.totalBalance)}
                 </p>
               </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <SavingsRateCard
+                month={month}
+                income={data.totalIncome}
+                expenses={data.totalExpenses}
+              />
+              <ExpenseProjectionCard
+                month={month}
+                expensesMTD={data.totalExpenses}
+              />
             </div>
 
             {data.topGrowthCategory && (
