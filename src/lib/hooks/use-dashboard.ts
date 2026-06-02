@@ -39,6 +39,8 @@ export interface CreditCardAlert {
 interface DashboardData {
   totalIncome: number;
   totalExpenses: number;
+  recurringExpenses: number;
+  occasionalExpenses: number;
   totalBalance: number;
   categorySpending: CategorySpending[];
   incomeByCategory: CategorySpending[];
@@ -54,6 +56,8 @@ export function useDashboard(month: string) {
   const defaultData: DashboardData = {
     totalIncome: 0,
     totalExpenses: 0,
+    recurringExpenses: 0,
+    occasionalExpenses: 0,
     totalBalance: 0,
     categorySpending: [],
     incomeByCategory: [],
@@ -115,6 +119,7 @@ export function useDashboard(month: string) {
       to_account_id: string | null;
       budget_id: string | null;
       category_id: string | null;
+      is_occasional: boolean;
       categories: { name: string; color: string } | null;
     };
 
@@ -130,6 +135,8 @@ export function useDashboard(month: string) {
 
     let totalIncome = 0;
     let totalExpenses = 0;
+    let recurringExpenses = 0;
+    let occasionalExpenses = 0;
     const catMap: Record<string, CategorySpending> = {};
     const incomeCatMap: Record<string, CategorySpending> = {};
     const dayMap: Record<string, number> = {};
@@ -154,6 +161,11 @@ export function useDashboard(month: string) {
         if (isCreditCardPayment(t)) return;
 
         totalExpenses += t.amount;
+        if (t.is_occasional) {
+          occasionalExpenses += t.amount;
+        } else {
+          recurringExpenses += t.amount;
+        }
 
         if (t.categories) {
           const key = t.categories.name;
@@ -295,6 +307,8 @@ export function useDashboard(month: string) {
     return {
       totalIncome,
       totalExpenses,
+      recurringExpenses,
+      occasionalExpenses,
       totalBalance,
       categorySpending,
       incomeByCategory,

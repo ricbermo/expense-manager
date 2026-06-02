@@ -36,12 +36,14 @@ interface TransactionListProps {
   transactions: TransactionWithRelations[];
   onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (id: string) => void;
+  onToggleOccasional: (id: string, value: boolean) => void;
 }
 
 export function TransactionList({
   transactions,
   onEdit,
   onDelete,
+  onToggleOccasional,
 }: TransactionListProps) {
   // Group by date
   const grouped = transactions.reduce<
@@ -93,6 +95,17 @@ export function TransactionList({
                         budgetName: t.budgets?.name ?? null,
                       })}
                     </p>
+                    {t.type === "expense" && (
+                      <label className="inline-flex items-center gap-1.5 mt-0.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={t.is_occasional}
+                          onChange={() => onToggleOccasional(t.id, !t.is_occasional)}
+                          className="h-3 w-3 accent-orange-500"
+                        />
+                        <span className="text-xs text-muted-foreground">ocasional</span>
+                      </label>
+                    )}
                     {((t.tags && t.tags.length > 0) ||
                       (t.installments && t.installments >= 2)) && (
                       <div className="flex flex-wrap gap-1 mt-1">

@@ -115,6 +115,7 @@ export function useTransactions(month?: string) {
       to_account_id: null,
       tags: [],
       installments: null,
+      is_occasional: false,
     };
     const { data: createdExpense, error: expenseError } = await supabase
       .from("transactions")

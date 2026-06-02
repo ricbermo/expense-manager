@@ -140,6 +140,40 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {(data.recurringExpenses > 0 || data.occasionalExpenses > 0) && (
+              <div className="section-card p-4 space-y-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Composición de gastos</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Recurrentes</p>
+                    <p className="text-lg font-semibold text-emerald-600">{formatCOP(data.recurringExpenses)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Ocasionales</p>
+                    <p className="text-lg font-semibold text-orange-500">{formatCOP(data.occasionalExpenses)}</p>
+                  </div>
+                </div>
+                {data.totalExpenses > 0 && (
+                  <div>
+                    <div className="flex h-2 rounded-full overflow-hidden bg-muted">
+                      <div
+                        className="bg-emerald-500 transition-all"
+                        style={{ width: `${(data.recurringExpenses / data.totalExpenses) * 100}%` }}
+                      />
+                      <div
+                        className="bg-orange-400 transition-all"
+                        style={{ width: `${(data.occasionalExpenses / data.totalExpenses) * 100}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>{Math.round((data.recurringExpenses / data.totalExpenses) * 100)}% recurrente</span>
+                      <span>{Math.round((data.occasionalExpenses / data.totalExpenses) * 100)}% ocasional</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <SavingsRateCard
                 month={month}

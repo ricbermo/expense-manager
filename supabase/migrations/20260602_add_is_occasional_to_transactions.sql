@@ -1,0 +1,2 @@
+ALTER TABLE transactions
+ADD COLUMN is_occasional BOOLEAN NOT NULL DEFAULT FALSE;

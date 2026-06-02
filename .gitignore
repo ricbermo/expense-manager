@@ -56,3 +56,4 @@ public/swe-worker-*.js
 .dev.vars*
 !.dev.vars.example
 !.env.example
+.superpowers/

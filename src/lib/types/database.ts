@@ -35,6 +35,7 @@ export interface Transaction {
   to_account_id: string | null;
   tags: string[];
   installments: number | null;
+  is_occasional: boolean;
   created_at: string;
 }
 

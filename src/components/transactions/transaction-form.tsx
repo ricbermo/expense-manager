@@ -80,6 +80,7 @@ interface TransactionFormValues {
   splitBetween: number;
   tags: string;
   installments: string;
+  isOccasional: boolean;
 }
 
 const INSTALLMENT_OPTIONS = [1, 3, 6, 9, 12, 18, 24, 36, 48];
@@ -102,6 +103,7 @@ function getDefaultValues(
       splitBetween: 2,
       tags: "",
       installments: "1",
+      isOccasional: false,
     };
   }
 
@@ -122,6 +124,7 @@ function getDefaultValues(
     installments: editTransaction.installments
       ? String(editTransaction.installments)
       : "1",
+    isOccasional: editTransaction.is_occasional ?? false,
   };
 }
 
@@ -418,6 +421,7 @@ export function TransactionForm({
         .map((t) => t.trim())
         .filter(Boolean),
       installments: installmentsValue,
+      is_occasional: effectiveType === "expense" ? values.isOccasional : false,
     };
 
     try {
@@ -702,6 +706,27 @@ export function TransactionForm({
                   )}
                 </div>
               )}
+
+              <label
+                htmlFor="isOccasional"
+                className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+              >
+                <Controller
+                  name="isOccasional"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      id="isOccasional"
+                      checked={field.value}
+                      onCheckedChange={(checked) => field.onChange(!!checked)}
+                    />
+                  )}
+                />
+                <div>
+                  <span className="text-sm">Gasto ocasional</span>
+                  <p className="text-xs text-muted-foreground">No se repetirá el próximo mes</p>
+                </div>
+              </label>
 
               {!isEditing && (
                 <>

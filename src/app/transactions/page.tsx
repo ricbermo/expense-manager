@@ -21,6 +21,7 @@ import { useAccounts } from "@/lib/hooks/use-accounts";
 import { formatMonthYear } from "@/lib/utils/dates";
 
 type TypeFilter = "all" | "expense" | "income" | "transfer";
+type OccasionalFilter = "all" | "occasional" | "recurring";
 
 function getCurrentMonth() {
   const now = new Date();
@@ -48,6 +49,7 @@ export default function TransactionsPage() {
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [occasionalFilter, setOccasionalFilter] = useState<OccasionalFilter>("all");
 
   const activeFilterCount = [accountFilter, minAmount, maxAmount].filter(Boolean).length;
 
@@ -67,6 +69,11 @@ export default function TransactionsPage() {
       const max = Number(maxAmount.replace(/\D/g, ""));
       if (!isNaN(max)) result = result.filter((t) => t.amount <= max);
     }
+    if (occasionalFilter === "occasional") {
+      result = result.filter((t) => t.type === "expense" && t.is_occasional);
+    } else if (occasionalFilter === "recurring") {
+      result = result.filter((t) => t.type === "expense" && !t.is_occasional);
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -79,7 +86,7 @@ export default function TransactionsPage() {
       );
     }
     return result;
-  }, [transactions, search, typeFilter, accountFilter, minAmount, maxAmount]);
+  }, [transactions, search, typeFilter, accountFilter, minAmount, maxAmount, occasionalFilter]);
 
   const changeMonth = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
@@ -105,6 +112,14 @@ export default function TransactionsPage() {
       toast.success("Movimiento eliminado");
     } catch {
       toast.error("No se pudo eliminar el movimiento");
+    }
+  };
+
+  const handleToggleOccasional = async (id: string, value: boolean) => {
+    try {
+      await updateTransaction(id, { is_occasional: value });
+    } catch {
+      toast.error("No se pudo actualizar el gasto");
     }
   };
 
@@ -186,6 +201,23 @@ export default function TransactionsPage() {
                   </Badge>
                 )}
               </Button>
+            </div>
+            <div className="flex gap-1 overflow-x-auto">
+              {([
+                ["all", "Todos"],
+                ["occasional", "Ocasionales"],
+                ["recurring", "Recurrentes"],
+              ] as const).map(([value, label]) => (
+                <Button
+                  key={value}
+                  variant={occasionalFilter === value ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 px-2.5 text-xs shrink-0"
+                  onClick={() => setOccasionalFilter(value)}
+                >
+                  {label}
+                </Button>
+              ))}
             </div>
 
             {showFilters && (
@@ -299,6 +331,7 @@ export default function TransactionsPage() {
                 transactions={filteredTransactions}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onToggleOccasional={handleToggleOccasional}
               />
             )}
           </div>
