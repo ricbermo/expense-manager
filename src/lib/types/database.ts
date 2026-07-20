@@ -1,6 +1,7 @@
 export type AccountType = "savings" | "cash" | "credit_card" | "loan";
 export type TransactionType = "expense" | "income" | "transfer";
 export type CategoryType = "expense" | "income";
+export type TransactionStatus = "confirmed" | "pending";
 
 export interface Category {
   id: string;
@@ -36,6 +37,7 @@ export interface Transaction {
   tags: string[];
   installments: number | null;
   is_occasional: boolean;
+  status: TransactionStatus;
   created_at: string;
 }
 
@@ -77,7 +79,7 @@ export type Database = {
       };
       transactions: {
         Row: Transaction;
-        Insert: Omit<Transaction, "id" | "created_at"> & { id?: string; created_at?: string };
+        Insert: Omit<Transaction, "id" | "created_at" | "status"> & { id?: string; created_at?: string; status?: TransactionStatus };
         Update: Partial<Transaction>;
         Relationships: [];
       };

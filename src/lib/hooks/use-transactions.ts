@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
-import type { Transaction, Category, Account } from "@/lib/types/database";
+import type { Transaction, Category, Account, TransactionStatus } from "@/lib/types/database";
 import { getTransactionsErrorMessage } from "@/lib/utils/transactions-error";
 
 export interface TransactionWithRelations extends Transaction {
@@ -74,7 +74,7 @@ export function useTransactions(month?: string) {
   }, [globalMutate, mutate]);
 
   const createTransaction = async (
-    transaction: Omit<Transaction, "id" | "created_at">
+    transaction: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus }
   ) => {
     const supabase = createClient();
     const { error } = await supabase
@@ -87,7 +87,7 @@ export function useTransactions(month?: string) {
   };
 
   const createSharedExpense = async (
-    expense: Omit<Transaction, "id" | "created_at">,
+    expense: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus },
     splitBetween: number
   ) => {
     const supabase = createClient();
@@ -103,7 +103,7 @@ export function useTransactions(month?: string) {
       .limit(1);
     const reembolsoCategoryId = (reembolsoCats as { id: string }[] | null)?.[0]?.id ?? null;
 
-    const reimbursement: Omit<Transaction, "id" | "created_at"> = {
+    const reimbursement: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus } = {
       type: "income",
       amount: reimbursementAmount,
       description: `Reembolso: ${expense.description || "gasto compartido"}`,

@@ -33,6 +33,7 @@ import type {
   Budget,
   Category,
   Transaction,
+  TransactionStatus,
   TransactionType,
 } from "@/lib/types/database";
 
@@ -53,9 +54,9 @@ function getTodayLocalDate() {
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<Transaction, "id" | "created_at">) => Promise<void>;
+  onSubmit: (data: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus }) => Promise<void>;
   onSubmitShared: (
-    data: Omit<Transaction, "id" | "created_at">,
+    data: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus },
     splitBetween: number
   ) => Promise<void>;
   onUpdate?: (
@@ -422,6 +423,9 @@ export function TransactionForm({
         .filter(Boolean),
       installments: installmentsValue,
       is_occasional: effectiveType === "expense" ? values.isOccasional : false,
+      status: (isEditing && editTransaction?.status === "pending" ? "confirmed" : undefined) as
+        | TransactionStatus
+        | undefined,
     };
 
     try {

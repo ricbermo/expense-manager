@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
+import { PendingTransactionList } from "@/components/transactions/pending-transaction-list";
 import { useTransactions, type TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { useAccounts } from "@/lib/hooks/use-accounts";
 import { formatMonthYear } from "@/lib/utils/dates";
@@ -53,8 +54,13 @@ export default function TransactionsPage() {
 
   const activeFilterCount = [accountFilter, minAmount, maxAmount].filter(Boolean).length;
 
+  const pendingTransactions = useMemo(
+    () => transactions.filter((t) => t.status === "pending"),
+    [transactions]
+  );
+
   const filteredTransactions = useMemo(() => {
-    let result = transactions;
+    let result = transactions.filter((t) => t.status !== "pending");
     if (typeFilter !== "all") {
       result = result.filter((t) => t.type === typeFilter);
     }
@@ -148,6 +154,13 @@ export default function TransactionsPage() {
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
+
+        {pendingTransactions.length > 0 && (
+          <PendingTransactionList
+            transactions={pendingTransactions}
+            onEdit={handleEdit}
+          />
+        )}
 
         {transactions.length > 0 && (
           <div className="space-y-2">
