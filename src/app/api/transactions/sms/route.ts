@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, getAdminUserId } from "@/lib/supabase/admin";
 import { parseSms } from "@/lib/sms/parse-sms";
+import { getEnv } from "@/lib/env";
 import type { Account, Category } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -10,31 +11,8 @@ interface SmsRequestBody {
   sender?: unknown;
 }
 
-function getShortcutAuthDiagnostics(request: Request): {
-  ok: boolean;
-  envSet: boolean;
-  headerPrefix: string;
-  headerPresent: boolean;
-} {
-  const shortcutApiKey = process.env.SHORTCUT_API_KEY;
-  if (!shortcutApiKey) {
-    return { ok: false, envSet: false, headerPrefix: "", headerPresent: false };
-  }
-
-  const header = request.headers.get("authorization") ?? "";
-  const headerPresent = header.length > 0;
-  const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
-  const ok = token.length > 0 && token === shortcutApiKey;
-  return {
-    ok,
-    envSet: true,
-    headerPrefix: headerPresent ? header.slice(0, 20) + "..." : "(missing)",
-    headerPresent,
-  };
-}
-
 function ensureShortcutAuth(request: Request): boolean {
-  const shortcutApiKey = process.env.SHORTCUT_API_KEY;
+  const shortcutApiKey = getEnv("SHORTCUT_API_KEY");
   if (!shortcutApiKey) return false;
 
   const header = request.headers.get("authorization") ?? "";
@@ -44,11 +22,7 @@ function ensureShortcutAuth(request: Request): boolean {
 
 export async function POST(request: Request) {
   if (!ensureShortcutAuth(request)) {
-    const diag = getShortcutAuthDiagnostics(request);
-    return NextResponse.json(
-      { error: "Unauthorized", diagnostics: diag },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: SmsRequestBody;

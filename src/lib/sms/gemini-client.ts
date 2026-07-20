@@ -21,12 +21,14 @@ export interface GeminiResponseShape {
   error?: { message?: string };
 }
 
+import { getEnv } from "@/lib/env";
+
 export async function callGemini(
   prompt: string,
   responseSchema: unknown,
   options: { apiKey?: string; fetchImpl?: typeof fetch; temperature?: number } = {}
 ): Promise<string> {
-  const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
+  const apiKey = options.apiKey ?? getEnv("GEMINI_API_KEY");
   if (!apiKey) {
     throw new Error("Missing GEMINI_API_KEY environment variable");
   }
