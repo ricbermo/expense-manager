@@ -17,7 +17,7 @@ export function getEnv(name: string): string | undefined {
   // Cloudflare Workers: env bindings accessible via getCloudflareContext
   try {
     const { env } = getCloudflareContext();
-    const value = (env as Record<string, unknown>)[name];
+    const value = (env as unknown as Record<string, unknown>)[name];
     if (typeof value === "string" && value.length > 0) {
       return value;
     }
