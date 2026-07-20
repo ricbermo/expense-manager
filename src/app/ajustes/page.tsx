@@ -2,8 +2,13 @@
 
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { ResetMonthButton } from "@/components/settings/reset-month-button";
+import { createClient } from "@/lib/supabase/client";
 import { formatMonthYear } from "@/lib/utils/dates";
 
 function getCurrentMonth() {
@@ -14,6 +19,15 @@ function getCurrentMonth() {
 export default function SettingsPage() {
   const month = useMemo(() => getCurrentMonth(), []);
   const monthLabel = formatMonthYear(`${month}-01`);
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    toast.success("Sesión cerrada");
+    router.replace("/login");
+    router.refresh();
+  };
 
   return (
     <div className="pb-6">
@@ -46,6 +60,26 @@ export default function SettingsPage() {
             </p>
             <ResetMonthButton month={month} />
           </div>
+        </section>
+
+        <section className="section-card space-y-3 p-4">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-foreground">
+              Sesión
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Cierra la sesión en este dispositivo. Volverás a la pantalla de
+              inicio.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => void handleSignOut()}
+            className="w-full sm:w-auto"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </Button>
         </section>
       </div>
     </div>

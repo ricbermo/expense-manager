@@ -3,7 +3,6 @@ import { IBM_Plex_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { LogoutButton } from "@/components/layout/logout-button";
 import { SettingsLink } from "@/components/layout/settings-link";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -41,7 +40,6 @@ export default function RootLayout({
       className={`${ibmPlexSans.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <LogoutButton />
         <SettingsLink />
         <main className="flex-1">{children}</main>
         <BottomNav />
