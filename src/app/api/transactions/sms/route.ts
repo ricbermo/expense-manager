@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, getAdminUserId } from "@/lib/supabase/admin";
 import { parseSms } from "@/lib/sms/parse-sms";
-import { getEnv } from "@/lib/env";
+import { getEnv, getCloudflareContext } from "@/lib/env";
 import type { Account, Category } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -11,18 +11,52 @@ interface SmsRequestBody {
   sender?: unknown;
 }
 
-function ensureShortcutAuth(request: Request): boolean {
-  const shortcutApiKey = getEnv("SHORTCUT_API_KEY");
-  if (!shortcutApiKey) return false;
-
+function ensureShortcutAuth(
+  request: Request
+): { ok: false; diagnostics: Record<string, unknown> } | { ok: true } {
   const header = request.headers.get("authorization") ?? "";
+  const headerPresent = header.length > 0;
+  const shortcutApiKey = getEnv("SHORTCUT_API_KEY");
+  const envSet = !!shortcutApiKey;
+
   const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
-  return token.length > 0 && token === shortcutApiKey;
+  const ok = envSet && headerPresent && token === shortcutApiKey;
+
+  if (!ok) {
+    return {
+      ok: false,
+      diagnostics: {
+        envSet,
+        envKeys: Object.keys(process.env).filter(
+          (k) =>
+            k.includes("KEY") ||
+            k.includes("SECRET") ||
+            k.includes("TOKEN") ||
+            k.includes("API") ||
+            k === "SHORTCUT_API_KEY"
+        ),
+        headerPresent,
+        headerPrefix: headerPresent ? header.slice(0, 25) + "..." : "(none)",
+        tokenLength: token.length,
+        cfEnvKeys: (() => {
+          try {
+            const { env } = getCloudflareContext();
+            return Object.keys(env).filter((k) => k.includes("KEY") || k.includes("API"));
+          } catch {
+            return "__no_cf_context__";
+          }
+        })(),
+      },
+    };
+  }
+
+  return { ok: true };
 }
 
 export async function POST(request: Request) {
-  if (!ensureShortcutAuth(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = ensureShortcutAuth(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: "Unauthorized", diagnostics: auth.diagnostics }, { status: 401 });
   }
 
   let body: SmsRequestBody;

@@ -1,4 +1,5 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getCloudflareContext as _cf } from "@opennextjs/cloudflare";
+export const getCloudflareContext = _cf;
 
 /**
  * Retrieve an environment variable from process.env (local dev) or
