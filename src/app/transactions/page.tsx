@@ -112,6 +112,24 @@ export default function TransactionsPage() {
     if (!open) setEditingTransaction(null);
   };
 
+  const handleAccept = async (transaction: TransactionWithRelations) => {
+    try {
+      await updateTransaction(transaction.id, { status: "confirmed" });
+      toast.success("Movimiento confirmado");
+    } catch {
+      toast.error("No se pudo confirmar el movimiento");
+    }
+  };
+
+  const handleDiscard = async (transaction: TransactionWithRelations) => {
+    try {
+      await deleteTransaction(transaction.id);
+      toast.success("Movimiento descartado");
+    } catch {
+      toast.error("No se pudo descartar el movimiento");
+    }
+  };
+
   const handleDelete = async (id: string) => {
     try {
       await deleteTransaction(id);
@@ -159,6 +177,8 @@ export default function TransactionsPage() {
           <PendingTransactionList
             transactions={pendingTransactions}
             onEdit={handleEdit}
+            onAccept={handleAccept}
+            onDiscard={handleDiscard}
           />
         )}
 

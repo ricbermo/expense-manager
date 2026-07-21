@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Check, Pencil, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCOP } from "@/lib/utils/currency";
@@ -10,11 +10,15 @@ import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
 interface PendingTransactionListProps {
   transactions: TransactionWithRelations[];
   onEdit: (transaction: TransactionWithRelations) => void;
+  onAccept: (transaction: TransactionWithRelations) => void;
+  onDiscard: (transaction: TransactionWithRelations) => void;
 }
 
 export function PendingTransactionList({
   transactions,
   onEdit,
+  onAccept,
+  onDiscard,
 }: PendingTransactionListProps) {
   if (transactions.length === 0) return null;
 
@@ -51,15 +55,35 @@ export function PendingTransactionList({
             <p className="text-sm font-semibold tabular-nums text-rose-600">
               -{formatCOP(t.amount)}
             </p>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11 text-muted-foreground hover:text-primary"
-              onClick={() => onEdit(t)}
-              aria-label={`Confirmar ${t.description || "movimiento pendiente"}`}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 text-muted-foreground hover:text-emerald-600"
+                onClick={() => onAccept(t)}
+                aria-label={`Aceptar ${t.description || "movimiento pendiente"}`}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 text-muted-foreground hover:text-destructive"
+                onClick={() => onDiscard(t)}
+                aria-label={`Descartar ${t.description || "movimiento pendiente"}`}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 text-muted-foreground hover:text-primary"
+                onClick={() => onEdit(t)}
+                aria-label={`Editar ${t.description || "movimiento pendiente"}`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>
