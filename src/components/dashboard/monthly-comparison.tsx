@@ -41,31 +41,25 @@ export function MonthlyComparison() {
           <BarChart data={comparison} barCategoryGap="30%">
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10, fill: "#64748b" }}
+              tick={{ fontSize: 10 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis hide />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #dbe4ee",
-                borderRadius: "8px",
-                fontSize: "12px",
-              }}
               formatter={(value, name) => [formatCOP(Number(value)), name === "income" ? "Ingresos" : "Gastos"] as [string, string]}
             />
             <Legend
               iconType="circle"
               iconSize={8}
               formatter={(value: string) => (
-                <span style={{ fontSize: "11px", color: "#64748b" }}>
+                <span style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>
                   {value === "income" ? "Ingresos" : "Gastos"}
                 </span>
               )}
             />
-            <Bar dataKey="income" fill="#059669" radius={[3, 3, 0, 0]} name="income" />
-            <Bar dataKey="expenses" fill="#e11d48" radius={[3, 3, 0, 0]} name="expenses" />
+            <Bar dataKey="income" fill="var(--chart-income)" radius={[3, 3, 0, 0]} name="income" />
+            <Bar dataKey="expenses" fill="var(--chart-expense)" radius={[3, 3, 0, 0]} name="expenses" />
           </BarChart>
         </ResponsiveContainer>
       </div>

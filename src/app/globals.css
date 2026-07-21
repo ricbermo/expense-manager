@@ -72,6 +72,8 @@
   --chart-3: #ca8a04;
   --chart-4: #dc2626;
   --chart-5: #475569;
+  --chart-income: #059669;
+  --chart-expense: #e11d48;
   --radius: 0.625rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #0f172a;
@@ -107,6 +109,8 @@
   --chart-3: #fcd34d;
   --chart-4: #fca5a5;
   --chart-5: #94a3b8;
+  --chart-income: #5eead4;
+  --chart-expense: #fca5a5;
   --sidebar: #0b1220;
   --sidebar-foreground: #e2e8f0;
   --sidebar-primary: #e2e8f0;
@@ -168,4 +172,24 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+.recharts-cartesian-axis-tick text {
+  fill: var(--muted-foreground);
+}
+
+.recharts-default-tooltip {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.75rem !important;
+  color: var(--foreground) !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--muted-foreground) !important;
+}
+
+.recharts-tooltip-item {
+  color: var(--foreground) !important;
 }

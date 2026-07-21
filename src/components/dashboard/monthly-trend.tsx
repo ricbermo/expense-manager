@@ -48,32 +48,25 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.28} />
-                <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.28} />
+                <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: "#64748b" }}
+              tick={{ fontSize: 10 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis hide />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #dbe4ee",
-                borderRadius: "8px",
-                fontSize: "12px",
-              }}
-              labelStyle={{ color: "#334155" }}
               formatter={(value) => [formatCOP(Number(value)), "Acumulado"]}
               labelFormatter={(label) => `Dia ${label}`}
             />
             <Area
               type="monotone"
               dataKey="amount"
-              stroke="#1e3a8a"
+              stroke="var(--chart-1)"
               fill="url(#colorAmount)"
               strokeWidth={2}
             />

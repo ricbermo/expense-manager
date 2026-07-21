@@ -60,7 +60,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
       : ratio >= 1.25
         ? "text-rose-600"
         : ratio >= 1.1
-          ? "text-amber-500"
+          ? "text-amber-600"
           : "text-emerald-600";
 
   const pct =
