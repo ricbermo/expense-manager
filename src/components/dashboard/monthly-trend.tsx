@@ -39,10 +39,17 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
     []
   );
 
+  const maxAmount = chartData.at(-1)?.amount ?? 0;
+  const lastDay = chartData.at(-1)?.date ?? "";
+
   return (
     <div className="section-card p-4 md:p-5">
       <h3 className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</h3>
-      <div className="min-w-0" aria-hidden="true">
+      <div
+        className="min-w-0"
+        role="img"
+        aria-label={`Gasto acumulado: ${formatCOP(maxAmount)} al día ${lastDay}`}
+      >
         <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={160}>
           <AreaChart data={chartData}>
             <defs>

@@ -325,12 +325,15 @@ export function useDashboard(month: string) {
     data = defaultData,
     error,
     isLoading: loading,
+    isValidating,
     mutate,
-  } = useSWR(swrKeys.dashboard(month), fetchDashboard);
+  } = useSWR(swrKeys.dashboard(month), fetchDashboard, {
+    keepPreviousData: true,
+  });
 
   const refetch = useCallback(async () => {
     await mutate();
   }, [mutate]);
 
-  return { data, loading, error, refetch };
+  return { data, loading, error, refetch, isValidating };
 }

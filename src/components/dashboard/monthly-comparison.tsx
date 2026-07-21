@@ -35,7 +35,7 @@ export function MonthlyComparison() {
   return (
     <div className="section-card p-4 md:p-5">
       <h3 className="mb-3 text-sm font-semibold text-foreground">Comparativa mensual</h3>
-      <div className="min-w-0" aria-hidden="true">
+      <div className="min-w-0" role="img" aria-label="Comparativo de ingresos y gastos de los últimos 6 meses">
         <ResponsiveContainer width="100%" height={180} minWidth={0} minHeight={180}>
           <BarChart data={comparison} barCategoryGap="30%">
             <XAxis
@@ -52,7 +52,7 @@ export function MonthlyComparison() {
               iconType="circle"
               iconSize={8}
               formatter={(value: string) => (
-                <span style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>
+                <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
                   {value === "income" ? "Ingresos" : "Gastos"}
                 </span>
               )}

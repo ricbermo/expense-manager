@@ -1,20 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { Plus, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { MonthPager } from "@/components/layout/month-pager";
 import { Button } from "@/components/ui/button";
 import { BudgetCard } from "@/components/budgets/budget-card";
 import { BudgetForm } from "@/components/budgets/budget-form";
 import { useBudgets, type BudgetWithCategory } from "@/lib/hooks/use-budgets";
 import { formatCOP } from "@/lib/utils/currency";
-import { formatMonthYear } from "@/lib/utils/dates";
-
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+import { getCurrentMonth } from "@/lib/utils/dates";
 
 export default function BudgetsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
@@ -90,7 +86,8 @@ export default function BudgetsPage() {
         title="Presupuesto"
         description="Monitorea limites y gasto acumulado por categoria"
         action={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <MonthPager month={month} onChange={changeMonth} />
             <Button
               size="sm"
               variant="outline"
@@ -115,18 +112,6 @@ export default function BudgetsPage() {
       />
 
       <div className="app-shell page-stack">
-        <div className="month-toolbar">
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)} aria-label="Mes anterior">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <p className="text-sm font-semibold capitalize text-foreground">
-            {formatMonthYear(`${month}-01`)}
-          </p>
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(1)} aria-label="Mes siguiente">
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
-
         {budgets.length > 0 && (
           <div className="kpi-card">
             <div className="flex justify-between text-sm">

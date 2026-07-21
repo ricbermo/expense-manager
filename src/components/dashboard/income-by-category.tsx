@@ -51,7 +51,7 @@ export function IncomeByCategory({ data }: { data: CategoryData[] }) {
                 style={{ backgroundColor: cat.color }}
               />
               <span className="truncate text-muted-foreground">{cat.name}</span>
-              <span className="ml-auto shrink-0 font-semibold tabular-nums text-emerald-600">
+              <span className="ml-auto shrink-0 font-semibold tabular-nums text-emerald-700">
                 +{formatCOP(cat.amount)}
               </span>
             </div>

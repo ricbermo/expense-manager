@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, ChevronLeft, ChevronRight, Search, X, Filter } from "lucide-react";
+import { Plus, Search, X, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { MonthPager } from "@/components/layout/month-pager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,15 +20,10 @@ import { TransactionList } from "@/components/transactions/transaction-list";
 import { PendingTransactionList } from "@/components/transactions/pending-transaction-list";
 import { useTransactions, type TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { useAccounts } from "@/lib/hooks/use-accounts";
-import { formatMonthYear } from "@/lib/utils/dates";
+import { formatMonthYear, getCurrentMonth } from "@/lib/utils/dates";
 
 type TypeFilter = "all" | "expense" | "income" | "transfer";
 type OccasionalFilter = "all" | "occasional" | "recurring";
-
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
 
 export default function TransactionsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
@@ -153,26 +149,17 @@ export default function TransactionsPage() {
         title="Movimientos"
         description="Registra ingresos, gastos y transferencias por mes"
         action={
-          <Button size="sm" onClick={() => setFormOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            Nuevo
-          </Button>
+          <div className="flex items-center gap-2">
+            <MonthPager month={month} onChange={changeMonth} />
+            <Button size="sm" onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Nuevo
+            </Button>
+          </div>
         }
       />
 
       <div className="app-shell page-stack">
-        <div className="month-toolbar">
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)} aria-label="Mes anterior">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <p className="text-sm font-semibold capitalize text-foreground">
-            {formatMonthYear(`${month}-01`)}
-          </p>
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(1)} aria-label="Mes siguiente">
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
-
         {pendingTransactions.length > 0 && (
           <PendingTransactionList
             transactions={pendingTransactions}

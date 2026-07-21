@@ -38,19 +38,19 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
     rate === null
       ? "text-muted-foreground"
       : rate < 0
-        ? "text-rose-600"
-        : "text-emerald-600";
+        ? "text-rose-700"
+        : "text-emerald-700";
 
   return (
     <div className="section-card p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <p className="text-sm font-medium text-muted-foreground">
           Tasa de ahorro
         </p>
         {deltaPts !== null && deltaPts !== 0 && (
           <span
             className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-              deltaPts > 0 ? "text-emerald-600" : "text-rose-600"
+              deltaPts > 0 ? "text-emerald-700" : "text-rose-700"
             }`}
           >
             {deltaPts > 0 ? (
@@ -62,7 +62,7 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
           </span>
         )}
       </div>
-      <p className={`mt-1 text-xl font-semibold ${rateColor}`}>
+      <p className={`mt-1 text-xl font-semibold tabular-nums ${rateColor}`}>
         {rate === null ? "—" : formatPct(rate)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">

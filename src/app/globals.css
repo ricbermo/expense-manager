@@ -150,8 +150,8 @@
     @apply rounded-2xl border border-border/90 bg-card p-4 text-card-foreground shadow-sm md:p-5;
   }
 
-  .month-toolbar {
-    @apply flex items-center justify-between rounded-2xl border border-border/90 bg-card px-3 py-2 text-card-foreground shadow-sm;
+  .clickable-card {
+    @apply rounded-2xl border border-border/90 bg-card text-card-foreground shadow-sm transition-colors hover:border-primary/30 focus-visible:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset;
   }
 
   .empty-state {

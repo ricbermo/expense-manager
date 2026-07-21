@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import {
-  ChevronLeft,
   ChevronRight,
+  ChevronDown,
   TrendingUp,
   TrendingDown,
   CreditCard,
   AlertTriangle,
   AlertCircle,
-  ArrowRight,
-  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
+import { MonthPager } from "@/components/layout/month-pager";
 import { Button } from "@/components/ui/button";
 import { SpendingByCategory } from "@/components/dashboard/spending-by-category";
 import { IncomeByCategory } from "@/components/dashboard/income-by-category";
@@ -23,7 +22,7 @@ import { SavingsRateCard } from "@/components/dashboard/savings-rate-card";
 import { ExpenseProjectionCard } from "@/components/dashboard/expense-projection-card";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { formatCOP } from "@/lib/utils/currency";
-import { formatMonthYear, getCurrentMonth } from "@/lib/utils/dates";
+import { getCurrentMonth } from "@/lib/utils/dates";
 import type { CreditCardAlert } from "@/lib/hooks/use-dashboard";
 
 function DeltaPill({
@@ -44,7 +43,7 @@ function DeltaPill({
   return (
     <span
       className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        isPositive ? "text-emerald-600" : "text-rose-600"
+        isPositive ? "text-emerald-700" : "text-rose-700"
       }`}
     >
       <Icon className="h-3 w-3" />
@@ -55,7 +54,8 @@ function DeltaPill({
 
 export default function DashboardPage() {
   const [month, setMonth] = useState(getCurrentMonth);
-  const { data, loading, error, refetch } = useDashboard(month);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const { data, loading, error, refetch, isValidating } = useDashboard(month);
   const router = useRouter();
 
   const changeMonth = (delta: number) => {
@@ -74,49 +74,27 @@ export default function DashboardPage() {
   const hasAlerts = hasCardAlerts || hasBudgetAlerts;
   const hasBothAlertTypes = hasCardAlerts && hasBudgetAlerts;
 
+  const hasRecurring = data.recurringExpenses > 0;
+  const hasOccasional = data.occasionalExpenses > 0;
+  const showComposition = hasRecurring || hasOccasional;
+  const showCompositionBar = hasRecurring && hasOccasional && data.totalExpenses > 0;
+
   return (
     <div>
       <PageHeader
         title="Dashboard"
-        action={
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative before:absolute before:inset-[-6px] before:content-['']"
-              onClick={() => changeMonth(-1)}
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span
-              className="min-w-[10rem] text-center text-sm font-medium capitalize text-foreground whitespace-nowrap"
-              aria-live="polite"
-            >
-              {formatMonthYear(`${month}-01`)}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative before:absolute before:inset-[-6px] before:content-['']"
-              onClick={() => changeMonth(1)}
-              aria-label="Mes siguiente"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        }
+        action={<MonthPager month={month} onChange={changeMonth} />}
       />
 
       <div className="app-shell page-stack">
         {loading ? (
           <div className="space-y-3">
-            <div className="section-card h-32 animate-pulse" />
+            <div className="section-card h-28 animate-pulse" />
+            <div className="section-card h-40 animate-pulse" />
             <div className="grid grid-cols-2 gap-3">
-              <div className="section-card h-24 animate-pulse" />
-              <div className="section-card h-24 animate-pulse" />
+              <div className="section-card h-20 animate-pulse" />
+              <div className="section-card h-20 animate-pulse" />
             </div>
-            <div className="section-card h-16 animate-pulse" />
           </div>
         ) : error ? (
           <div className="section-card flex flex-col items-center gap-3 p-8 text-center">
@@ -134,7 +112,11 @@ export default function DashboardPage() {
             </Button>
           </div>
         ) : (
-          <>
+          <div
+            className={`space-y-5 transition-opacity duration-200 ${
+              isValidating ? "opacity-60" : "opacity-100"
+            }`}
+          >
             <section className="section-card p-5 md:p-6" aria-label="Neto del mes">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Neto del mes
@@ -144,8 +126,8 @@ export default function DashboardPage() {
                   net === 0
                     ? "text-muted-foreground"
                     : net > 0
-                      ? "text-emerald-600"
-                      : "text-rose-600"
+                      ? "text-emerald-700"
+                      : "text-rose-700"
                 }`}
               >
                 {formatCOP(net)}
@@ -154,7 +136,7 @@ export default function DashboardPage() {
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span
                     className={`inline-flex items-center gap-0.5 font-medium ${
-                      netDelta > 0 ? "text-emerald-600" : "text-rose-600"
+                      netDelta > 0 ? "text-emerald-700" : "text-rose-700"
                     }`}
                   >
                     {netDelta > 0 ? (
@@ -185,10 +167,10 @@ export default function DashboardPage() {
                       const overdue = alert.daysUntilDue < 0;
                       const urgent = alert.daysUntilDue <= 7;
                       const color = overdue
-                        ? "text-rose-600"
+                        ? "text-rose-700"
                         : urgent
-                          ? "text-amber-600"
-                          : "text-blue-600";
+                          ? "text-amber-700"
+                          : "text-blue-700";
                       const label = overdue
                         ? `Vencida hace ${Math.abs(alert.daysUntilDue)} días`
                         : alert.daysUntilDue === 0
@@ -197,7 +179,7 @@ export default function DashboardPage() {
                       return (
                         <button
                           key={alert.id}
-                          className="section-card flex w-full items-center gap-3 p-3 text-left transition-colors hover:border-primary/30 cursor-pointer"
+                          className="clickable-card flex w-full items-center gap-3 p-3 text-left"
                           onClick={() => router.push("/accounts")}
                         >
                           <CreditCard className={`h-4 w-4 shrink-0 ${color}`} />
@@ -207,9 +189,9 @@ export default function DashboardPage() {
                             </p>
                             <p className={`text-xs ${color}`}>{label}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="shrink-0 text-right">
                             <p
-                              className={`text-sm font-semibold tabular-nums ${color}`}
+                              className={`text-sm font-semibold tabular-nums whitespace-nowrap ${color}`}
                             >
                               {formatCOP(alert.minimumPayment)}
                             </p>
@@ -232,14 +214,14 @@ export default function DashboardPage() {
                     {data.budgetAlerts.map((alert) => (
                       <button
                         key={alert.name}
-                        className="section-card flex w-full items-center gap-3 p-3 text-left transition-colors hover:border-primary/30 cursor-pointer"
+                        className="clickable-card flex w-full items-center gap-3 p-3 text-left"
                         onClick={() => router.push("/budgets")}
                       >
                         <AlertTriangle
                           className={`h-4 w-4 shrink-0 ${
                             alert.percentage >= 100
-                              ? "text-rose-600"
-                              : "text-amber-600"
+                              ? "text-rose-700"
+                              : "text-amber-700"
                           }`}
                         />
                         <div className="min-w-0 flex-1">
@@ -250,17 +232,17 @@ export default function DashboardPage() {
                             {alert.categoryName}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="shrink-0 text-right">
                           <p
-                            className={`text-sm font-semibold tabular-nums ${
+                            className={`text-sm font-semibold tabular-nums whitespace-nowrap ${
                               alert.percentage >= 100
-                                ? "text-rose-600"
-                                : "text-amber-600"
+                                ? "text-rose-700"
+                                : "text-amber-700"
                             }`}
                           >
                             {alert.percentage}%
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                             {formatCOP(alert.spent)} / {formatCOP(alert.limit)}
                           </p>
                         </div>
@@ -271,55 +253,82 @@ export default function DashboardPage() {
               </section>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <section
+              className="section-card divide-y divide-border/60"
+              aria-label="Resumen del mes"
+            >
               <button
-                className="kpi-card text-left transition-colors hover:border-primary/30 cursor-pointer"
                 onClick={() => router.push("/transactions")}
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
-                <div className="flex items-center justify-between">
+                <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Ingresos
                   </p>
+                  <p
+                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
+                      data.totalIncome === 0
+                        ? "text-muted-foreground"
+                        : "text-emerald-700"
+                    }`}
+                  >
+                    {formatCOP(data.totalIncome)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
                   <DeltaPill
                     current={data.totalIncome}
                     previous={data.prevTotalIncome}
                   />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <p
-                  className={`mt-1 text-2xl font-semibold tabular-nums ${
-                    data.totalIncome === 0
-                      ? "text-muted-foreground"
-                      : "text-emerald-600"
-                  }`}
-                >
-                  {formatCOP(data.totalIncome)}
-                </p>
               </button>
               <button
-                className="kpi-card text-left transition-colors hover:border-primary/30 cursor-pointer"
                 onClick={() => router.push("/transactions")}
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
-                <div className="flex items-center justify-between">
+                <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Gastos
                   </p>
+                  <p
+                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
+                      data.totalExpenses === 0
+                        ? "text-muted-foreground"
+                        : "text-rose-700"
+                    }`}
+                  >
+                    {formatCOP(data.totalExpenses)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
                   <DeltaPill
                     current={data.totalExpenses}
                     previous={data.prevTotalExpenses}
                     invertColor
                   />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <p
-                  className={`mt-1 text-2xl font-semibold tabular-nums ${
-                    data.totalExpenses === 0
-                      ? "text-muted-foreground"
-                      : "text-rose-600"
-                  }`}
-                >
-                  {formatCOP(data.totalExpenses)}
-                </p>
               </button>
-            </div>
+              <button
+                onClick={() => router.push("/accounts")}
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Balance total
+                  </p>
+                  <p
+                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
+                      data.totalBalance < 0 ? "text-rose-700" : "text-foreground"
+                    }`}
+                  >
+                    {formatCOP(data.totalBalance)}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+            </section>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <SavingsRateCard
@@ -333,70 +342,48 @@ export default function DashboardPage() {
               />
             </div>
 
-            <button
-              className="flex w-full items-center justify-between rounded-2xl border border-border/90 bg-card px-4 py-3 text-left text-card-foreground shadow-sm transition-colors hover:border-primary/30 cursor-pointer"
-              onClick={() => router.push("/accounts")}
-            >
-              <div className="flex items-center gap-3">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Balance total
-                  </p>
-                  <p
-                    className={`mt-0.5 text-lg font-semibold tabular-nums ${
-                      data.totalBalance < 0 ? "text-rose-600" : "text-foreground"
-                    }`}
-                  >
-                    {formatCOP(data.totalBalance)}
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-
-            {(data.recurringExpenses > 0 || data.occasionalExpenses > 0) && (
+            {showComposition && (
               <section className="section-card space-y-3 p-4">
                 <p className="text-sm font-semibold text-foreground">
                   Composición de gastos
                 </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Recurrentes</p>
-                    <p
-                      className={`text-lg font-semibold tabular-nums ${
-                        data.recurringExpenses === 0
-                          ? "text-muted-foreground"
-                          : "text-emerald-600"
-                      }`}
-                    >
-                      {formatCOP(data.recurringExpenses)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Ocasionales</p>
-                    <p
-                      className={`text-lg font-semibold tabular-nums ${
-                        data.occasionalExpenses === 0
-                          ? "text-muted-foreground"
-                          : "text-orange-500"
-                      }`}
-                    >
-                      {formatCOP(data.occasionalExpenses)}
-                    </p>
-                  </div>
+                <div
+                  className={`grid gap-3 ${
+                    showCompositionBar ? "grid-cols-2" : "grid-cols-1"
+                  }`}
+                >
+                  {hasRecurring && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Recurrentes
+                      </p>
+                      <p className="text-lg font-semibold tabular-nums text-emerald-700">
+                        {formatCOP(data.recurringExpenses)}
+                      </p>
+                    </div>
+                  )}
+                  {hasOccasional && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Ocasionales
+                      </p>
+                      <p className="text-lg font-semibold tabular-nums text-orange-700">
+                        {formatCOP(data.occasionalExpenses)}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                {data.totalExpenses > 0 && (
+                {showCompositionBar && (
                   <div>
                     <div className="flex h-2 overflow-hidden rounded-full bg-muted">
                       <div
-                        className="bg-emerald-600 transition-all"
+                        className="bg-emerald-700 transition-[width] duration-300 ease-out"
                         style={{
                           width: `${(data.recurringExpenses / data.totalExpenses) * 100}%`,
                         }}
                       />
                       <div
-                        className="bg-orange-500 transition-all"
+                        className="bg-orange-700 transition-[width] duration-300 ease-out"
                         style={{
                           width: `${(data.occasionalExpenses / data.totalExpenses) * 100}%`,
                         }}
@@ -425,6 +412,7 @@ export default function DashboardPage() {
               <p className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
                 <TrendingUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span>
+                  Gasto en{" "}
                   <span className="font-medium text-foreground">
                     {data.topGrowthCategory.name}
                   </span>{" "}
@@ -438,15 +426,28 @@ export default function DashboardPage() {
             )}
 
             <div className="space-y-3">
-              <h2 className="px-1 text-sm font-semibold text-foreground">
-                Análisis
-              </h2>
-              <SpendingByCategory data={data.categorySpending} />
-              <MonthlyTrend data={data.dailySpending} />
-              <MonthlyComparison />
-              <IncomeByCategory data={data.incomeByCategory} />
+              <button
+                onClick={() => setShowAnalysis((v) => !v)}
+                aria-expanded={showAnalysis}
+                className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+              >
+                <span>Análisis</span>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                    showAnalysis ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {showAnalysis && (
+                <div className="space-y-3 animate-in fade-in duration-200">
+                  <SpendingByCategory data={data.categorySpending} />
+                  <MonthlyTrend data={data.dailySpending} />
+                  <MonthlyComparison />
+                  <IncomeByCategory data={data.incomeByCategory} />
+                </div>
+              )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
