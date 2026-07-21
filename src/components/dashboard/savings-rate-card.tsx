@@ -1,8 +1,8 @@
 "use client";
 
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { useMonthlyComparison } from "@/lib/hooks/use-monthly-comparison";
+import { getCurrentMonth } from "@/lib/utils/dates";
 
 interface Props {
   month: string;
@@ -12,11 +12,6 @@ interface Props {
 
 function formatPct(rate: number): string {
   return `${Math.round(rate * 100)}%`;
-}
-
-function getCurrentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
 export function SavingsRateCard({ month, income, expenses }: Props) {
@@ -47,9 +42,9 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
         : "text-emerald-600";
 
   return (
-    <Card className="section-card p-4">
+    <div className="section-card p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Tasa de ahorro
         </p>
         {deltaPts !== null && deltaPts !== 0 && (
@@ -67,7 +62,7 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
           </span>
         )}
       </div>
-      <p className={`mt-1 text-2xl font-semibold ${rateColor}`}>
+      <p className={`mt-1 text-xl font-semibold ${rateColor}`}>
         {rate === null ? "—" : formatPct(rate)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
@@ -79,6 +74,6 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
               ? `Promedio ${priorRates.length}m previos: ${formatPct(priorAvg)}`
               : "Ahorrado del ingreso del mes"}
       </p>
-    </Card>
+    </div>
   );
 }

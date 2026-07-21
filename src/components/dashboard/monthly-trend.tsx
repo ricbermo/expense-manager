@@ -8,7 +8,6 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { Card } from "@/components/ui/card";
 import { formatCOP } from "@/lib/utils/currency";
 
 interface DailyData {
@@ -19,12 +18,12 @@ interface DailyData {
 export function MonthlyTrend({ data }: { data: DailyData[] }) {
   if (data.length === 0) {
     return (
-      <Card className="section-card p-4 md:p-5">
-        <p className="mb-3 text-sm font-semibold text-foreground">Tendencia diaria</p>
+      <div className="section-card p-4 md:p-5">
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</h3>
         <p className="py-6 text-center text-xs text-muted-foreground">
           Registra gastos para ver la tendencia de gasto acumulado
         </p>
-      </Card>
+      </div>
     );
   }
 
@@ -41,9 +40,9 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
   );
 
   return (
-    <Card className="section-card p-4 md:p-5">
-      <p className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</p>
-      <div className="min-w-0">
+    <div className="section-card p-4 md:p-5">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</h3>
+      <div className="min-w-0" aria-hidden="true">
         <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={160}>
           <AreaChart data={chartData}>
             <defs>
@@ -73,6 +72,6 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }

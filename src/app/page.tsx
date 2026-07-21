@@ -8,6 +8,7 @@ import {
   TrendingDown,
   CreditCard,
   AlertTriangle,
+  AlertCircle,
   ArrowRight,
   Wallet,
 } from "lucide-react";
@@ -22,13 +23,8 @@ import { SavingsRateCard } from "@/components/dashboard/savings-rate-card";
 import { ExpenseProjectionCard } from "@/components/dashboard/expense-projection-card";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { formatCOP } from "@/lib/utils/currency";
-import { formatMonthYear } from "@/lib/utils/dates";
+import { formatMonthYear, getCurrentMonth } from "@/lib/utils/dates";
 import type { CreditCardAlert } from "@/lib/hooks/use-dashboard";
-
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
 
 function DeltaPill({
   current,
@@ -59,7 +55,7 @@ function DeltaPill({
 
 export default function DashboardPage() {
   const [month, setMonth] = useState(getCurrentMonth);
-  const { data, loading } = useDashboard(month);
+  const { data, loading, error, refetch } = useDashboard(month);
   const router = useRouter();
 
   const changeMonth = (delta: number) => {
@@ -79,25 +75,30 @@ export default function DashboardPage() {
   const hasBothAlertTypes = hasCardAlerts && hasBudgetAlerts;
 
   return (
-    <div className="pb-6">
+    <div>
       <PageHeader
         title="Dashboard"
         action={
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
+              className="relative before:absolute before:inset-[-6px] before:content-['']"
               onClick={() => changeMonth(-1)}
               aria-label="Mes anterior"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="min-w-[8.5rem] text-center text-sm font-medium capitalize text-foreground">
+            <span
+              className="min-w-[10rem] text-center text-sm font-medium capitalize text-foreground whitespace-nowrap"
+              aria-live="polite"
+            >
               {formatMonthYear(`${month}-01`)}
             </span>
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
+              className="relative before:absolute before:inset-[-6px] before:content-['']"
               onClick={() => changeMonth(1)}
               aria-label="Mes siguiente"
             >
@@ -117,15 +118,34 @@ export default function DashboardPage() {
             </div>
             <div className="section-card h-16 animate-pulse" />
           </div>
+        ) : error ? (
+          <div className="section-card flex flex-col items-center gap-3 p-8 text-center">
+            <AlertCircle className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                No se pudieron cargar los datos
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Revisa tu conexión e intenta de nuevo
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={refetch}>
+              Reintentar
+            </Button>
+          </div>
         ) : (
           <>
             <section className="section-card p-5 md:p-6" aria-label="Neto del mes">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Neto del mes
               </p>
               <p
                 className={`mt-2 text-3xl font-semibold tabular-nums md:text-4xl ${
-                  net >= 0 ? "text-emerald-600" : "text-rose-600"
+                  net === 0
+                    ? "text-muted-foreground"
+                    : net > 0
+                      ? "text-emerald-600"
+                      : "text-rose-600"
                 }`}
               >
                 {formatCOP(net)}
@@ -148,148 +168,6 @@ export default function DashboardPage() {
                 </p>
               ) : null}
             </section>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                className="kpi-card text-left transition-colors hover:border-primary/30 cursor-pointer"
-                onClick={() => router.push("/transactions")}
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Ingresos
-                  </p>
-                  <DeltaPill
-                    current={data.totalIncome}
-                    previous={data.prevTotalIncome}
-                  />
-                </div>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-600">
-                  {formatCOP(data.totalIncome)}
-                </p>
-              </button>
-              <button
-                className="kpi-card text-left transition-colors hover:border-primary/30 cursor-pointer"
-                onClick={() => router.push("/transactions")}
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Gastos
-                  </p>
-                  <DeltaPill
-                    current={data.totalExpenses}
-                    previous={data.prevTotalExpenses}
-                    invertColor
-                  />
-                </div>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-rose-600">
-                  {formatCOP(data.totalExpenses)}
-                </p>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <SavingsRateCard
-                month={month}
-                income={data.totalIncome}
-                expenses={data.totalExpenses}
-              />
-              <ExpenseProjectionCard
-                month={month}
-                expensesMTD={data.totalExpenses}
-              />
-            </div>
-
-            <button
-              className="flex w-full items-center justify-between rounded-2xl border border-border/90 bg-card px-4 py-3 text-left text-card-foreground shadow-sm transition-colors hover:border-primary/30 cursor-pointer"
-              onClick={() => router.push("/accounts")}
-            >
-              <div className="flex items-center gap-3">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Balance total
-                  </p>
-                  <p
-                    className={`mt-0.5 text-lg font-semibold tabular-nums ${
-                      data.totalBalance >= 0 ? "text-foreground" : "text-rose-600"
-                    }`}
-                  >
-                    {formatCOP(data.totalBalance)}
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-
-            {(data.recurringExpenses > 0 || data.occasionalExpenses > 0) && (
-              <section className="section-card space-y-3 p-4">
-                <p className="text-sm font-semibold text-foreground">
-                  Composición de gastos
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Recurrentes</p>
-                    <p className="text-lg font-semibold tabular-nums text-emerald-600">
-                      {formatCOP(data.recurringExpenses)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Ocasionales</p>
-                    <p className="text-lg font-semibold tabular-nums text-orange-500">
-                      {formatCOP(data.occasionalExpenses)}
-                    </p>
-                  </div>
-                </div>
-                {data.totalExpenses > 0 && (
-                  <div>
-                    <div className="flex h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="bg-emerald-500 transition-all"
-                        style={{
-                          width: `${(data.recurringExpenses / data.totalExpenses) * 100}%`,
-                        }}
-                      />
-                      <div
-                        className="bg-orange-400 transition-all"
-                        style={{
-                          width: `${(data.occasionalExpenses / data.totalExpenses) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                      <span>
-                        {Math.round(
-                          (data.recurringExpenses / data.totalExpenses) * 100
-                        )}
-                        % recurrente
-                      </span>
-                      <span>
-                        {Math.round(
-                          (data.occasionalExpenses / data.totalExpenses) * 100
-                        )}
-                        % ocasional
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {data.topGrowthCategory && (
-              <p className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
-                <TrendingUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span>
-                  <span className="font-medium text-foreground">
-                    {data.topGrowthCategory.name}
-                  </span>{" "}
-                  aumentó{" "}
-                  <span className="font-medium text-foreground">
-                    {formatCOP(data.topGrowthCategory.growth)}
-                  </span>{" "}
-                  vs el mes anterior
-                </span>
-              </p>
-            )}
 
             {hasAlerts && (
               <section className="space-y-3">
@@ -393,7 +271,176 @@ export default function DashboardPage() {
               </section>
             )}
 
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                className="kpi-card text-left transition-colors hover:border-primary/30 cursor-pointer"
+                onClick={() => router.push("/transactions")}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Ingresos
+                  </p>
+                  <DeltaPill
+                    current={data.totalIncome}
+                    previous={data.prevTotalIncome}
+                  />
+                </div>
+                <p
+                  className={`mt-1 text-2xl font-semibold tabular-nums ${
+                    data.totalIncome === 0
+                      ? "text-muted-foreground"
+                      : "text-emerald-600"
+                  }`}
+                >
+                  {formatCOP(data.totalIncome)}
+                </p>
+              </button>
+              <button
+                className="kpi-card text-left transition-colors hover:border-primary/30 cursor-pointer"
+                onClick={() => router.push("/transactions")}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Gastos
+                  </p>
+                  <DeltaPill
+                    current={data.totalExpenses}
+                    previous={data.prevTotalExpenses}
+                    invertColor
+                  />
+                </div>
+                <p
+                  className={`mt-1 text-2xl font-semibold tabular-nums ${
+                    data.totalExpenses === 0
+                      ? "text-muted-foreground"
+                      : "text-rose-600"
+                  }`}
+                >
+                  {formatCOP(data.totalExpenses)}
+                </p>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <SavingsRateCard
+                month={month}
+                income={data.totalIncome}
+                expenses={data.totalExpenses}
+              />
+              <ExpenseProjectionCard
+                month={month}
+                expensesMTD={data.totalExpenses}
+              />
+            </div>
+
+            <button
+              className="flex w-full items-center justify-between rounded-2xl border border-border/90 bg-card px-4 py-3 text-left text-card-foreground shadow-sm transition-colors hover:border-primary/30 cursor-pointer"
+              onClick={() => router.push("/accounts")}
+            >
+              <div className="flex items-center gap-3">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Balance total
+                  </p>
+                  <p
+                    className={`mt-0.5 text-lg font-semibold tabular-nums ${
+                      data.totalBalance < 0 ? "text-rose-600" : "text-foreground"
+                    }`}
+                  >
+                    {formatCOP(data.totalBalance)}
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+
+            {(data.recurringExpenses > 0 || data.occasionalExpenses > 0) && (
+              <section className="section-card space-y-3 p-4">
+                <p className="text-sm font-semibold text-foreground">
+                  Composición de gastos
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Recurrentes</p>
+                    <p
+                      className={`text-lg font-semibold tabular-nums ${
+                        data.recurringExpenses === 0
+                          ? "text-muted-foreground"
+                          : "text-emerald-600"
+                      }`}
+                    >
+                      {formatCOP(data.recurringExpenses)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Ocasionales</p>
+                    <p
+                      className={`text-lg font-semibold tabular-nums ${
+                        data.occasionalExpenses === 0
+                          ? "text-muted-foreground"
+                          : "text-orange-500"
+                      }`}
+                    >
+                      {formatCOP(data.occasionalExpenses)}
+                    </p>
+                  </div>
+                </div>
+                {data.totalExpenses > 0 && (
+                  <div>
+                    <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="bg-emerald-600 transition-all"
+                        style={{
+                          width: `${(data.recurringExpenses / data.totalExpenses) * 100}%`,
+                        }}
+                      />
+                      <div
+                        className="bg-orange-500 transition-all"
+                        style={{
+                          width: `${(data.occasionalExpenses / data.totalExpenses) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                      <span>
+                        {Math.round(
+                          (data.recurringExpenses / data.totalExpenses) * 100
+                        )}
+                        % recurrente
+                      </span>
+                      <span>
+                        {Math.round(
+                          (data.occasionalExpenses / data.totalExpenses) * 100
+                        )}
+                        % ocasional
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {data.topGrowthCategory && (
+              <p className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+                <TrendingUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span>
+                  <span className="font-medium text-foreground">
+                    {data.topGrowthCategory.name}
+                  </span>{" "}
+                  aumentó{" "}
+                  <span className="font-medium text-foreground">
+                    {formatCOP(data.topGrowthCategory.growth)}
+                  </span>{" "}
+                  vs el mes anterior
+                </span>
+              </p>
+            )}
+
             <div className="space-y-3">
+              <h2 className="px-1 text-sm font-semibold text-foreground">
+                Análisis
+              </h2>
               <SpendingByCategory data={data.categorySpending} />
               <MonthlyTrend data={data.dailySpending} />
               <MonthlyComparison />

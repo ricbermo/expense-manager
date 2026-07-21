@@ -1,18 +1,13 @@
 "use client";
 
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { useMonthlyComparison } from "@/lib/hooks/use-monthly-comparison";
+import { getCurrentMonth } from "@/lib/utils/dates";
 import { formatCOP } from "@/lib/utils/currency";
 
 interface Props {
   month: string;
   expensesMTD: number;
-}
-
-function getCurrentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
 export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
@@ -30,14 +25,14 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
 
   if (day < 5) {
     return (
-      <Card className="section-card p-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div className="section-card p-4">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Proyección a fin de mes
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Datos insuficientes para proyectar
         </p>
-      </Card>
+      </div>
     );
   }
 
@@ -67,9 +62,9 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
     avg3m && avg3m > 0 ? Math.round(((projected - avg3m) / avg3m) * 100) : null;
 
   return (
-    <Card className="section-card p-4">
+    <div className="section-card p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Proyección a fin de mes
         </p>
         {pct !== null && pct !== 0 && (
@@ -87,14 +82,16 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
           </span>
         )}
       </div>
-      <p className={`mt-1 text-2xl font-semibold ${projectedColor}`}>
+      <p className={`mt-1 text-xl font-semibold ${projectedColor}`}>
         {formatCOP(projected)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         {avg3m
-          ? `Promedio ${priorExpenses.length}m previos: ${formatCOP(Math.round(avg3m))}`
+          ? priorExpenses.length === 1
+            ? `Mes anterior: ${formatCOP(Math.round(avg3m))}`
+            : `Promedio ${priorExpenses.length}m previos: ${formatCOP(Math.round(avg3m))}`
           : `Día ${day} de ${daysInMonth} · ritmo actual`}
       </p>
-    </Card>
+    </div>
   );
 }

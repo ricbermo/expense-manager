@@ -1,7 +1,6 @@
 "use client";
 
 import { PieChart, Pie, Cell } from "recharts";
-import { Card } from "@/components/ui/card";
 import { formatCOP } from "@/lib/utils/currency";
 
 interface CategoryData {
@@ -13,20 +12,20 @@ interface CategoryData {
 export function SpendingByCategory({ data }: { data: CategoryData[] }) {
   if (data.length === 0) {
     return (
-      <Card className="section-card p-4 md:p-5">
-        <p className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</p>
+      <div className="section-card p-4 md:p-5">
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</h3>
         <p className="py-6 text-center text-xs text-muted-foreground">
           Registra gastos para ver el desglose por categoria
         </p>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="section-card p-4 md:p-5">
-      <p className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</p>
+    <div className="section-card p-4 md:p-5">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</h3>
       <div className="flex items-center gap-4">
-        <div className="w-32 h-32">
+        <div className="w-32 h-32" aria-hidden="true">
           <PieChart width={128} height={128}>
             <Pie
               data={data}
@@ -61,6 +60,6 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
           ))}
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

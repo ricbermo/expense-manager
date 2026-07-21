@@ -9,7 +9,6 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { Card } from "@/components/ui/card";
 import { formatCOP } from "@/lib/utils/currency";
 import { useMonthlyComparison } from "@/lib/hooks/use-monthly-comparison";
 
@@ -17,26 +16,26 @@ export function MonthlyComparison() {
   const { comparison, loading } = useMonthlyComparison();
 
   if (loading) {
-    return <Card className="section-card p-4 md:p-5 h-48 animate-pulse" />;
+    return <div className="section-card p-4 md:p-5 h-48 animate-pulse" />;
   }
 
   const hasData = comparison.some((m) => m.income > 0 || m.expenses > 0);
 
   if (!hasData) {
     return (
-      <Card className="section-card p-4 md:p-5">
-        <p className="mb-3 text-sm font-semibold text-foreground">Comparativa mensual</p>
+      <div className="section-card p-4 md:p-5">
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Comparativa mensual</h3>
         <p className="py-6 text-center text-xs text-muted-foreground">
           Registra movimientos para ver la comparativa de los últimos 6 meses
         </p>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="section-card p-4 md:p-5">
-      <p className="mb-3 text-sm font-semibold text-foreground">Comparativa mensual</p>
-      <div className="min-w-0">
+    <div className="section-card p-4 md:p-5">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Comparativa mensual</h3>
+      <div className="min-w-0" aria-hidden="true">
         <ResponsiveContainer width="100%" height={180} minWidth={0} minHeight={180}>
           <BarChart data={comparison} barCategoryGap="30%">
             <XAxis
@@ -63,6 +62,6 @@ export function MonthlyComparison() {
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }

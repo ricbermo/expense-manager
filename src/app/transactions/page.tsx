@@ -229,7 +229,7 @@ export default function TransactionsPage() {
                 <Filter className="h-3.5 w-3.5" />
                 Filtros
                 {activeFilterCount > 0 && (
-                  <Badge className="h-4 w-4 rounded-full p-0 text-[10px] flex items-center justify-center ml-0.5">
+                  <Badge className="h-5 w-5 rounded-full p-0 text-[11px] flex items-center justify-center ml-0.5">
                     {activeFilterCount}
                   </Badge>
                 )}

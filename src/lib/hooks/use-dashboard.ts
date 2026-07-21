@@ -323,6 +323,7 @@ export function useDashboard(month: string) {
 
   const {
     data = defaultData,
+    error,
     isLoading: loading,
     mutate,
   } = useSWR(swrKeys.dashboard(month), fetchDashboard);
@@ -331,5 +332,5 @@ export function useDashboard(month: string) {
     await mutate();
   }, [mutate]);
 
-  return { data, loading, refetch };
+  return { data, loading, error, refetch };
 }
