@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-21T14:30:00Z",
+  "title": "Design System: Gastos — Expense Tracker",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.15 0.02 265)",
+        "tonalRamp": ["oklch(0.08 0.01 265)", "oklch(0.15 0.02 265)", "oklch(0.28 0.025 265)", "oklch(0.38 0.03 265)", "oklch(0.52 0.03 265)", "oklch(0.64 0.02 265)", "oklch(0.76 0.015 265)", "oklch(0.88 0.01 265)", "oklch(0.95 0.005 265)"]
+      },
+      "navy": {
+        "role": "primary",
+        "displayName": "Navy",
+        "canonical": "oklch(0.2 0.03 270)",
+        "tonalRamp": ["oklch(0.08 0.02 270)", "oklch(0.12 0.025 270)", "oklch(0.2 0.03 270)", "oklch(0.3 0.035 270)", "oklch(0.4 0.04 270)", "oklch(0.55 0.04 270)", "oklch(0.7 0.03 270)", "oklch(0.82 0.025 270)", "oklch(0.94 0.015 270)"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(0.96 0.005 265)",
+        "tonalRamp": ["oklch(0.85 0.005 265)", "oklch(0.90 0.005 265)", "oklch(0.93 0.005 265)", "oklch(0.96 0.005 265)", "oklch(0.97 0.004 265)", "oklch(0.98 0.003 265)", "oklch(0.985 0.002 265)", "oklch(0.995 0.001 265)", "oklch(1.0 0 265)"]
+      },
+      "blue-deep": {
+        "role": "accent",
+        "displayName": "Blue Deep",
+        "canonical": "oklch(0.32 0.07 270)",
+        "tonalRamp": ["oklch(0.1 0.03 270)", "oklch(0.18 0.05 270)", "oklch(0.32 0.07 270)", "oklch(0.45 0.09 270)", "oklch(0.55 0.1 270)", "oklch(0.65 0.09 270)", "oklch(0.74 0.07 270)", "oklch(0.84 0.05 270)", "oklch(0.94 0.02 270)"]
+      },
+      "emerald": {
+        "role": "positive",
+        "displayName": "Emerald",
+        "canonical": "oklch(0.6 0.18 165)",
+        "tonalRamp": ["oklch(0.1 0.05 165)", "oklch(0.25 0.1 165)", "oklch(0.4 0.15 165)", "oklch(0.5 0.18 165)", "oklch(0.6 0.18 165)", "oklch(0.7 0.15 165)", "oklch(0.8 0.1 165)", "oklch(0.9 0.05 165)", "oklch(0.95 0.02 165)"]
+      },
+      "rose": {
+        "role": "negative",
+        "displayName": "Rose",
+        "canonical": "oklch(0.55 0.2 15)",
+        "tonalRamp": ["oklch(0.1 0.05 15)", "oklch(0.2 0.1 15)", "oklch(0.35 0.15 15)", "oklch(0.45 0.2 15)", "oklch(0.55 0.2 15)", "oklch(0.65 0.18 15)", "oklch(0.75 0.13 15)", "oklch(0.85 0.07 15)", "oklch(0.95 0.03 15)"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title (h1) — used once per view. Clamped from 1.5rem to 1.875rem."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "KPI numbers, chart value labels. Always with tabular-nums."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All prose content, transaction descriptions, alert messages. Max 75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "KPI category labels, form labels, table column headers. Uppercase, tight tracking."
+      }
+    },
+    "shadows": [
+      { "name": "ambient-low", "value": "0 1px 2px 0 rgba(0,0,0,0.05)", "purpose": "Default card shadow (Tailwind shadow-sm). Barely-there separation." },
+      { "name": "elevated", "value": "0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1)", "purpose": "Hover elevation for interactive cards and active nav items (Tailwind shadow)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Default call-to-action button. Navy background, white text, compact h-8 sizing.",
+      "html": "<button class=\"ds-btn-primary\">Nueva</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 2rem; padding: 0 0.625rem; gap: 0.375rem; border-radius: 0.625rem; border: 1px solid transparent; background: #0f172a; color: #f8fafc; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: opacity 0.15s ease, transform 0.1s ease; } .ds-btn-primary:hover { opacity: 0.85; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.5); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action button. Transparent bg, slate border, ink text.",
+      "html": "<button class=\"ds-btn-outline\">Cancelar</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 2rem; padding: 0 0.625rem; gap: 0.375rem; border-radius: 0.625rem; border: 1px solid #dbe4ee; background: transparent; color: #020617; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; } .ds-btn-outline:hover { background: #eef2f7; color: #020617; } .ds-btn-outline:active { transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.5); }"
+    },
+    {
+      "name": "KPI Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Metric display card used in the dashboard KPI grid. Contains label, value, and optional delta.",
+      "html": "<button class=\"ds-kpi-card\"><div class=\"ds-kpi-header\"><span class=\"ds-kpi-label\">Ingresos</span><span class=\"ds-kpi-delta ds-kpi-up\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"16 18 22 12 16 6\"/><polyline points=\"8 6 2 12 8 18\"/></svg>12%</span></div><span class=\"ds-kpi-value ds-kpi-positive\">$3,250,000</span></button>",
+      "css": ".ds-kpi-card { display: block; width: 100%; text-align: left; cursor: pointer; border-radius: 1.125rem; border: 1px solid rgba(219, 228, 238, 0.9); background: #ffffff; padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); font-family: 'IBM Plex Sans', system-ui, sans-serif; transition: border-color 0.15s ease; } .ds-kpi-card:hover { border-color: rgba(15, 23, 42, 0.3); } .ds-kpi-header { display: flex; align-items: center; justify-content: space-between; } .ds-kpi-label { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: #475569; } .ds-kpi-delta { display: inline-flex; align-items: center; gap: 0.125rem; font-size: 0.75rem; font-weight: 500; } .ds-kpi-up { color: #059669; } .ds-kpi-down { color: #e11d48; } .ds-kpi-value { display: block; margin-top: 0.25rem; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-kpi-positive { color: #059669; } .ds-kpi-negative { color: #e11d48; }"
+    },
+    {
+      "name": "Bottom Nav Item",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Navigation item in the bottom app bar. Single icon + label stack. Active state: navy bg, white icon/label.",
+      "html": "<nav class=\"ds-nav-bar\"><a class=\"ds-nav-item ds-nav-active\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/></svg><span>Dashboard</span></a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"17 1 21 5 17 9\"/><path d=\"M3 11V9a4 4 0 0 1 4-4h14\"/><polyline points=\"7 23 3 19 7 15\"/><path d=\"M21 13v2a4 4 0 0 1-4 4H3\"/></svg><span>Movimientos</span></a></nav>",
+      "css": ".ds-nav-bar { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border-radius: 1.125rem; border: 1px solid rgba(219, 228, 238, 0.8); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); } .ds-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; padding: 0.5rem 0.75rem; border-radius: 0.875rem; text-decoration: none; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.6875rem; font-weight: 500; color: #475569; transition: background 0.15s ease, color 0.15s ease; } .ds-nav-item:hover { background: #eef2f7; color: #020617; } .ds-nav-active { background: #0f172a; color: #f8fafc; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); } .ds-nav-active:hover { background: #0f172a; color: #f8fafc; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": null,
+      "description": "Standard text field. Slate border, rounded-lg, focus ring in blue-deep.",
+      "html": "<div style=\"display: flex; flex-direction: column; gap: 0.375rem; font-family: 'IBM Plex Sans', system-ui, sans-serif;\"><label class=\"ds-input-label\">Monto</label><input class=\"ds-input\" type=\"text\" placeholder=\"0\" /></div>",
+      "css": ".ds-input-label { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: #475569; } .ds-input { display: flex; width: 100%; height: 2rem; padding: 0 0.75rem; border-radius: 0.625rem; border: 1px solid #dbe4ee; background: transparent; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.875rem; color: #020617; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; } .ds-input::placeholder { color: #475569; } .ds-input:focus { border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.5); } .ds-input[aria-invalid=\"true\"] { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Personal Ledger",
+    "overview": "Every screen reads like a page from a well-kept ledger — no-nonsense, honest, personal. This is not a bank app, a fintech demo, or a gamified budget tool. It is a calm, clear view of where money is, what was spent, and whether the budget is on track. The system is cool-toned and restrained: slate and navy neutrals, a blue accent used sparingly, and semantic color reserved for moments where the user actually needs to react. Layout is compact and efficient, rewarding a 30-second glance while supporting deeper inspection.",
+    "keyCharacteristics": [
+      "Cool slate-and-navy palette — never warm, never cream, never sand",
+      "Single font family (IBM Plex Sans) at weights 400 / 500 / 600 — unity, not pairing drama",
+      "Card-driven dashboard: each KPI, chart, and alert is an independent rounded container on a fixed subtle-gradient background",
+      "Bottom-nav glass sheet as the primary navigation (mobile-first, no sidebar)",
+      "Compact controls: h-8 buttons, tight padding, small type — the tool stays out of the way",
+      "Semantic color is informational, not decorative — emerald and rose carry real financial signal",
+      "Dark mode inverts the palette without introducing new hues — the same slate-and-navy values, just reordered"
+    ],
+    "rules": [
+      { "name": "The Named-Message Rule", "body": "Semantic color always carries a label or icon. Color is redundant support, not the sole channel.", "section": "colors" },
+      { "name": "The No-Pairing Rule", "body": "One font, all weights. No serif companion, no display font, no mono for contrast.", "section": "typography" },
+      { "name": "The One-Cue-Too-Many Rule", "body": "Never combine border + shadow + background-tint + gradient on the same container. Pick two, at most three.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use slate-and-navy cool neutrals. The background is paper (#f8fafc), not cream, sand, or warm beige.",
+      "Do make body text reach ≥4.5:1 against its background. Ink on paper passes; ink on any tinted surface requires checking.",
+      "Do use semantic color (emerald / rose / amber / orange) only for financial signals that carry meaning, not for decoration.",
+      "Do accompany every colored value with a text or icon label — color is redundant reinforcement, never the sole channel.",
+      "Do use tabular-nums on all monetary amounts so digits don't shift width as values change.",
+      "Do cap the page at max-w-5xl (64rem). Content should not stretch across wide monitors.",
+      "Do apply text-wrap: balance on h1 headings for even line lengths.",
+      "Do honor prefers-reduced-motion: reduce on every animation."
+    ],
+    "donts": [
+      "Don't use a warm-tinted background (cream, sand, beige, bone, parchment, linen, ivory, biscuit).",
+      "Don't create hero-metric layouts with a giant number, small label, supporting stats, and gradient accent.",
+      "Don't put tiny uppercase tracking-heavy eyebrows above every section.",
+      "Don't apply side-stripe borders (border-left greater than 1px as a colored accent on cards or list items).",
+      "Don't use gradient text (background-clip: text).",
+      "Don't use glassmorphism as a default surface treatment.",
+      "Don't nest cards. One card, one container.",
+      "Don't ship animated layouts (animating width/height/top/left). Use transform and opacity only.",
+      "Don't create alarm fatigue with multiple simultaneous toasts.",
+      "Don't hardcode the author's name or personal data into UI strings."
+    ]
+  }
+}
