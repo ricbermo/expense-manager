@@ -5,9 +5,12 @@ import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
 import type { CreditCardStatement } from "@/lib/types/database";
+import type { CreditCardStatementPayment } from "@/lib/types/database";
+import { getOpenStatements } from "@/lib/utils/credit-card-statements";
 
 export type StatementWithAccount = CreditCardStatement & {
   accounts: { name: string } | null;
+  payments: CreditCardStatementPayment[];
 };
 
 export function useCreditCardStatements() {
@@ -17,9 +20,19 @@ export function useCreditCardStatements() {
     const supabase = createClient();
     const { data } = await supabase
       .from("credit_card_statements")
-      .select("*, accounts(name)")
+      .select("*, accounts(name), credit_card_statement_payments(*)")
       .order("due_date", { ascending: true });
-    return (data ?? []) as StatementWithAccount[];
+    return (data ?? []).map((statement) => {
+      const record = statement as CreditCardStatement & {
+        accounts: { name: string } | null;
+        credit_card_statement_payments: CreditCardStatementPayment[] | null;
+      };
+      const { credit_card_statement_payments, ...statementData } = record;
+      return {
+        ...statementData,
+        payments: credit_card_statement_payments ?? [],
+      };
+    });
   }, []);
 
   const {
@@ -39,15 +52,7 @@ export function useCreditCardStatements() {
     ]);
   }, [mutate, globalMutate]);
 
-  const pendingByAccountId = statements
-    .filter((s) => s.paid_at === null)
-    .reduce<Record<string, StatementWithAccount>>((acc, s) => {
-      // Keep the most recent unpaid statement per account
-      if (!acc[s.account_id] || s.due_date > acc[s.account_id].due_date) {
-        acc[s.account_id] = s;
-      }
-      return acc;
-    }, {});
+  const openStatements = getOpenStatements(statements);
 
   const createStatement = async (
     data: Omit<CreditCardStatement, "id" | "created_at" | "paid_at" | "payment_transaction_id">
@@ -60,15 +65,30 @@ export function useCreditCardStatements() {
     await revalidateRelated();
   };
 
-  const markAsPaid = async (statementId: string, paymentTransactionId: string) => {
+  const recordPayment = async ({
+    statementId,
+    sourceAccountId,
+    amount,
+    date,
+    description,
+  }: {
+    statementId: string;
+    sourceAccountId: string;
+    amount: number;
+    date: string;
+    description: string;
+  }) => {
     const supabase = createClient();
-    const { error } = await supabase
-      .from("credit_card_statements")
-      .update({ paid_at: new Date().toISOString(), payment_transaction_id: paymentTransactionId } as never)
-      .eq("id", statementId);
+    const { error } = await supabase.rpc("record_credit_card_statement_payment", {
+      p_statement_id: statementId,
+      p_source_account_id: sourceAccountId,
+      p_amount: amount,
+      p_date: date,
+      p_description: description,
+    } as never);
     if (error) throw error;
     await revalidateRelated();
   };
 
-  return { statements, loading, pendingByAccountId, createStatement, markAsPaid };
+  return { statements, openStatements, loading, createStatement, recordPayment };
 }

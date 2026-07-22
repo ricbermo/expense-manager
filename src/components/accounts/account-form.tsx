@@ -35,8 +35,8 @@ import {
 const accountTypeLabels: Record<AccountType, string> = {
   savings: "Ahorros",
   cash: "Efectivo",
-  credit_card: "Tarjeta de Credito",
-  loan: "Prestamo",
+  credit_card: "Tarjeta de crédito",
+  loan: "Préstamo",
 };
 
 function getAccountFormValues(data?: Account) {
@@ -87,7 +87,9 @@ export function AccountForm({
     handleSubmit,
     reset,
     setValue,
-    formState: { isSubmitting },
+    clearErrors,
+    setError,
+    formState: { isSubmitting, errors },
   } = useForm<AccountFormValues>({
     defaultValues: initialValues,
   });
@@ -104,6 +106,16 @@ export function AccountForm({
   }, [open, initialData, reset]);
 
   const onFormSubmit = async (values: AccountFormValues) => {
+    const dueDayValue = Number(values.dueDay);
+    if (
+      (values.type === "credit_card" || values.type === "loan") &&
+      values.dueDay &&
+      (!Number.isInteger(dueDayValue) || dueDayValue < 1 || dueDayValue > 31)
+    ) {
+      setError("dueDay", { message: "Ingresa un día entre 1 y 31." });
+      return;
+    }
+
     const parsedBalance = parseIntegerInput(values.balance);
     const parsedCreditLimit =
       values.type === "credit_card"
@@ -182,8 +194,8 @@ export function AccountForm({
                   <SelectContent>
                     <SelectItem value="savings">Ahorros</SelectItem>
                     <SelectItem value="cash">Efectivo</SelectItem>
-                    <SelectItem value="credit_card">Tarjeta de Credito</SelectItem>
-                    <SelectItem value="loan">Prestamo</SelectItem>
+                    <SelectItem value="credit_card">Tarjeta de crédito</SelectItem>
+                    <SelectItem value="loan">Préstamo</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -227,7 +239,7 @@ export function AccountForm({
           {(type === "credit_card" || type === "loan") && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="interestRate">Tasa de interes (%)</Label>
+                <Label htmlFor="interestRate">Tasa de interés (%)</Label>
                 <Input
                   id="interestRate"
                   type="text"
@@ -243,7 +255,7 @@ export function AccountForm({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dueDay">Dia de pago</Label>
+                <Label htmlFor="dueDay">Día de pago</Label>
                 <Controller
                   name="dueDay"
                   control={control}
@@ -254,17 +266,21 @@ export function AccountForm({
                       inputMode="numeric"
                       pattern="[0-9]*"
                       value={field.value}
-                      onChange={(e) =>
-                        field.onChange(e.target.value.replace(/\D/g, "").slice(0, 2))
-                      }
-                      onBlur={() => {
-                        const parsed = parseDueDayInput(field.value);
-                        field.onChange(parsed ? String(parsed) : "");
-                      }}
-                      placeholder="15"
-                    />
+                       onChange={(e) =>
+                          field.onChange(e.target.value.replace(/\D/g, "").slice(0, 2))
+                        }
+                        onBlur={() => clearErrors("dueDay")}
+                        placeholder="15"
+                        aria-invalid={Boolean(errors.dueDay)}
+                        aria-describedby={errors.dueDay ? "due-day-error" : undefined}
+                      />
+                    )}
+                  />
+                  {errors.dueDay?.message && (
+                    <p id="due-day-error" className="text-sm text-destructive" aria-live="polite">
+                      {errors.dueDay.message}
+                    </p>
                   )}
-                />
               </div>
             </>
           )}
