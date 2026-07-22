@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,15 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatIntegerInput, parseIntegerInput } from "@/lib/utils/number-input-format";
-import { formatCOP } from "@/lib/utils/currency";
-import type { Account } from "@/lib/types/database";
 import type { StatementWithAccount } from "@/lib/hooks/use-credit-card-statements";
+import type { Account } from "@/lib/types/database";
 import {
   getStatementPaymentSummary,
   validateStatementPayment,
 } from "@/lib/utils/credit-card-statements";
+import { formatCOP } from "@/lib/utils/currency";
+import {
+  formatIntegerInput,
+  parseIntegerInput,
+} from "@/lib/utils/number-input-format";
 
 interface PaymentFormValues {
   amount: string;
@@ -92,11 +100,13 @@ export function CreditCardPaymentForm({
 
   const watchedSourceId = useWatch({ control, name: "sourceAccountId" });
   const watchedAmount = useWatch({ control, name: "amount" });
-  const selectedSource = sourceAccounts.find((account) => account.id === watchedSourceId);
+  const selectedSource = sourceAccounts.find(
+    (account) => account.id === watchedSourceId,
+  );
   const statementSummary = getStatementPaymentSummary(pendingStatement);
   const remainingAfterPayment = Math.max(
     0,
-    statementSummary.remainingAmount - parseIntegerInput(watchedAmount ?? "")
+    statementSummary.remainingAmount - parseIntegerInput(watchedAmount ?? ""),
   );
 
   const onFormSubmit = async (values: PaymentFormValues) => {
@@ -122,7 +132,9 @@ export function CreditCardPaymentForm({
       });
       onOpenChange(false);
     } catch {
-      setError("root.server", { message: "No se pudo registrar el pago. Intenta de nuevo." });
+      setError("root.server", {
+        message: "No se pudo registrar el pago. Intenta de nuevo.",
+      });
     }
   };
 
@@ -134,20 +146,25 @@ export function CreditCardPaymentForm({
         </DialogHeader>
 
         <div className="rounded-lg bg-muted/50 border border-border/60 p-3 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Saldo extracto</span>
-              <span className="font-medium">{formatCOP(statementSummary.remainingAmount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Pago mínimo</span>
-              <span className="font-medium text-amber-600">{formatCOP(pendingStatement.minimum_payment)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Vence</span>
-              <span className="font-medium">{pendingStatement.due_date}</span>
-            </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Saldo extracto</span>
+            <span className="font-medium">
+              {formatCOP(statementSummary.remainingAmount)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Pago mínimo</span>
+            <span className="font-medium text-amber-600">
+              {formatCOP(pendingStatement.minimum_payment)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Vence</span>
+            <span className="font-medium">{pendingStatement.due_date}</span>
+          </div>
           <p className="pt-1 text-xs text-muted-foreground">
-            Saldo pendiente después de pagar: {formatCOP(remainingAfterPayment)}.
+            Saldo pendiente después de pagar: {formatCOP(remainingAfterPayment)}
+            .
           </p>
         </div>
 
@@ -163,13 +180,17 @@ export function CreditCardPaymentForm({
                   type="text"
                   inputMode="numeric"
                   value={field.value}
-                  onChange={(e) => field.onChange(formatIntegerInput(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(formatIntegerInput(e.target.value))
+                  }
                   onBlur={() => clearErrors()}
                   placeholder="50.000"
                   required
                   className="text-2xl font-bold h-14"
                   aria-invalid={Boolean(errors.root?.payment)}
-                  aria-describedby={errors.root?.payment ? "pay-error" : undefined}
+                  aria-describedby={
+                    errors.root?.payment ? "pay-error" : undefined
+                  }
                 />
               )}
             />
@@ -181,13 +202,20 @@ export function CreditCardPaymentForm({
               name="sourceAccountId"
               control={control}
               render={({ field }) => (
-                  <Select value={field.value} onValueChange={(v) => {
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => {
                     clearErrors();
                     field.onChange(v ?? "");
-                  }}>
+                  }}
+                >
                   <SelectTrigger id="pay-source" className="h-11">
                     <SelectValue placeholder="Selecciona cuenta">
-                      {() => selectedSource ? `${selectedSource.name} · ${formatCOP(selectedSource.balance)}` : "Selecciona cuenta"}
+                      {() =>
+                        selectedSource
+                          ? `${selectedSource.name} · ${formatCOP(selectedSource.balance)}`
+                          : "Selecciona cuenta"
+                      }
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -204,16 +232,30 @@ export function CreditCardPaymentForm({
 
           <div className="space-y-2">
             <Label htmlFor="pay-date">Fecha del pago</Label>
-            <Input id="pay-date" type="date" className="h-11" {...register("date")} required />
+            <Input
+              id="pay-date"
+              type="date"
+              className="h-11"
+              {...register("date")}
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="pay-description">Descripción</Label>
-            <Input id="pay-description" className="h-11" {...register("description")} />
+            <Input
+              id="pay-description"
+              className="h-11"
+              {...register("description")}
+            />
           </div>
 
           {errors.root?.payment?.message && (
-            <p id="pay-error" className="text-sm text-destructive" aria-live="polite">
+            <p
+              id="pay-error"
+              className="text-sm text-destructive"
+              aria-live="polite"
+            >
               {errors.root.payment.message}
             </p>
           )}

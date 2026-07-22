@@ -8,7 +8,7 @@ export function isDestinationRequired(_type: TransactionType): boolean {
 export function isDestinationSelectionValid(
   type: TransactionType,
   accountId: string,
-  toAccountId: string
+  toAccountId: string,
 ): boolean {
   if (type !== "transfer" && type !== "expense") {
     return true;

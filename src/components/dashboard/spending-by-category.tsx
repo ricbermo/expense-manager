@@ -1,6 +1,6 @@
 "use client";
 
-import { PieChart, Pie, Cell } from "recharts";
+import { Cell, Pie, PieChart } from "recharts";
 import { formatCOP } from "@/lib/utils/currency";
 
 interface CategoryData {
@@ -13,7 +13,9 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
   if (data.length === 0) {
     return (
       <div className="section-card p-4 md:p-5">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          Gastos por categoria
+        </h3>
         <p className="py-6 text-center text-xs text-muted-foreground">
           Registra gastos para ver el desglose por categoria
         </p>
@@ -23,7 +25,9 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
 
   return (
     <div className="section-card p-4 md:p-5">
-      <h3 className="mb-3 text-sm font-semibold text-foreground">Gastos por categoria</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">
+        Gastos por categoria
+      </h3>
       <div className="flex items-center gap-4">
         <div className="w-32 h-32" aria-hidden="true">
           <PieChart width={128} height={128}>
@@ -37,8 +41,8 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
               outerRadius={55}
               paddingAngle={2}
             >
-              {data.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
+              {data.map((entry) => (
+                <Cell key={`${entry.name}-${entry.color}`} fill={entry.color} />
               ))}
             </Pie>
           </PieChart>
@@ -50,9 +54,7 @@ export function SpendingByCategory({ data }: { data: CategoryData[] }) {
                 className="h-2.5 w-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: cat.color }}
               />
-              <span className="truncate text-muted-foreground">
-                {cat.name}
-              </span>
+              <span className="truncate text-muted-foreground">{cat.name}</span>
               <span className="ml-auto shrink-0 font-semibold tabular-nums">
                 {formatCOP(cat.amount)}
               </span>

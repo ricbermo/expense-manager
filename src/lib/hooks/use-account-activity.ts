@@ -11,7 +11,9 @@ export interface AccountActivity {
 }
 
 export function useAccountActivity(month: string) {
-  const fetchActivity = useCallback(async (): Promise<Record<string, AccountActivity>> => {
+  const fetchActivity = useCallback(async (): Promise<
+    Record<string, AccountActivity>
+  > => {
     const supabase = createClient();
     const startDate = `${month}-01`;
     const [y, m] = month.split("-").map(Number);
@@ -30,7 +32,7 @@ export function useAccountActivity(month: string) {
     const creditCardAccountIds = new Set(
       ((accountsData ?? []) as { id: string; type: string }[])
         .filter((a) => a.type === "credit_card")
-        .map((a) => a.id)
+        .map((a) => a.id),
     );
 
     const result: Record<string, AccountActivity> = {};
@@ -40,10 +42,12 @@ export function useAccountActivity(month: string) {
       type: string;
       amount: number;
     }[]) {
-      if (!result[t.account_id]) result[t.account_id] = { income: 0, expense: 0 };
+      if (!result[t.account_id])
+        result[t.account_id] = { income: 0, expense: 0 };
       if (t.type === "income") result[t.account_id].income += t.amount;
       else if (t.type === "expense") {
-        if (t.to_account_id && creditCardAccountIds.has(t.to_account_id)) continue;
+        if (t.to_account_id && creditCardAccountIds.has(t.to_account_id))
+          continue;
         result[t.account_id].expense += t.amount;
       }
     }
@@ -52,7 +56,7 @@ export function useAccountActivity(month: string) {
 
   const { data: activity = {}, isLoading: loading } = useSWR(
     swrKeys.accountActivity(month),
-    fetchActivity
+    fetchActivity,
   );
 
   return { activity, loading };

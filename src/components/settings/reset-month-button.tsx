@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,7 +31,7 @@ export function ResetMonthButton({ month }: ResetMonthButtonProps) {
     try {
       const { deletedTransactions, deletedBudgets } = await resetMonth(month);
       toast.success(
-        `Mes reiniciado: ${deletedTransactions} movimientos y ${deletedBudgets} presupuestos eliminados`
+        `Mes reiniciado: ${deletedTransactions} movimientos y ${deletedBudgets} presupuestos eliminados`,
       );
       setOpen(false);
       router.push("/");
@@ -67,8 +67,8 @@ export function ResetMonthButton({ month }: ResetMonthButtonProps) {
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
           <p className="font-medium">Esta acción es irreversible.</p>
           <p className="mt-1 text-xs text-destructive/80">
-            No podrás recuperar los datos borrados. Si solo quieres corregir
-            un movimiento, edítalo desde la página de Movimientos.
+            No podrás recuperar los datos borrados. Si solo quieres corregir un
+            movimiento, edítalo desde la página de Movimientos.
           </p>
         </div>
 

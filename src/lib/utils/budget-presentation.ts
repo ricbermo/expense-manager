@@ -13,7 +13,10 @@ export interface BudgetCopyResult {
 }
 
 export function getBudgetErrorMessage(error: { message?: string } | null) {
-  return error?.message || "No se pudieron cargar los presupuestos. Intenta de nuevo.";
+  return (
+    error?.message ||
+    "No se pudieron cargar los presupuestos. Intenta de nuevo."
+  );
 }
 
 export function getBudgetPriority(budget: BudgetProgressInput) {
@@ -27,7 +30,9 @@ export function getBudgetPriority(budget: BudgetProgressInput) {
   return { kind: "healthy" as const, percentage };
 }
 
-export function orderBudgetsByPriority<T extends BudgetProgressInput>(budgets: T[]) {
+export function orderBudgetsByPriority<T extends BudgetProgressInput>(
+  budgets: T[],
+) {
   const rank: Record<BudgetPriorityKind, number> = {
     exceeded: 0,
     alert: 1,
@@ -36,18 +41,27 @@ export function orderBudgetsByPriority<T extends BudgetProgressInput>(budgets: T
   };
 
   return budgets
-    .map((budget, index) => ({ budget, index, rank: rank[getBudgetPriority(budget).kind] }))
+    .map((budget, index) => ({
+      budget,
+      index,
+      rank: rank[getBudgetPriority(budget).kind],
+    }))
     .sort((a, b) => a.rank - b.rank || a.index - b.index)
     .map(({ budget }) => budget);
 }
 
 export function getBudgetSummary(budgets: BudgetProgressInput[]) {
-  const exceeded = budgets.filter((budget) => getBudgetPriority(budget).kind === "exceeded");
+  const exceeded = budgets.filter(
+    (budget) => getBudgetPriority(budget).kind === "exceeded",
+  );
   if (exceeded.length > 0) {
     return {
       kind: "exceeded" as const,
       budgetCount: exceeded.length,
-      amount: exceeded.reduce((total, budget) => total + (budget.spent - budget.limit_amount), 0),
+      amount: exceeded.reduce(
+        (total, budget) => total + (budget.spent - budget.limit_amount),
+        0,
+      ),
     };
   }
 
@@ -55,8 +69,9 @@ export function getBudgetSummary(budgets: BudgetProgressInput[]) {
     kind: "available" as const,
     budgetCount: 0,
     amount: budgets.reduce(
-      (total, budget) => total + Math.max(0, budget.limit_amount - budget.spent),
-      0
+      (total, budget) =>
+        total + Math.max(0, budget.limit_amount - budget.spent),
+      0,
     ),
   };
 }

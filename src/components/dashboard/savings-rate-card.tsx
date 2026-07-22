@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { useMonthlyComparison } from "@/lib/hooks/use-monthly-comparison";
 import { getCurrentMonth } from "@/lib/utils/dates";
 
@@ -32,7 +32,9 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
       : null;
 
   const deltaPts =
-    rate !== null && priorAvg !== null ? Math.round((rate - priorAvg) * 100) : null;
+    rate !== null && priorAvg !== null
+      ? Math.round((rate - priorAvg) * 100)
+      : null;
 
   const rateColor =
     rate === null

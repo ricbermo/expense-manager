@@ -3,8 +3,8 @@
 import { useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
-import type { Account } from "@/lib/types/database";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
+import type { Account } from "@/lib/types/database";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
 export function useAccounts() {
@@ -33,13 +33,11 @@ export function useAccounts() {
     await globalMutate(
       (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
       undefined,
-      { revalidate: true }
+      { revalidate: true },
     );
   }, [globalMutate]);
 
-  const createAccount = async (
-    account: Omit<Account, "id" | "created_at">
-  ) => {
+  const createAccount = async (account: Omit<Account, "id" | "created_at">) => {
     const supabase = createClient();
     const payload = {
       ...account,
@@ -58,7 +56,7 @@ export function useAccounts() {
 
   const updateAccount = async (
     id: string,
-    updates: Partial<Omit<Account, "id" | "created_at">>
+    updates: Partial<Omit<Account, "id" | "created_at">>,
   ) => {
     const supabase = createClient();
     const accountType = updates.type ?? accounts.find((a) => a.id === id)?.type;
@@ -89,5 +87,12 @@ export function useAccounts() {
     await revalidateDashboard();
   };
 
-  return { accounts, loading, createAccount, updateAccount, deleteAccount, refetch };
+  return {
+    accounts,
+    loading,
+    createAccount,
+    updateAccount,
+    deleteAccount,
+    refetch,
+  };
 }

@@ -1,29 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import {
-  ChevronRight,
-  ChevronDown,
-  TrendingUp,
-  TrendingDown,
-  CreditCard,
-  AlertTriangle,
   AlertCircle,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  CreditCard,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
-import { MonthPager } from "@/components/layout/month-pager";
-import { Button } from "@/components/ui/button";
-import { SpendingByCategory } from "@/components/dashboard/spending-by-category";
-import { IncomeByCategory } from "@/components/dashboard/income-by-category";
-import { MonthlyTrend } from "@/components/dashboard/monthly-trend";
-import { MonthlyComparison } from "@/components/dashboard/monthly-comparison";
-import { SavingsRateCard } from "@/components/dashboard/savings-rate-card";
+import { useState } from "react";
 import { ExpenseProjectionCard } from "@/components/dashboard/expense-projection-card";
+import { IncomeByCategory } from "@/components/dashboard/income-by-category";
+import { MonthlyComparison } from "@/components/dashboard/monthly-comparison";
+import { MonthlyTrend } from "@/components/dashboard/monthly-trend";
+import { SavingsRateCard } from "@/components/dashboard/savings-rate-card";
+import { SpendingByCategory } from "@/components/dashboard/spending-by-category";
+import { MonthPager } from "@/components/layout/month-pager";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import type { CreditCardAlert } from "@/lib/hooks/use-dashboard";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { formatCOP } from "@/lib/utils/currency";
 import { getCurrentMonth } from "@/lib/utils/dates";
-import type { CreditCardAlert } from "@/lib/hooks/use-dashboard";
 
 function DeltaPill({
   current,
@@ -77,7 +77,8 @@ export default function DashboardPage() {
   const hasRecurring = data.recurringExpenses > 0;
   const hasOccasional = data.occasionalExpenses > 0;
   const showComposition = hasRecurring || hasOccasional;
-  const showCompositionBar = hasRecurring && hasOccasional && data.totalExpenses > 0;
+  const showCompositionBar =
+    hasRecurring && hasOccasional && data.totalExpenses > 0;
 
   return (
     <div>
@@ -117,7 +118,10 @@ export default function DashboardPage() {
               isValidating ? "opacity-60" : "opacity-100"
             }`}
           >
-            <section className="section-card p-5 md:p-6" aria-label="Neto del mes">
+            <section
+              className="section-card p-5 md:p-6"
+              aria-label="Neto del mes"
+            >
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Neto del mes
               </p>
@@ -178,6 +182,7 @@ export default function DashboardPage() {
                           : `Vence en ${alert.daysUntilDue} días`;
                       return (
                         <button
+                          type="button"
                           key={alert.id}
                           className="clickable-card flex w-full items-center gap-3 p-3 text-left"
                           onClick={() => router.push("/accounts")}
@@ -213,6 +218,7 @@ export default function DashboardPage() {
                     )}
                     {data.budgetAlerts.map((alert) => (
                       <button
+                        type="button"
                         key={alert.name}
                         className="clickable-card flex w-full items-center gap-3 p-3 text-left"
                         onClick={() => router.push("/budgets")}
@@ -258,6 +264,7 @@ export default function DashboardPage() {
               aria-label="Resumen del mes"
             >
               <button
+                type="button"
                 onClick={() => router.push("/transactions")}
                 className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
@@ -284,6 +291,7 @@ export default function DashboardPage() {
                 </div>
               </button>
               <button
+                type="button"
                 onClick={() => router.push("/transactions")}
                 className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
@@ -311,6 +319,7 @@ export default function DashboardPage() {
                 </div>
               </button>
               <button
+                type="button"
                 onClick={() => router.push("/accounts")}
                 className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
@@ -320,7 +329,9 @@ export default function DashboardPage() {
                   </p>
                   <p
                     className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
-                      data.totalBalance < 0 ? "text-rose-700" : "text-foreground"
+                      data.totalBalance < 0
+                        ? "text-rose-700"
+                        : "text-foreground"
                     }`}
                   >
                     {formatCOP(data.totalBalance)}
@@ -392,13 +403,13 @@ export default function DashboardPage() {
                     <div className="mt-1 flex justify-between text-xs text-muted-foreground">
                       <span>
                         {Math.round(
-                          (data.recurringExpenses / data.totalExpenses) * 100
+                          (data.recurringExpenses / data.totalExpenses) * 100,
                         )}
                         % recurrente
                       </span>
                       <span>
                         {Math.round(
-                          (data.occasionalExpenses / data.totalExpenses) * 100
+                          (data.occasionalExpenses / data.totalExpenses) * 100,
                         )}
                         % ocasional
                       </span>
@@ -427,6 +438,7 @@ export default function DashboardPage() {
 
             <div className="space-y-3">
               <button
+                type="button"
                 onClick={() => setShowAnalysis((v) => !v)}
                 aria-expanded={showAnalysis}
                 className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"

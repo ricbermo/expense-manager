@@ -9,7 +9,12 @@ interface MonthPagerProps {
   buttonClassName?: string;
 }
 
-export function MonthPager({ month, onChange, className, buttonClassName }: MonthPagerProps) {
+export function MonthPager({
+  month,
+  onChange,
+  className,
+  buttonClassName,
+}: MonthPagerProps) {
   return (
     <div className={`flex items-center gap-1 ${className ?? ""}`}>
       <Button

@@ -30,18 +30,25 @@ export function getStatementPaymentSummary(statement: StatementPaymentSource) {
   };
 }
 
-export function getOpenStatements<T extends StatementPaymentSource>(statements: T[]) {
+export function getOpenStatements<T extends StatementPaymentSource>(
+  statements: T[],
+) {
   return statements
     .filter((statement) => !getStatementPaymentSummary(statement).isPaid)
     .sort((a, b) => a.due_date.localeCompare(b.due_date));
 }
 
-export function orderAccountsForReconciliation<T extends Pick<Account, "id" | "name" | "type">>(
+export function orderAccountsForReconciliation<
+  T extends Pick<Account, "id" | "name" | "type">,
+>(
   accounts: T[],
-  statements: (StatementPaymentSource & { account_id: string })[]
+  statements: (StatementPaymentSource & { account_id: string })[],
 ) {
   const nextDueByAccountId = new Map(
-    getOpenStatements(statements).map((statement) => [statement.account_id, statement.due_date])
+    getOpenStatements(statements).map((statement) => [
+      statement.account_id,
+      statement.due_date,
+    ]),
   );
 
   return [...accounts].sort((a, b) => {
@@ -66,7 +73,8 @@ export function validateStatement({
   statementDate: string;
   dueDate: string;
 }) {
-  if (totalBalance <= 0) return "El saldo del extracto debe ser mayor que cero.";
+  if (totalBalance <= 0)
+    return "El saldo del extracto debe ser mayor que cero.";
   if (minimumPayment <= 0) return "El pago mínimo debe ser mayor que cero.";
   if (minimumPayment > totalBalance) {
     return "El pago mínimo no puede superar el saldo del extracto.";
@@ -88,13 +96,17 @@ export function validateStatementPayment({
   sourceBalance: number;
 }) {
   if (amount <= 0) return "El monto debe ser mayor que cero.";
-  if (amount > remainingAmount) return "El monto supera el saldo pendiente del extracto.";
-  if (amount > sourceBalance) return "La cuenta de origen no tiene saldo suficiente.";
+  if (amount > remainingAmount)
+    return "El monto supera el saldo pendiente del extracto.";
+  if (amount > sourceBalance)
+    return "La cuenta de origen no tiene saldo suficiente.";
 
   return null;
 }
 
-export function getAccountBalances(accounts: Pick<Account, "type" | "balance">[]) {
+export function getAccountBalances(
+  accounts: Pick<Account, "type" | "balance">[],
+) {
   return accounts.reduce(
     (totals, account) => {
       if (account.type === "savings" || account.type === "cash") {
@@ -106,6 +118,6 @@ export function getAccountBalances(accounts: Pick<Account, "type" | "balance">[]
       totals.netPosition += account.balance;
       return totals;
     },
-    { liquidFunds: 0, cardDebt: 0, netPosition: 0 }
+    { liquidFunds: 0, cardDebt: 0, netPosition: 0 },
   );
 }

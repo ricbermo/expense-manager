@@ -3,9 +3,9 @@
 import { Check, Pencil, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
-import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
 
 interface PendingTransactionListProps {
   transactions: TransactionWithRelations[];

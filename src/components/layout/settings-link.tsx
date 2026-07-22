@@ -1,8 +1,8 @@
 "use client";
 
+import { Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings } from "lucide-react";
 
 export function SettingsLink() {
   const pathname = usePathname();

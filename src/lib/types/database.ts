@@ -70,7 +70,9 @@ export interface CreditCardStatementPayment {
 }
 
 type CreditCardStatementRow = CreditCardStatement & { user_id: string };
-type CreditCardStatementPaymentRow = CreditCardStatementPayment & { user_id: string };
+type CreditCardStatementPaymentRow = CreditCardStatementPayment & {
+  user_id: string;
+};
 
 // Supabase Database type for client typing
 export type Database = {
@@ -78,19 +80,29 @@ export type Database = {
     Tables: {
       categories: {
         Row: Category;
-        Insert: Omit<Category, "id" | "created_at"> & { id?: string; created_at?: string };
+        Insert: Omit<Category, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
         Update: Partial<Category>;
         Relationships: [];
       };
       accounts: {
         Row: Account;
-        Insert: Omit<Account, "id" | "created_at"> & { id?: string; created_at?: string };
+        Insert: Omit<Account, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
         Update: Partial<Account>;
         Relationships: [];
       };
       transactions: {
         Row: Transaction;
-        Insert: Omit<Transaction, "id" | "created_at" | "status"> & { id?: string; created_at?: string; status?: TransactionStatus };
+        Insert: Omit<Transaction, "id" | "created_at" | "status"> & {
+          id?: string;
+          created_at?: string;
+          status?: TransactionStatus;
+        };
         Update: Partial<Transaction>;
         Relationships: [];
       };
@@ -102,7 +114,10 @@ export type Database = {
       };
       credit_card_statements: {
         Row: CreditCardStatementRow;
-        Insert: Omit<CreditCardStatementRow, "id" | "created_at" | "paid_at" | "payment_transaction_id" | "user_id"> & {
+        Insert: Omit<
+          CreditCardStatementRow,
+          "id" | "created_at" | "paid_at" | "payment_transaction_id" | "user_id"
+        > & {
           id?: string;
           created_at?: string;
           paid_at?: string | null;
@@ -114,7 +129,10 @@ export type Database = {
       };
       credit_card_statement_payments: {
         Row: CreditCardStatementPaymentRow;
-        Insert: Omit<CreditCardStatementPaymentRow, "id" | "created_at" | "user_id"> & {
+        Insert: Omit<
+          CreditCardStatementPaymentRow,
+          "id" | "created_at" | "user_id"
+        > & {
           id?: string;
           created_at?: string;
           user_id?: string;

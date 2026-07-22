@@ -2,13 +2,17 @@ import type { AccountContext, CategoryContext, SmsParseInput } from "./types";
 
 function formatAccounts(accounts: AccountContext[]): string {
   if (accounts.length === 0) return "[]";
-  const lines = accounts.map((a) => `  { "id": "${a.id}", "name": "${a.name}", "type": "${a.type}" }`);
+  const lines = accounts.map(
+    (a) => `  { "id": "${a.id}", "name": "${a.name}", "type": "${a.type}" }`,
+  );
   return `[\n${lines.join(",\n")}\n]`;
 }
 
 function formatCategories(categories: CategoryContext[]): string {
   if (categories.length === 0) return "[]";
-  const lines = categories.map((c) => `  { "id": "${c.id}", "name": "${c.name}" }`);
+  const lines = categories.map(
+    (c) => `  { "id": "${c.id}", "name": "${c.name}" }`,
+  );
   return `[\n${lines.join(",\n")}\n]`;
 }
 

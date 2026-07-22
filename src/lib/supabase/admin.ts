@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/types/database";
 import { getAllowedUserEmail } from "@/lib/auth/allowed-user";
+import type { Database } from "@/lib/types/database";
 
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -8,7 +8,7 @@ export function createAdminClient() {
 
   if (!url || !secretKey) {
     throw new Error(
-      "Missing Supabase admin env vars: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY are required for server-side admin operations. Use the modern sb_secret_... key (replaces the legacy service_role key)."
+      "Missing Supabase admin env vars: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY are required for server-side admin operations. Use the modern sb_secret_... key (replaces the legacy service_role key).",
     );
   }
 
@@ -21,7 +21,7 @@ export function createAdminClient() {
 }
 
 export async function getAdminUserId(
-  client: ReturnType<typeof createAdminClient>
+  client: ReturnType<typeof createAdminClient>,
 ): Promise<string | null> {
   const {
     data: { users },
@@ -33,6 +33,8 @@ export async function getAdminUserId(
   }
 
   const allowedEmail = getAllowedUserEmail();
-  const match = users.find((u) => (u.email ?? "").trim().toLowerCase() === allowedEmail);
+  const match = users.find(
+    (u) => (u.email ?? "").trim().toLowerCase() === allowedEmail,
+  );
   return match?.id ?? null;
 }

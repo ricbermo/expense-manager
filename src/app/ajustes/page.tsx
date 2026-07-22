@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import { AlertTriangle } from "lucide-react";
-import { LogOut } from "lucide-react";
+import { AlertTriangle, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { ResetMonthButton } from "@/components/settings/reset-month-button";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { formatMonthYear } from "@/lib/utils/dates";
 
@@ -64,9 +63,7 @@ export default function SettingsPage() {
 
         <section className="section-card space-y-3 p-4">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold text-foreground">
-              Sesión
-            </h2>
+            <h2 className="text-base font-semibold text-foreground">Sesión</h2>
             <p className="text-sm text-muted-foreground">
               Cierra la sesión en este dispositivo. Volverás a la pantalla de
               inicio.

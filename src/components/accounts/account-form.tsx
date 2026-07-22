@@ -4,6 +4,12 @@ import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,12 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import type { Account, AccountType } from "@/lib/types/database";
 import {
   normalizeStoredBalance,
@@ -194,7 +194,9 @@ export function AccountForm({
                   <SelectContent>
                     <SelectItem value="savings">Ahorros</SelectItem>
                     <SelectItem value="cash">Efectivo</SelectItem>
-                    <SelectItem value="credit_card">Tarjeta de crédito</SelectItem>
+                    <SelectItem value="credit_card">
+                      Tarjeta de crédito
+                    </SelectItem>
                     <SelectItem value="loan">Préstamo</SelectItem>
                   </SelectContent>
                 </Select>
@@ -215,7 +217,9 @@ export function AccountForm({
               type="text"
               inputMode="numeric"
               {...register("balance")}
-              onChange={(e) => setValue("balance", formatIntegerInput(e.target.value))}
+              onChange={(e) =>
+                setValue("balance", formatIntegerInput(e.target.value))
+              }
               placeholder="0"
             />
           </div>
@@ -248,7 +252,7 @@ export function AccountForm({
                   onChange={(e) =>
                     setValue(
                       "interestRate",
-                      sanitizeDecimalInput(e.target.value, 2)
+                      sanitizeDecimalInput(e.target.value, 2),
                     )
                   }
                   placeholder="28.5"
@@ -266,21 +270,29 @@ export function AccountForm({
                       inputMode="numeric"
                       pattern="[0-9]*"
                       value={field.value}
-                       onChange={(e) =>
-                          field.onChange(e.target.value.replace(/\D/g, "").slice(0, 2))
-                        }
-                        onBlur={() => clearErrors("dueDay")}
-                        placeholder="15"
-                        aria-invalid={Boolean(errors.dueDay)}
-                        aria-describedby={errors.dueDay ? "due-day-error" : undefined}
-                      />
-                    )}
-                  />
-                  {errors.dueDay?.message && (
-                    <p id="due-day-error" className="text-sm text-destructive" aria-live="polite">
-                      {errors.dueDay.message}
-                    </p>
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value.replace(/\D/g, "").slice(0, 2),
+                        )
+                      }
+                      onBlur={() => clearErrors("dueDay")}
+                      placeholder="15"
+                      aria-invalid={Boolean(errors.dueDay)}
+                      aria-describedby={
+                        errors.dueDay ? "due-day-error" : undefined
+                      }
+                    />
                   )}
+                />
+                {errors.dueDay?.message && (
+                  <p
+                    id="due-day-error"
+                    className="text-sm text-destructive"
+                    aria-live="polite"
+                  >
+                    {errors.dueDay.message}
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -290,7 +302,11 @@ export function AccountForm({
             className="w-full"
             disabled={isSubmitting || !name?.trim()}
           >
-            {isSubmitting ? "Guardando..." : initialData ? "Actualizar" : "Crear"}
+            {isSubmitting
+              ? "Guardando..."
+              : initialData
+                ? "Actualizar"
+                : "Crear"}
           </Button>
         </form>
       </DialogContent>

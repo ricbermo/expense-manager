@@ -1,15 +1,16 @@
 "use client";
 
+import { Copy, Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Plus, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/layout/page-header";
-import { MonthPager } from "@/components/layout/month-pager";
-import { Button } from "@/components/ui/button";
 import { BudgetCard } from "@/components/budgets/budget-card";
 import { BudgetForm } from "@/components/budgets/budget-form";
-import { useBudgets, type BudgetWithCategory } from "@/lib/hooks/use-budgets";
+import { MonthPager } from "@/components/layout/month-pager";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { type BudgetWithCategory, useBudgets } from "@/lib/hooks/use-budgets";
+import { cn } from "@/lib/utils";
 import {
   getBudgetCopyMessage,
   getBudgetPriority,
@@ -23,8 +24,9 @@ export default function BudgetsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [formOpen, setFormOpen] = useState(false);
   const [copying, setCopying] = useState(false);
-  const [editingBudget, setEditingBudget] =
-    useState<BudgetWithCategory | null>(null);
+  const [editingBudget, setEditingBudget] = useState<BudgetWithCategory | null>(
+    null,
+  );
   const {
     budgets,
     loading,
@@ -35,7 +37,10 @@ export default function BudgetsPage() {
     deleteBudget,
     copyFromPreviousMonth,
   } = useBudgets(month);
-  const orderedBudgets = useMemo(() => orderBudgetsByPriority(budgets), [budgets]);
+  const orderedBudgets = useMemo(
+    () => orderBudgetsByPriority(budgets),
+    [budgets],
+  );
   const summary = useMemo(() => getBudgetSummary(budgets), [budgets]);
   const priorityBudget = orderedBudgets.find((budget) => {
     const priority = getBudgetPriority(budget).kind;
@@ -45,9 +50,7 @@ export default function BudgetsPage() {
   const changeMonth = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
     const d = new Date(y, m - 1 + delta, 1);
-    setMonth(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-    );
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -147,15 +150,14 @@ export default function BudgetsPage() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="section-card h-24 animate-pulse"
-              />
+              <div key={i} className="section-card h-24 animate-pulse" />
             ))}
           </div>
         ) : error && budgets.length === 0 ? (
           <div className="empty-state text-muted-foreground">
-            <p className="font-medium text-foreground">No se pudieron cargar los presupuestos</p>
+            <p className="font-medium text-foreground">
+              No se pudieron cargar los presupuestos
+            </p>
             <p className="mt-1 text-xs">{error}</p>
             <Button className="mt-4 h-11" onClick={() => void refetch()}>
               Reintentar
@@ -163,8 +165,13 @@ export default function BudgetsPage() {
           </div>
         ) : budgets.length === 0 ? (
           <div className="empty-state text-muted-foreground">
-            <p className="font-medium text-foreground">Sin presupuestos este mes</p>
-            <p className="mt-1 text-xs">Define límites de gasto por categoría para detectar cuándo te excedes.</p>
+            <p className="font-medium text-foreground">
+              Sin presupuestos este mes
+            </p>
+            <p className="mt-1 text-xs">
+              Define límites de gasto por categoría para detectar cuándo te
+              excedes.
+            </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Button className="h-11" onClick={handleCreate}>
                 <Plus className="h-4 w-4" />
@@ -185,20 +192,34 @@ export default function BudgetsPage() {
           <>
             {error ? (
               <div className="section-card p-3">
-                <p className="text-sm font-medium">Error al actualizar los presupuestos</p>
+                <p className="text-sm font-medium">
+                  Error al actualizar los presupuestos
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">{error}</p>
-                <Button variant="ghost" className="mt-2 h-11" onClick={() => void refetch()}>
+                <Button
+                  variant="ghost"
+                  className="mt-2 h-11"
+                  onClick={() => void refetch()}
+                >
                   Reintentar
                 </Button>
               </div>
             ) : null}
-            <section className="section-card p-4" aria-labelledby="budget-summary-heading">
-              <p id="budget-summary-heading" className="text-sm font-medium text-foreground">
+            <section
+              className="section-card p-4"
+              aria-labelledby="budget-summary-heading"
+            >
+              <p
+                id="budget-summary-heading"
+                className="text-sm font-medium text-foreground"
+              >
                 {summary.kind === "exceeded"
                   ? `${summary.budgetCount} ${summary.budgetCount === 1 ? "presupuesto excedido" : "presupuestos excedidos"}`
                   : "Todos los presupuestos están dentro del límite"}
               </p>
-              <p className={`mt-1 text-sm font-semibold tabular-nums ${summary.kind === "exceeded" ? "text-rose-700" : "text-chart-income"}`}>
+              <p
+                className={`mt-1 text-sm font-semibold tabular-nums ${summary.kind === "exceeded" ? "text-rose-700" : "text-chart-income"}`}
+              >
                 {summary.kind === "exceeded"
                   ? `${formatCOP(summary.amount)} por encima del límite`
                   : `${formatCOP(summary.amount)} disponible`}
@@ -207,22 +228,22 @@ export default function BudgetsPage() {
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
                   <div className="min-w-0">
                     <p className="font-medium">{priorityBudget.name}</p>
-                    <p className="text-xs text-muted-foreground">{priorityBudget.categories.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {priorityBudget.categories.name}
+                    </p>
                   </div>
-                  <Button
-                    render={
-                      <Link
-                        href={{
-                          pathname: "/transactions",
-                          query: { month, budget: priorityBudget.id },
-                        }}
-                      />
-                    }
-                    variant="outline"
-                    className="h-11 shrink-0"
+                  <Link
+                    href={{
+                      pathname: "/transactions",
+                      query: { month, budget: priorityBudget.id },
+                    }}
+                    className={cn(
+                      buttonVariants({ variant: "outline" }),
+                      "h-11 shrink-0",
+                    )}
                   >
                     Ver gastos
-                  </Button>
+                  </Link>
                 </div>
               ) : null}
             </section>

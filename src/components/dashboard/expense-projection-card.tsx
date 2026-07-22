@@ -1,9 +1,9 @@
 "use client";
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { useMonthlyComparison } from "@/lib/hooks/use-monthly-comparison";
-import { getCurrentMonth } from "@/lib/utils/dates";
 import { formatCOP } from "@/lib/utils/currency";
+import { getCurrentMonth } from "@/lib/utils/dates";
 
 interface Props {
   month: string;
@@ -17,8 +17,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
   const [y, m] = month.split("-").map(Number);
   const monthDate = new Date(y, m - 1, 1);
   const now = new Date();
-  const isPast =
-    monthDate < new Date(now.getFullYear(), now.getMonth(), 1);
+  const isPast = monthDate < new Date(now.getFullYear(), now.getMonth(), 1);
 
   if (!isCurrentMonth) {
     if (isPast) {
@@ -50,7 +49,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
   const daysInMonth = new Date(
     today.getFullYear(),
     today.getMonth() + 1,
-    0
+    0,
   ).getDate();
 
   if (day < 5) {
@@ -112,7 +111,9 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
           </span>
         )}
       </div>
-      <p className={`mt-1 text-xl font-semibold tabular-nums ${projectedColor}`}>
+      <p
+        className={`mt-1 text-xl font-semibold tabular-nums ${projectedColor}`}
+      >
         {formatCOP(projected)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">

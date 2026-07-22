@@ -5,6 +5,13 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,20 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { createClient } from "@/lib/supabase/client";
 import { useCategories } from "@/lib/hooks/use-categories";
-import {
-  formatIntegerInput,
-  parseIntegerInput,
-} from "@/lib/utils/number-input-format";
-import { isDestinationSelectionValid } from "@/lib/utils/transaction-destination-rules";
+import { createClient } from "@/lib/supabase/client";
 import type {
   Account,
   Budget,
@@ -36,6 +31,11 @@ import type {
   TransactionStatus,
   TransactionType,
 } from "@/lib/types/database";
+import {
+  formatIntegerInput,
+  parseIntegerInput,
+} from "@/lib/utils/number-input-format";
+import { isDestinationSelectionValid } from "@/lib/utils/transaction-destination-rules";
 
 type BudgetWithCategory = Budget & { categories: Category | null };
 
@@ -54,14 +54,20 @@ function getTodayLocalDate() {
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus }) => Promise<void>;
+  onSubmit: (
+    data: Omit<Transaction, "id" | "created_at" | "status"> & {
+      status?: TransactionStatus;
+    },
+  ) => Promise<void>;
   onSubmitShared: (
-    data: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus },
-    splitBetween: number
+    data: Omit<Transaction, "id" | "created_at" | "status"> & {
+      status?: TransactionStatus;
+    },
+    splitBetween: number,
   ) => Promise<void>;
   onUpdate?: (
     id: string,
-    data: Partial<Omit<Transaction, "id" | "created_at">>
+    data: Partial<Omit<Transaction, "id" | "created_at">>,
   ) => Promise<void>;
   accounts: Account[];
   editTransaction?: (Transaction & { categories?: Category | null }) | null;
@@ -87,7 +93,7 @@ interface TransactionFormValues {
 const INSTALLMENT_OPTIONS = [1, 3, 6, 9, 12, 18, 24, 36, 48];
 
 function getDefaultValues(
-  editTransaction?: (Transaction & { categories?: Category | null }) | null
+  editTransaction?: (Transaction & { categories?: Category | null }) | null,
 ): TransactionFormValues {
   if (!editTransaction) {
     return {
@@ -198,7 +204,7 @@ export function TransactionForm({
 
   const { data: budgets = [], isLoading: loadingBudgets } = useSWR(
     ["budgets-options", selectedMonth],
-    fetchBudgets
+    fetchBudgets,
   );
 
   useEffect(() => {
@@ -247,7 +253,9 @@ export function TransactionForm({
       return;
     }
 
-    const matchingBudgets = budgets.filter((b) => b.category_id === editCategoryId);
+    const matchingBudgets = budgets.filter(
+      (b) => b.category_id === editCategoryId,
+    );
 
     if (matchingBudgets.length === 1) {
       setValue("budgetId", matchingBudgets[0].id);
@@ -267,12 +275,12 @@ export function TransactionForm({
 
   const liquidAccounts = useMemo(
     () => accounts.filter(isLiquidAccount),
-    [accounts]
+    [accounts],
   );
 
   const expenseOriginAccounts = useMemo(
     () => accounts.filter((a) => a.type !== "loan"),
-    [accounts]
+    [accounts],
   );
 
   const originAccounts =
@@ -282,13 +290,12 @@ export function TransactionForm({
 
   const destinationAccounts = useMemo(
     () => liquidAccounts.filter((a) => a.id !== accountId),
-    [liquidAccounts, accountId]
+    [liquidAccounts, accountId],
   );
 
   const debtAccounts = useMemo(
-    () =>
-      accounts.filter((a) => a.type === "credit_card" || a.type === "loan"),
-    [accounts]
+    () => accounts.filter((a) => a.type === "credit_card" || a.type === "loan"),
+    [accounts],
   );
 
   useEffect(() => {
@@ -352,7 +359,9 @@ export function TransactionForm({
     const categoryLabel = budget.categories?.name ?? "Sin categoria";
     return `${budget.name} · ${categoryLabel}`;
   }, []);
-  const selectedIncomeCategory = incomeCategories.find((c) => c.id === categoryId);
+  const selectedIncomeCategory = incomeCategories.find(
+    (c) => c.id === categoryId,
+  );
   const selectedOriginAccount = originAccounts.find((a) => a.id === accountId);
   const selectedDebtAccount = debtAccounts.find((a) => a.id === toAccountId);
   const selectedDestinationAccount =
@@ -363,7 +372,7 @@ export function TransactionForm({
   const hasValidDestination = isDestinationSelectionValid(
     type,
     accountId,
-    toAccountId
+    toAccountId,
   );
 
   const isCreditCardPurchase =
@@ -377,7 +386,8 @@ export function TransactionForm({
     }
   }, [isCreditCardPurchase, installments, setValue]);
 
-  const canSave = !isSubmitting && !!amount && !!accountId && hasValidDestination;
+  const canSave =
+    !isSubmitting && !!amount && !!accountId && hasValidDestination;
 
   const onFormSubmit = async (values: TransactionFormValues) => {
     const debtAccount = debtAccounts.find((a) => a.id === values.toAccountId);
@@ -407,12 +417,14 @@ export function TransactionForm({
       budget_id: effectiveType === "expense" ? values.budgetId || null : null,
       category_id:
         effectiveType === "expense"
-          ? selectedBudget?.category_id ?? null
+          ? (selectedBudget?.category_id ?? null)
           : effectiveType === "income"
             ? values.categoryId || null
             : null,
       account_id: values.accountId,
-      related_expense_id: isEditing ? (editTransaction?.related_expense_id ?? null) : null,
+      related_expense_id: isEditing
+        ? (editTransaction?.related_expense_id ?? null)
+        : null,
       to_account_id:
         effectiveType === "transfer" || effectiveType === "expense"
           ? values.toAccountId || null
@@ -423,16 +435,20 @@ export function TransactionForm({
         .filter(Boolean),
       installments: installmentsValue,
       is_occasional: effectiveType === "expense" ? values.isOccasional : false,
-      status: (isEditing && editTransaction?.status === "pending" ? "confirmed" : undefined) as
-        | TransactionStatus
-        | undefined,
+      status: (isEditing && editTransaction?.status === "pending"
+        ? "confirmed"
+        : undefined) as TransactionStatus | undefined,
     };
 
     try {
       if (isEditing && onUpdate) {
         await onUpdate(editTransaction!.id, transaction);
         toast.success("Movimiento actualizado");
-      } else if (!isEditing && values.isSharedExpense && values.type === "expense") {
+      } else if (
+        !isEditing &&
+        values.isSharedExpense &&
+        values.type === "expense"
+      ) {
         await onSubmitShared(transaction, values.splitBetween);
         toast.success("Gasto compartido registrado");
       } else {
@@ -456,23 +472,25 @@ export function TransactionForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar movimiento" : "Nuevo movimiento"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Editar movimiento" : "Nuevo movimiento"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="grid grid-cols-3 gap-1.5">
-            {(
-              ["expense", "income", "transfer"] as TransactionType[]
-            ).map((t) => (
-              <Button
-                key={t}
-                type="button"
-                variant={type === t ? "default" : "outline"}
-                className="h-11 text-sm font-medium"
-                onClick={() => setValue("type", t)}
-              >
-                {typeLabels[t]}
-              </Button>
-            ))}
+            {(["expense", "income", "transfer"] as TransactionType[]).map(
+              (t) => (
+                <Button
+                  key={t}
+                  type="button"
+                  variant={type === t ? "default" : "outline"}
+                  className="h-11 text-sm font-medium"
+                  onClick={() => setValue("type", t)}
+                >
+                  {typeLabels[t]}
+                </Button>
+              ),
+            )}
           </div>
 
           <div className="space-y-2">
@@ -508,13 +526,15 @@ export function TransactionForm({
                     value={field.value}
                     onValueChange={(v) => field.onChange(v ?? "")}
                   >
-                      <SelectTrigger id="budget" className="w-full">
-                        <SelectValue placeholder="Sin budget">
-                          {() =>
-                            selectedBudget ? getBudgetLabel(selectedBudget) : "Sin budget"
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
+                    <SelectTrigger id="budget" className="w-full">
+                      <SelectValue placeholder="Sin budget">
+                        {() =>
+                          selectedBudget
+                            ? getBudgetLabel(selectedBudget)
+                            : "Sin budget"
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent className="w-[min(92vw,34rem)] min-w-[var(--anchor-width)]">
                       <SelectItem value="" label="Sin budget">
                         Sin budget
@@ -523,12 +543,16 @@ export function TransactionForm({
                         <SelectItem value="__loading" disabled>
                           Cargando budgets...
                         </SelectItem>
-                        ) : (
+                      ) : (
                         budgets.map((b) => {
                           const budgetLabel = getBudgetLabel(b);
 
                           return (
-                            <SelectItem key={b.id} value={b.id} label={budgetLabel}>
+                            <SelectItem
+                              key={b.id}
+                              value={b.id}
+                              label={budgetLabel}
+                            >
                               {budgetLabel}
                             </SelectItem>
                           );
@@ -554,7 +578,9 @@ export function TransactionForm({
                   >
                     <SelectTrigger id="category">
                       <SelectValue placeholder="Selecciona categoria">
-                        {() => selectedIncomeCategory?.name ?? "Selecciona categoria"}
+                        {() =>
+                          selectedIncomeCategory?.name ?? "Selecciona categoria"
+                        }
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -648,7 +674,9 @@ export function TransactionForm({
                       >
                         <SelectTrigger id="debtAccount">
                           <SelectValue placeholder="Selecciona deuda">
-                            {() => selectedDebtAccount?.name ?? "Selecciona deuda"}
+                            {() =>
+                              selectedDebtAccount?.name ?? "Selecciona deuda"
+                            }
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
@@ -687,7 +715,11 @@ export function TransactionForm({
                           {INSTALLMENT_OPTIONS.map((n) => {
                             const label = n === 1 ? "1 cuota" : `${n} cuotas`;
                             return (
-                              <SelectItem key={n} value={String(n)} label={label}>
+                              <SelectItem
+                                key={n}
+                                value={String(n)}
+                                label={label}
+                              >
                                 {label}
                               </SelectItem>
                             );
@@ -702,9 +734,9 @@ export function TransactionForm({
                       {formatIntegerInput(
                         String(
                           Math.floor(
-                            parseIntegerInput(amount) / Number(installments)
-                          )
-                        )
+                            parseIntegerInput(amount) / Number(installments),
+                          ),
+                        ),
                       )}
                     </p>
                   )}
@@ -728,7 +760,9 @@ export function TransactionForm({
                 />
                 <div>
                   <span className="text-sm">Gasto ocasional</span>
-                  <p className="text-xs text-muted-foreground">No se repetirá el próximo mes</p>
+                  <p className="text-xs text-muted-foreground">
+                    No se repetirá el próximo mes
+                  </p>
                 </div>
               </label>
 
@@ -781,8 +815,8 @@ export function TransactionForm({
                               field.onChange(
                                 Math.max(
                                   2,
-                                  Math.min(10, Number(e.target.value) || 2)
-                                )
+                                  Math.min(10, Number(e.target.value) || 2),
+                                ),
                               )
                             }
                           />
@@ -795,8 +829,10 @@ export function TransactionForm({
                             Tu parte:{" "}
                             {formatIntegerInput(
                               String(
-                                Math.floor(parseIntegerInput(amount) / splitBetween)
-                              )
+                                Math.floor(
+                                  parseIntegerInput(amount) / splitBetween,
+                                ),
+                              ),
                             )}
                           </p>
                           <p>
@@ -804,8 +840,10 @@ export function TransactionForm({
                             {formatIntegerInput(
                               String(
                                 parseIntegerInput(amount) -
-                                  Math.floor(parseIntegerInput(amount) / splitBetween)
-                              )
+                                  Math.floor(
+                                    parseIntegerInput(amount) / splitBetween,
+                                  ),
+                              ),
                             )}
                           </p>
                         </div>
@@ -832,7 +870,8 @@ export function TransactionForm({
                       <SelectValue placeholder="Selecciona cuenta destino">
                         {() =>
                           selectedDestinationAccount?.name ??
-                          "Selecciona cuenta destino"}
+                          "Selecciona cuenta destino"
+                        }
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -880,7 +919,11 @@ export function TransactionForm({
           </div>
 
           <Button type="submit" className="w-full" disabled={!canSave}>
-            {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Guardar"}
+            {isSubmitting
+              ? "Guardando..."
+              : isEditing
+                ? "Actualizar"
+                : "Guardar"}
           </Button>
         </form>
       </DialogContent>

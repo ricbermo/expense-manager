@@ -4,7 +4,12 @@ import { useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
-import type { Transaction, Category, Account, TransactionStatus } from "@/lib/types/database";
+import type {
+  Account,
+  Category,
+  Transaction,
+  TransactionStatus,
+} from "@/lib/types/database";
 import { getTransactionsErrorMessage } from "@/lib/utils/transactions-error";
 
 export interface TransactionWithRelations extends Transaction {
@@ -16,12 +21,14 @@ export interface TransactionWithRelations extends Transaction {
 export function useTransactions(month?: string) {
   const { mutate: globalMutate } = useSWRConfig();
 
-  const fetchTransactions = useCallback(async (): Promise<TransactionWithRelations[]> => {
+  const fetchTransactions = useCallback(async (): Promise<
+    TransactionWithRelations[]
+  > => {
     const supabase = createClient();
     let query = supabase
       .from("transactions")
       .select(
-        "*, categories(*), budgets(name), accounts:accounts!transactions_account_id_fkey(*)"
+        "*, categories(*), budgets(name), accounts:accounts!transactions_account_id_fkey(*)",
       )
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
@@ -58,23 +65,25 @@ export function useTransactions(month?: string) {
       globalMutate(
         (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       ),
       globalMutate(
         (key) => Array.isArray(key) && key[0] === swrKeyPrefix.budgets,
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       ),
       globalMutate(
         (key) => Array.isArray(key) && key[0] === swrKeys.accounts[0],
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       ),
     ]);
   }, [globalMutate, mutate]);
 
   const createTransaction = async (
-    transaction: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus }
+    transaction: Omit<Transaction, "id" | "created_at" | "status"> & {
+      status?: TransactionStatus;
+    },
   ) => {
     const supabase = createClient();
     const { error } = await supabase
@@ -87,8 +96,10 @@ export function useTransactions(month?: string) {
   };
 
   const createSharedExpense = async (
-    expense: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus },
-    splitBetween: number
+    expense: Omit<Transaction, "id" | "created_at" | "status"> & {
+      status?: TransactionStatus;
+    },
+    splitBetween: number,
   ) => {
     const supabase = createClient();
     const reimbursementAmount =
@@ -101,9 +112,12 @@ export function useTransactions(month?: string) {
       .eq("name", "Reembolso")
       .eq("type", "income")
       .limit(1);
-    const reembolsoCategoryId = (reembolsoCats as { id: string }[] | null)?.[0]?.id ?? null;
+    const reembolsoCategoryId =
+      (reembolsoCats as { id: string }[] | null)?.[0]?.id ?? null;
 
-    const reimbursement: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus } = {
+    const reimbursement: Omit<Transaction, "id" | "created_at" | "status"> & {
+      status?: TransactionStatus;
+    } = {
       type: "income",
       amount: reimbursementAmount,
       description: `Reembolso: ${expense.description || "gasto compartido"}`,
@@ -144,7 +158,7 @@ export function useTransactions(month?: string) {
 
   const updateTransaction = async (
     id: string,
-    updates: Partial<Omit<Transaction, "id" | "created_at">>
+    updates: Partial<Omit<Transaction, "id" | "created_at">>,
   ) => {
     const supabase = createClient();
     const { error } = await supabase
@@ -159,10 +173,7 @@ export function useTransactions(month?: string) {
 
   const deleteTransaction = async (id: string) => {
     const supabase = createClient();
-    const { error } = await supabase
-      .from("transactions")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("transactions").delete().eq("id", id);
     if (error) {
       throw error;
     }

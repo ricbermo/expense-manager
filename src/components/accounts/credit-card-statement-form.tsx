@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatIntegerInput, parseIntegerInput } from "@/lib/utils/number-input-format";
 import type { Account } from "@/lib/types/database";
 import { validateStatement } from "@/lib/utils/credit-card-statements";
+import {
+  formatIntegerInput,
+  parseIntegerInput,
+} from "@/lib/utils/number-input-format";
 
 interface StatementFormValues {
   statement_date: string;
@@ -93,7 +101,9 @@ export function CreditCardStatementForm({
       });
       onOpenChange(false);
     } catch {
-      setError("root.server", { message: "No se pudo guardar el extracto. Intenta de nuevo." });
+      setError("root.server", {
+        message: "No se pudo guardar el extracto. Intenta de nuevo.",
+      });
     }
   };
 
@@ -106,11 +116,19 @@ export function CreditCardStatementForm({
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="statement_date">Fecha del extracto</Label>
-            <Input id="statement_date" type="date" className="h-11" {...register("statement_date", { onChange: () => clearErrors() })} required />
+            <Input
+              id="statement_date"
+              type="date"
+              className="h-11"
+              {...register("statement_date", { onChange: () => clearErrors() })}
+              required
+            />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="total_balance">Saldo total del extracto (COP)</Label>
+            <Label htmlFor="total_balance">
+              Saldo total del extracto (COP)
+            </Label>
             <Controller
               name="total_balance"
               control={control}
@@ -120,13 +138,17 @@ export function CreditCardStatementForm({
                   type="text"
                   inputMode="numeric"
                   value={field.value}
-                  onChange={(e) => field.onChange(formatIntegerInput(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(formatIntegerInput(e.target.value))
+                  }
                   onBlur={() => clearErrors()}
                   placeholder="500.000"
                   required
                   className="text-xl font-bold h-12"
                   aria-invalid={Boolean(errors.root?.validation)}
-                  aria-describedby={errors.root?.validation ? "statement-error" : undefined}
+                  aria-describedby={
+                    errors.root?.validation ? "statement-error" : undefined
+                  }
                 />
               )}
             />
@@ -143,13 +165,17 @@ export function CreditCardStatementForm({
                   type="text"
                   inputMode="numeric"
                   value={field.value}
-                  onChange={(e) => field.onChange(formatIntegerInput(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(formatIntegerInput(e.target.value))
+                  }
                   onBlur={() => clearErrors()}
                   placeholder="50.000"
                   required
                   className="text-xl font-bold h-12"
                   aria-invalid={Boolean(errors.root?.validation)}
-                  aria-describedby={errors.root?.validation ? "statement-error" : undefined}
+                  aria-describedby={
+                    errors.root?.validation ? "statement-error" : undefined
+                  }
                 />
               )}
             />
@@ -157,11 +183,21 @@ export function CreditCardStatementForm({
 
           <div className="space-y-2">
             <Label htmlFor="due_date">Fecha límite de pago</Label>
-            <Input id="due_date" type="date" className="h-11" {...register("due_date", { onChange: () => clearErrors() })} required />
+            <Input
+              id="due_date"
+              type="date"
+              className="h-11"
+              {...register("due_date", { onChange: () => clearErrors() })}
+              required
+            />
           </div>
 
           {errors.root?.validation?.message && (
-            <p id="statement-error" className="text-sm text-destructive" aria-live="polite">
+            <p
+              id="statement-error"
+              className="text-sm text-destructive"
+              aria-live="polite"
+            >
               {errors.root.validation.message}
             </p>
           )}

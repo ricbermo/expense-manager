@@ -1,11 +1,14 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Filter, Plus, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search, X, Filter } from "lucide-react";
+import { Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/layout/page-header";
 import { MonthPager } from "@/components/layout/month-pager";
+import { PageHeader } from "@/components/layout/page-header";
+import { PendingTransactionList } from "@/components/transactions/pending-transaction-list";
+import { TransactionForm } from "@/components/transactions/transaction-form";
+import { TransactionList } from "@/components/transactions/transaction-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TransactionForm } from "@/components/transactions/transaction-form";
-import { TransactionList } from "@/components/transactions/transaction-list";
-import { PendingTransactionList } from "@/components/transactions/pending-transaction-list";
-import { useTransactions, type TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { useAccounts } from "@/lib/hooks/use-accounts";
+import {
+  type TransactionWithRelations,
+  useTransactions,
+} from "@/lib/hooks/use-transactions";
 import { formatMonthYear, getCurrentMonth } from "@/lib/utils/dates";
 
 type TypeFilter = "all" | "expense" | "income" | "transfer";
@@ -34,7 +37,8 @@ function TransactionsPageContent() {
   const [localMonth, setLocalMonth] = useState(getCurrentMonth);
   const month = requestedMonth ?? localMonth;
   const [formOpen, setFormOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<TransactionWithRelations | null>(null);
+  const [editingTransaction, setEditingTransaction] =
+    useState<TransactionWithRelations | null>(null);
   const {
     transactions,
     loading,
@@ -52,14 +56,17 @@ function TransactionsPageContent() {
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [occasionalFilter, setOccasionalFilter] = useState<OccasionalFilter>("all");
+  const [occasionalFilter, setOccasionalFilter] =
+    useState<OccasionalFilter>("all");
   const budgetFilter = searchParams.get("budget") ?? "";
 
-  const activeFilterCount = [accountFilter, minAmount, maxAmount].filter(Boolean).length;
+  const activeFilterCount = [accountFilter, minAmount, maxAmount].filter(
+    Boolean,
+  ).length;
 
   const pendingTransactions = useMemo(
     () => transactions.filter((t) => t.status === "pending"),
-    [transactions]
+    [transactions],
   );
 
   const filteredTransactions = useMemo(() => {
@@ -94,7 +101,7 @@ function TransactionsPageContent() {
           t.categories?.name?.toLowerCase().includes(q) ||
           t.accounts?.name?.toLowerCase().includes(q) ||
           t.budgets?.name?.toLowerCase().includes(q) ||
-          t.tags?.some((tag) => tag.toLowerCase().includes(q))
+          t.tags?.some((tag) => tag.toLowerCase().includes(q)),
       );
     }
     return result;
@@ -229,6 +236,7 @@ function TransactionsPageContent() {
               />
               {search && (
                 <button
+                  type="button"
                   onClick={() => setSearch("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
@@ -238,12 +246,14 @@ function TransactionsPageContent() {
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-1 flex-1 overflow-x-auto">
-                {([
-                  ["all", "Todos"],
-                  ["expense", "Gastos"],
-                  ["income", "Ingresos"],
-                  ["transfer", "Transferencias"],
-                ] as const).map(([value, label]) => (
+                {(
+                  [
+                    ["all", "Todos"],
+                    ["expense", "Gastos"],
+                    ["income", "Ingresos"],
+                    ["transfer", "Transferencias"],
+                  ] as const
+                ).map(([value, label]) => (
                   <Button
                     key={value}
                     variant={typeFilter === value ? "default" : "ghost"}
@@ -271,11 +281,13 @@ function TransactionsPageContent() {
               </Button>
             </div>
             <div className="flex gap-1 overflow-x-auto">
-              {([
-                ["all", "Todos"],
-                ["occasional", "Ocasionales"],
-                ["recurring", "Recurrentes"],
-              ] as const).map(([value, label]) => (
+              {(
+                [
+                  ["all", "Todos"],
+                  ["occasional", "Ocasionales"],
+                  ["recurring", "Recurrentes"],
+                ] as const
+              ).map(([value, label]) => (
                 <Button
                   key={value}
                   variant={occasionalFilter === value ? "default" : "ghost"}
@@ -291,8 +303,13 @@ function TransactionsPageContent() {
             {showFilters && (
               <div className="rounded-lg border border-border/60 p-3 space-y-3">
                 <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">Cuenta</p>
-                  <Select value={accountFilter} onValueChange={(v) => setAccountFilter(v ?? "")}>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Cuenta
+                  </p>
+                  <Select
+                    value={accountFilter}
+                    onValueChange={(v) => setAccountFilter(v ?? "")}
+                  >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Todas las cuentas" />
                     </SelectTrigger>
@@ -308,7 +325,9 @@ function TransactionsPageContent() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">Monto mínimo</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Monto mínimo
+                    </p>
                     <Input
                       type="number"
                       placeholder="0"
@@ -318,7 +337,9 @@ function TransactionsPageContent() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">Monto máximo</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Monto máximo
+                    </p>
                     <Input
                       type="number"
                       placeholder="Sin límite"
@@ -350,10 +371,7 @@ function TransactionsPageContent() {
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="section-card h-16 animate-pulse"
-              />
+              <div key={i} className="section-card h-16 animate-pulse" />
             ))}
           </div>
         ) : error && transactions.length === 0 ? (
@@ -366,8 +384,13 @@ function TransactionsPageContent() {
           </div>
         ) : transactions.length === 0 ? (
           <div className="empty-state text-muted-foreground">
-            <p className="font-medium text-foreground">Sin movimientos en {formatMonthYear(`${month}-01`)}</p>
-            <p className="text-xs mt-1">Registra un ingreso, gasto o transferencia para comenzar a rastrear tus finanzas</p>
+            <p className="font-medium text-foreground">
+              Sin movimientos en {formatMonthYear(`${month}-01`)}
+            </p>
+            <p className="text-xs mt-1">
+              Registra un ingreso, gasto o transferencia para comenzar a
+              rastrear tus finanzas
+            </p>
             <Button className="mt-4" onClick={() => setFormOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
               Registrar primer movimiento
@@ -377,7 +400,9 @@ function TransactionsPageContent() {
           <div className="space-y-3">
             {error ? (
               <div className="section-card p-3">
-                <p className="text-sm font-medium">Error al actualizar movimientos</p>
+                <p className="text-sm font-medium">
+                  Error al actualizar movimientos
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">{error}</p>
                 <Button
                   variant="ghost"
@@ -392,7 +417,9 @@ function TransactionsPageContent() {
             {filteredTransactions.length === 0 ? (
               <div className="empty-state text-muted-foreground">
                 <p>No se encontraron movimientos</p>
-                <p className="text-xs mt-1">Intenta con otro filtro o busqueda</p>
+                <p className="text-xs mt-1">
+                  Intenta con otro filtro o busqueda
+                </p>
               </div>
             ) : (
               <TransactionList
@@ -421,7 +448,13 @@ function TransactionsPageContent() {
 
 export default function TransactionsPage() {
   return (
-    <Suspense fallback={<div className="app-shell py-6 text-sm text-muted-foreground">Cargando movimientos...</div>}>
+    <Suspense
+      fallback={
+        <div className="app-shell py-6 text-sm text-muted-foreground">
+          Cargando movimientos...
+        </div>
+      }
+    >
       <TransactionsPageContent />
     </Suspense>
   );

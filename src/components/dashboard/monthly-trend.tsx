@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  AreaChart,
   Area,
-  XAxis,
-  YAxis,
+  AreaChart,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { formatCOP } from "@/lib/utils/currency";
 
@@ -19,7 +19,9 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
   if (data.length === 0) {
     return (
       <div className="section-card p-4 md:p-5">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          Gasto acumulado
+        </h3>
         <p className="py-6 text-center text-xs text-muted-foreground">
           Registra gastos para ver la tendencia de gasto acumulado
         </p>
@@ -36,7 +38,7 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
       });
       return acc;
     },
-    []
+    [],
   );
 
   const maxAmount = chartData.at(-1)?.amount ?? 0;
@@ -44,17 +46,28 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
 
   return (
     <div className="section-card p-4 md:p-5">
-      <h3 className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">
+        Gasto acumulado
+      </h3>
       <div
         className="min-w-0"
         role="img"
         aria-label={`Gasto acumulado: ${formatCOP(maxAmount)} al día ${lastDay}`}
       >
-        <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={160}>
+        <ResponsiveContainer
+          width="100%"
+          height={160}
+          minWidth={0}
+          minHeight={160}
+        >
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.28} />
+                <stop
+                  offset="5%"
+                  stopColor="var(--chart-1)"
+                  stopOpacity={0.28}
+                />
                 <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
               </linearGradient>
             </defs>

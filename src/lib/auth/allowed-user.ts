@@ -12,7 +12,7 @@ export function normalizeEmail(email: string | null | undefined) {
 
 export function isAllowedUserEmail(
   email: string | null | undefined,
-  allowedEmail = FALLBACK_ALLOWED_USER_EMAIL
+  allowedEmail = FALLBACK_ALLOWED_USER_EMAIL,
 ) {
   return normalizeEmail(email) === normalizeEmail(allowedEmail);
 }

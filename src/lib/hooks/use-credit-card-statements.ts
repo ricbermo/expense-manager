@@ -4,8 +4,10 @@ import { useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
-import type { CreditCardStatement } from "@/lib/types/database";
-import type { CreditCardStatementPayment } from "@/lib/types/database";
+import type {
+  CreditCardStatement,
+  CreditCardStatementPayment,
+} from "@/lib/types/database";
 import { getOpenStatements } from "@/lib/utils/credit-card-statements";
 
 export type StatementWithAccount = CreditCardStatement & {
@@ -16,7 +18,9 @@ export type StatementWithAccount = CreditCardStatement & {
 export function useCreditCardStatements() {
   const { mutate: globalMutate } = useSWRConfig();
 
-  const fetchStatements = useCallback(async (): Promise<StatementWithAccount[]> => {
+  const fetchStatements = useCallback(async (): Promise<
+    StatementWithAccount[]
+  > => {
     const supabase = createClient();
     const { data } = await supabase
       .from("credit_card_statements")
@@ -47,7 +51,7 @@ export function useCreditCardStatements() {
       globalMutate(
         (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       ),
     ]);
   }, [mutate, globalMutate]);
@@ -55,7 +59,10 @@ export function useCreditCardStatements() {
   const openStatements = getOpenStatements(statements);
 
   const createStatement = async (
-    data: Omit<CreditCardStatement, "id" | "created_at" | "paid_at" | "payment_transaction_id">
+    data: Omit<
+      CreditCardStatement,
+      "id" | "created_at" | "paid_at" | "payment_transaction_id"
+    >,
   ) => {
     const supabase = createClient();
     const { error } = await supabase
@@ -79,16 +86,25 @@ export function useCreditCardStatements() {
     description: string;
   }) => {
     const supabase = createClient();
-    const { error } = await supabase.rpc("record_credit_card_statement_payment", {
-      p_statement_id: statementId,
-      p_source_account_id: sourceAccountId,
-      p_amount: amount,
-      p_date: date,
-      p_description: description,
-    } as never);
+    const { error } = await supabase.rpc(
+      "record_credit_card_statement_payment",
+      {
+        p_statement_id: statementId,
+        p_source_account_id: sourceAccountId,
+        p_amount: amount,
+        p_date: date,
+        p_description: description,
+      } as never,
+    );
     if (error) throw error;
     await revalidateRelated();
   };
 
-  return { statements, openStatements, loading, createStatement, recordPayment };
+  return {
+    statements,
+    openStatements,
+    loading,
+    createStatement,
+    recordPayment,
+  };
 }

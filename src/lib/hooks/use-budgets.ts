@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
 import type { Budget, Category } from "@/lib/types/database";
 import {
-  getBudgetErrorMessage,
   type BudgetCopyResult,
+  getBudgetErrorMessage,
 } from "@/lib/utils/budget-presentation";
 
 export interface BudgetWithCategory extends Budget {
@@ -21,7 +21,9 @@ interface SaveBudgetInput {
   limitAmount: number;
 }
 
-function mapBudgetError(error: { code?: string; message?: string } | null): Error | null {
+function mapBudgetError(
+  error: { code?: string; message?: string } | null,
+): Error | null {
   if (!error) {
     return null;
   }
@@ -64,31 +66,38 @@ export function useBudgets(month: string) {
     }
 
     const expenseRows =
-      (expenses as {
-        id: string;
-        category_id: string | null;
-        budget_id: string | null;
-        amount: number;
-      }[] | null) ?? [];
+      (expenses as
+        | {
+            id: string;
+            category_id: string | null;
+            budget_id: string | null;
+            amount: number;
+          }[]
+        | null) ?? [];
 
     const expenseIds = expenseRows.map((expense) => expense.id);
 
     let reimbursementsByExpenseId: Record<string, number> = {};
     if (expenseIds.length > 0) {
-      const { data: reimbursements, error: reimbursementsError } = await supabase
-        .from("transactions")
-        .select("related_expense_id, amount")
-        .eq("type", "income")
-        .in("related_expense_id", expenseIds);
+      const { data: reimbursements, error: reimbursementsError } =
+        await supabase
+          .from("transactions")
+          .select("related_expense_id, amount")
+          .eq("type", "income")
+          .in("related_expense_id", expenseIds);
       if (reimbursementsError) {
         throw reimbursementsError;
       }
 
       reimbursementsByExpenseId =
-        (reimbursements as {
-          related_expense_id: string | null;
-          amount: number;
-        }[] | null)?.reduce<Record<string, number>>((acc, reimbursement) => {
+        (
+          reimbursements as
+            | {
+                related_expense_id: string | null;
+                amount: number;
+              }[]
+            | null
+        )?.reduce<Record<string, number>>((acc, reimbursement) => {
           if (!reimbursement.related_expense_id) {
             return acc;
           }
@@ -108,16 +117,20 @@ export function useBudgets(month: string) {
       const netAmount = Math.max(0, t.amount - reimbursedAmount);
 
       if (t.budget_id) {
-        spentByBudgetMap[t.budget_id] = (spentByBudgetMap[t.budget_id] || 0) + netAmount;
+        spentByBudgetMap[t.budget_id] =
+          (spentByBudgetMap[t.budget_id] || 0) + netAmount;
         return;
       }
 
       if (t.category_id) {
-        spentByCategoryMap[t.category_id] = (spentByCategoryMap[t.category_id] || 0) + netAmount;
+        spentByCategoryMap[t.category_id] =
+          (spentByCategoryMap[t.category_id] || 0) + netAmount;
       }
     });
 
-    const categoryUsageCount = (budgetData ?? []).reduce<Record<string, number>>((acc, b) => {
+    const categoryUsageCount = (budgetData ?? []).reduce<
+      Record<string, number>
+    >((acc, b) => {
       const row = b as unknown as Budget;
       acc[row.category_id] = (acc[row.category_id] ?? 0) + 1;
       return acc;
@@ -126,9 +139,10 @@ export function useBudgets(month: string) {
     const enriched = (budgetData ?? []).map((b) => {
       const raw = b as unknown as Budget & { categories: Category };
       const directSpent = spentByBudgetMap[raw.id] ?? 0;
-      const canApplyLegacyCategorySpent = categoryUsageCount[raw.category_id] === 1;
+      const canApplyLegacyCategorySpent =
+        categoryUsageCount[raw.category_id] === 1;
       const legacyCategorySpent = canApplyLegacyCategorySpent
-        ? spentByCategoryMap[raw.category_id] ?? 0
+        ? (spentByCategoryMap[raw.category_id] ?? 0)
         : 0;
 
       return {
@@ -155,20 +169,22 @@ export function useBudgets(month: string) {
     await globalMutate(
       (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
       undefined,
-      { revalidate: true }
+      { revalidate: true },
     );
   }, [globalMutate]);
 
-  const createBudget = async ({ name, categoryId, limitAmount }: SaveBudgetInput) => {
+  const createBudget = async ({
+    name,
+    categoryId,
+    limitAmount,
+  }: SaveBudgetInput) => {
     const supabase = createClient();
-    const { error } = await supabase.from("budgets").insert(
-      {
-        name: name.trim(),
-        category_id: categoryId,
-        month: `${month}-01`,
-        limit_amount: limitAmount,
-      } as never
-    );
+    const { error } = await supabase.from("budgets").insert({
+      name: name.trim(),
+      category_id: categoryId,
+      month: `${month}-01`,
+      limit_amount: limitAmount,
+    } as never);
     const mappedError = mapBudgetError(error);
     if (mappedError) throw mappedError;
     await mutate();
@@ -219,11 +235,14 @@ export function useBudgets(month: string) {
       throw previousBudgetsError;
     }
 
-    const prev = (prevBudgets as unknown as {
-      name: string;
-      category_id: string;
-      limit_amount: number;
-    }[] | null) ?? [];
+    const prev =
+      (prevBudgets as unknown as
+        | {
+            name: string;
+            category_id: string;
+            limit_amount: number;
+          }[]
+        | null) ?? [];
     if (prev.length === 0) {
       return { sourceCount: 0, copiedCount: 0, skippedCount: 0 };
     }
@@ -238,16 +257,17 @@ export function useBudgets(month: string) {
 
     const existingNames = new Set(
       (currentBudgets as { name: string }[] | null)?.map((b) =>
-        b.name.trim().toLowerCase()
-      ) ?? []
+        b.name.trim().toLowerCase(),
+      ) ?? [],
     );
 
-    const inserts = prev.map((b) => ({
-      name: b.name,
-      category_id: b.category_id,
-      month: `${month}-01`,
-      limit_amount: b.limit_amount,
-    }))
+    const inserts = prev
+      .map((b) => ({
+        name: b.name,
+        category_id: b.category_id,
+        month: `${month}-01`,
+        limit_amount: b.limit_amount,
+      }))
       .filter((b) => {
         const normalized = b.name.trim().toLowerCase();
         if (existingNames.has(normalized)) {
@@ -262,20 +282,26 @@ export function useBudgets(month: string) {
       return { sourceCount: prev.length, copiedCount: 0, skippedCount };
     }
 
-    const { error: insertError } = await supabase.from("budgets").insert(inserts as never[]);
+    const { error: insertError } = await supabase
+      .from("budgets")
+      .insert(inserts as never[]);
     const mappedError = mapBudgetError(insertError);
     if (mappedError) throw mappedError;
     await mutate();
     await revalidateDashboard();
 
-    return { sourceCount: prev.length, copiedCount: inserts.length, skippedCount };
+    return {
+      sourceCount: prev.length,
+      copiedCount: inserts.length,
+      skippedCount,
+    };
   };
 
   const normalizedError = error
     ? getBudgetErrorMessage(
         typeof error === "object" && error !== null
           ? (error as { message?: string })
-          : null
+          : null,
       )
     : null;
 

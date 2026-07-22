@@ -1,25 +1,31 @@
 "use client";
 
+import {
+  Banknote,
+  CreditCard,
+  FileText,
+  Landmark,
+  MoreHorizontal,
+  Pencil,
+  Wallet,
+} from "lucide-react";
 import { useState } from "react";
-import { Wallet, Banknote, CreditCard, Landmark, Pencil, FileText, MoreHorizontal } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { InlineConfirm } from "@/components/ui/inline-confirm";
-import { formatCOP } from "@/lib/utils/currency";
-import type { Account } from "@/lib/types/database";
-import type { AccountActivity } from "@/lib/hooks/use-account-activity";
-import type { StatementWithAccount } from "@/lib/hooks/use-credit-card-statements";
-import { normalizeStoredBalance } from "@/lib/utils/account-balance";
-import {
-  getStatementPaymentSummary,
-} from "@/lib/utils/credit-card-statements";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import type { AccountActivity } from "@/lib/hooks/use-account-activity";
+import type { StatementWithAccount } from "@/lib/hooks/use-credit-card-statements";
+import type { Account } from "@/lib/types/database";
+import { normalizeStoredBalance } from "@/lib/utils/account-balance";
+import { getStatementPaymentSummary } from "@/lib/utils/credit-card-statements";
+import { formatCOP } from "@/lib/utils/currency";
 
 const accountIcons = {
   savings: Wallet,
@@ -52,17 +58,30 @@ interface AccountCardProps {
   onPayCC?: (account: Account) => void;
 }
 
-export function AccountCard({ account, activity, openStatements, onEdit, onDelete, onRegisterStatement, onPayCC }: AccountCardProps) {
+export function AccountCard({
+  account,
+  activity,
+  openStatements,
+  onEdit,
+  onDelete,
+  onRegisterStatement,
+  onPayCC,
+}: AccountCardProps) {
   const Icon = accountIcons[account.type];
-  const normalizedBalance = normalizeStoredBalance(account.type, account.balance);
-  const displayedBalance = account.type === "credit_card" || account.type === "loan"
-    ? Math.abs(normalizedBalance)
-    : normalizedBalance;
+  const normalizedBalance = normalizeStoredBalance(
+    account.type,
+    account.balance,
+  );
+  const displayedBalance =
+    account.type === "credit_card" || account.type === "loan"
+      ? Math.abs(normalizedBalance)
+      : normalizedBalance;
   const [managementOpen, setManagementOpen] = useState(false);
   const nextStatement = openStatements[0];
   const totalOutstanding = openStatements.reduce(
-    (sum, statement) => sum + getStatementPaymentSummary(statement).remainingAmount,
-    0
+    (sum, statement) =>
+      sum + getStatementPaymentSummary(statement).remainingAmount,
+    0,
   );
 
   return (
@@ -94,7 +113,11 @@ export function AccountCard({ account, activity, openStatements, onEdit, onDelet
 
       <div>
         <p className="text-xs text-muted-foreground">
-          {account.type === "credit_card" ? "Deuda actual" : account.type === "loan" ? "Saldo pendiente" : "Saldo disponible"}
+          {account.type === "credit_card"
+            ? "Deuda actual"
+            : account.type === "loan"
+              ? "Saldo pendiente"
+              : "Saldo disponible"}
         </p>
         <p
           className={`mt-1 text-2xl font-semibold tabular-nums ${
@@ -114,16 +137,23 @@ export function AccountCard({ account, activity, openStatements, onEdit, onDelet
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <div>
-              <p className="text-xs font-medium text-amber-900">Próximo extracto</p>
-              <p className="mt-0.5 text-xs text-amber-800">Vence {nextStatement.due_date}</p>
+              <p className="text-xs font-medium text-amber-900">
+                Próximo extracto
+              </p>
+              <p className="mt-0.5 text-xs text-amber-800">
+                Vence {nextStatement.due_date}
+              </p>
             </div>
             <p className="text-sm font-semibold tabular-nums text-amber-900">
-              {formatCOP(getStatementPaymentSummary(nextStatement).remainingAmount)}
+              {formatCOP(
+                getStatementPaymentSummary(nextStatement).remainingAmount,
+              )}
             </p>
           </div>
           {openStatements.length > 1 && (
             <p className="mt-2 text-xs text-amber-800">
-              {openStatements.length} extractos pendientes · {formatCOP(totalOutstanding)} en total
+              {openStatements.length} extractos pendientes ·{" "}
+              {formatCOP(totalOutstanding)} en total
             </p>
           )}
           <Button
@@ -146,10 +176,14 @@ export function AccountCard({ account, activity, openStatements, onEdit, onDelet
       {activity && (activity.income > 0 || activity.expense > 0) && (
         <div className="flex items-center gap-3 border-t border-border/40 pt-2 text-xs text-muted-foreground">
           {activity.income > 0 && (
-            <span className="font-medium text-emerald-600">+{formatCOP(activity.income)}</span>
+            <span className="font-medium text-emerald-600">
+              +{formatCOP(activity.income)}
+            </span>
           )}
           {activity.expense > 0 && (
-            <span className="font-medium text-rose-600">−{formatCOP(activity.expense)}</span>
+            <span className="font-medium text-rose-600">
+              −{formatCOP(activity.expense)}
+            </span>
           )}
           <span>en el mes seleccionado</span>
         </div>
@@ -172,7 +206,10 @@ export function AccountCard({ account, activity, openStatements, onEdit, onDelet
               <Pencil className="h-4 w-4" />
               Editar cuenta
             </Button>
-            <InlineConfirm onConfirm={() => onDelete(account.id)} label="Eliminar cuenta" />
+            <InlineConfirm
+              onConfirm={() => onDelete(account.id)}
+              label="Eliminar cuenta"
+            />
           </div>
         </SheetContent>
       </Sheet>

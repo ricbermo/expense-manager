@@ -13,13 +13,17 @@ export interface MonthComparison {
   savingsRate: number | null;
 }
 
-function getTrailing6Months(): { start: string; end: string; months: string[] } {
+function getTrailing6Months(): {
+  start: string;
+  end: string;
+  months: string[];
+} {
   const now = new Date();
   const months: string[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
     );
   }
   const start = `${months[0]}-01`;
@@ -31,7 +35,7 @@ function getTrailing6Months(): { start: string; end: string; months: string[] } 
 function shortMonthLabel(yyyyMM: string): string {
   const [y, m] = yyyyMM.split("-").map(Number);
   return new Intl.DateTimeFormat("es-CO", { month: "short" }).format(
-    new Date(y, m - 1, 1)
+    new Date(y, m - 1, 1),
   );
 }
 
@@ -53,7 +57,7 @@ export function useMonthlyComparison() {
     const creditCardAccountIds = new Set(
       ((accountsData ?? []) as { id: string; type: string }[])
         .filter((a) => a.type === "credit_card")
-        .map((a) => a.id)
+        .map((a) => a.id),
     );
 
     const totals: Record<string, { income: number; expenses: number }> = {};
@@ -72,7 +76,8 @@ export function useMonthlyComparison() {
       if (t.type === "income" && t.categories?.name !== "Reembolso") {
         totals[mo].income += t.amount;
       } else if (t.type === "expense") {
-        if (t.to_account_id && creditCardAccountIds.has(t.to_account_id)) continue;
+        if (t.to_account_id && creditCardAccountIds.has(t.to_account_id))
+          continue;
         totals[mo].expenses += t.amount;
       }
     }
@@ -91,7 +96,7 @@ export function useMonthlyComparison() {
 
   const { data: comparison = [], isLoading: loading } = useSWR(
     swrKeys.monthlyComparison(),
-    fetchComparison
+    fetchComparison,
   );
 
   return { comparison, loading };

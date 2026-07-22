@@ -2,16 +2,16 @@
 
 import {
   ArrowDownLeft,
-  ArrowUpRight,
   ArrowLeftRight,
+  ArrowUpRight,
   Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/ui/inline-confirm";
+import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
-import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { buildTransactionMetaLine } from "@/lib/utils/transaction-list-meta";
 
 const typeIcons = {
@@ -100,24 +100,35 @@ export function TransactionList({
                         <input
                           type="checkbox"
                           checked={t.is_occasional}
-                          onChange={() => onToggleOccasional(t.id, !t.is_occasional)}
+                          onChange={() =>
+                            onToggleOccasional(t.id, !t.is_occasional)
+                          }
                           className="h-3 w-3 accent-orange-500"
                         />
-                        <span className="text-xs text-muted-foreground">ocasional</span>
+                        <span className="text-xs text-muted-foreground">
+                          ocasional
+                        </span>
                       </label>
                     )}
                     {((t.tags && t.tags.length > 0) ||
                       (t.installments && t.installments >= 2)) && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {t.installments && t.installments >= 2 && (
-                          <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
+                          <Badge
+                            variant="outline"
+                            className="text-xs px-1.5 py-0 h-4"
+                          >
                             {t.installments} cuotas ·{" "}
                             {formatCOP(Math.floor(t.amount / t.installments))}
                             /mes
                           </Badge>
                         )}
                         {t.tags?.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-4">
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className="text-xs px-1.5 py-0 h-4"
+                          >
                             {tag}
                           </Badge>
                         ))}
@@ -125,7 +136,9 @@ export function TransactionList({
                     )}
                   </div>
                   <div className="text-right flex items-center gap-1">
-                    <p className={`text-sm font-semibold tabular-nums ${typeColors[t.type]}`}>
+                    <p
+                      className={`text-sm font-semibold tabular-nums ${typeColors[t.type]}`}
+                    >
                       {t.type === "income" ? "+" : "-"}
                       {formatCOP(t.amount)}
                     </p>

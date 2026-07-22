@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createAdminClient, getAdminUserId } from "@/lib/supabase/admin";
+import { getCloudflareContext, getEnv } from "@/lib/env";
 import { parseSms } from "@/lib/sms/parse-sms";
-import { getEnv, getCloudflareContext } from "@/lib/env";
+import { createAdminClient, getAdminUserId } from "@/lib/supabase/admin";
 import type { Account, Category } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -12,14 +12,16 @@ interface SmsRequestBody {
 }
 
 function ensureShortcutAuth(
-  request: Request
+  request: Request,
 ): { ok: false; diagnostics: Record<string, unknown> } | { ok: true } {
   const header = request.headers.get("authorization") ?? "";
   const headerPresent = header.length > 0;
   const shortcutApiKey = getEnv("SHORTCUT_API_KEY");
   const envSet = !!shortcutApiKey;
 
-  const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+  const token = header.startsWith("Bearer ")
+    ? header.slice("Bearer ".length).trim()
+    : "";
   const ok = envSet && headerPresent && token === shortcutApiKey;
 
   if (!ok) {
@@ -33,7 +35,7 @@ function ensureShortcutAuth(
             k.includes("SECRET") ||
             k.includes("TOKEN") ||
             k.includes("API") ||
-            k === "SHORTCUT_API_KEY"
+            k === "SHORTCUT_API_KEY",
         ),
         headerPresent,
         headerPrefix: headerPresent ? header.slice(0, 25) + "..." : "(none)",
@@ -41,7 +43,9 @@ function ensureShortcutAuth(
         cfEnvKeys: (() => {
           try {
             const { env } = getCloudflareContext();
-            return Object.keys(env).filter((k) => k.includes("KEY") || k.includes("API"));
+            return Object.keys(env).filter(
+              (k) => k.includes("KEY") || k.includes("API"),
+            );
           } catch {
             return "__no_cf_context__";
           }
@@ -56,7 +60,10 @@ function ensureShortcutAuth(
 export async function POST(request: Request) {
   const auth = ensureShortcutAuth(request);
   if (!auth.ok) {
-    return NextResponse.json({ error: "Unauthorized", diagnostics: auth.diagnostics }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized", diagnostics: auth.diagnostics },
+      { status: 401 },
+    );
   }
 
   let body: SmsRequestBody;
@@ -67,7 +74,8 @@ export async function POST(request: Request) {
   }
 
   const rawSms = typeof body.rawSms === "string" ? body.rawSms.trim() : "";
-  const sender = typeof body.sender === "string" ? body.sender.trim() : undefined;
+  const sender =
+    typeof body.sender === "string" ? body.sender.trim() : undefined;
 
   if (!rawSms) {
     return NextResponse.json({ error: "rawSms is required" }, { status: 400 });
@@ -77,29 +85,46 @@ export async function POST(request: Request) {
   try {
     adminClient = createAdminClient();
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Missing admin env vars";
+    const message =
+      err instanceof Error ? err.message : "Missing admin env vars";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
   const userId = await getAdminUserId(adminClient);
   if (!userId) {
-    return NextResponse.json({ error: "Could not resolve user from database" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not resolve user from database" },
+      { status: 500 },
+    );
   }
 
   const [accountsRes, expenseCategoriesRes] = await Promise.all([
     adminClient.from("accounts").select("id, name, type").limit(50),
-    adminClient.from("categories").select("id, name").eq("type", "expense").limit(50),
+    adminClient
+      .from("categories")
+      .select("id, name")
+      .eq("type", "expense")
+      .limit(50),
   ]);
 
   if (accountsRes.error || expenseCategoriesRes.error) {
-    const message = accountsRes.error?.message ?? expenseCategoriesRes.error?.message ?? "DB error";
+    const message =
+      accountsRes.error?.message ??
+      expenseCategoriesRes.error?.message ??
+      "DB error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  const accounts = (accountsRes.data ?? []) as Pick<Account, "id" | "name" | "type">[];
-  const categories = (expenseCategoriesRes.data ?? []) as Pick<Category, "id" | "name">[];
+  const accounts = (accountsRes.data ?? []) as Pick<
+    Account,
+    "id" | "name" | "type"
+  >[];
+  const categories = (expenseCategoriesRes.data ?? []) as Pick<
+    Category,
+    "id" | "name"
+  >[];
 
-  let parsed;
+  let parsed: Awaited<ReturnType<typeof parseSms>>;
   try {
     parsed = await parseSms({
       rawSms,
@@ -119,14 +144,14 @@ export async function POST(request: Request) {
   if (!parsed.amount || parsed.amount <= 0) {
     return NextResponse.json(
       { error: "Could not determine amount from SMS", parsed },
-      { status: 422 }
+      { status: 422 },
     );
   }
 
   if (!parsed.type) {
     return NextResponse.json(
       { error: "Could not determine transaction type", parsed },
-      { status: 422 }
+      { status: 422 },
     );
   }
 
@@ -134,7 +159,7 @@ export async function POST(request: Request) {
   if (!accountId) {
     return NextResponse.json(
       { error: "User has no accounts configured", parsed },
-      { status: 422 }
+      { status: 422 },
     );
   }
 

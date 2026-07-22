@@ -1,24 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { AccountCard } from "@/components/accounts/account-card";
 import { AccountForm } from "@/components/accounts/account-form";
-import { CreditCardStatementForm } from "@/components/accounts/credit-card-statement-form";
 import { CreditCardPaymentForm } from "@/components/accounts/credit-card-payment-form";
-import { useAccounts } from "@/lib/hooks/use-accounts";
+import { CreditCardStatementForm } from "@/components/accounts/credit-card-statement-form";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
 import { useAccountActivity } from "@/lib/hooks/use-account-activity";
+import { useAccounts } from "@/lib/hooks/use-accounts";
 import { useCreditCardStatements } from "@/lib/hooks/use-credit-card-statements";
-import { formatCOP } from "@/lib/utils/currency";
+import type { Account } from "@/lib/types/database";
 import {
   getAccountBalances,
   getStatementPaymentSummary,
   orderAccountsForReconciliation,
 } from "@/lib/utils/credit-card-statements";
-import type { Account } from "@/lib/types/database";
+import { formatCOP } from "@/lib/utils/currency";
 
 function getCurrentMonth() {
   const now = new Date();
@@ -38,33 +38,44 @@ function getDueLabel(date: string) {
 }
 
 export default function AccountsPage() {
-  const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
+  const { accounts, loading, createAccount, updateAccount, deleteAccount } =
+    useAccounts();
   const [month] = useState(getCurrentMonth);
   const { activity } = useAccountActivity(month);
-  const { openStatements, createStatement, recordPayment } = useCreditCardStatements();
+  const { openStatements, createStatement, recordPayment } =
+    useCreditCardStatements();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Account | undefined>();
-  const [statementFormAccount, setStatementFormAccount] = useState<Account | undefined>();
-  const [paymentFormAccount, setPaymentFormAccount] = useState<Account | undefined>();
+  const [statementFormAccount, setStatementFormAccount] = useState<
+    Account | undefined
+  >();
+  const [paymentFormAccount, setPaymentFormAccount] = useState<
+    Account | undefined
+  >();
 
   const sourceAccounts = useMemo(
     () => accounts.filter((a) => a.type === "savings" || a.type === "cash"),
-    [accounts]
+    [accounts],
   );
 
   const accountTotals = useMemo(() => getAccountBalances(accounts), [accounts]);
   const orderedAccounts = useMemo(
     () => orderAccountsForReconciliation(accounts, openStatements),
-    [accounts, openStatements]
+    [accounts, openStatements],
   );
   const openStatementsByAccountId = useMemo(
     () =>
-      openStatements.reduce<Record<string, typeof openStatements>>((grouped, statement) => {
-        (grouped[statement.account_id] ??= []).push(statement);
-        return grouped;
-      }, {}),
-    [openStatements]
+      openStatements.reduce<Record<string, typeof openStatements>>(
+        (grouped, statement) => {
+          const statements = grouped[statement.account_id] ?? [];
+          statements.push(statement);
+          grouped[statement.account_id] = statements;
+          return grouped;
+        },
+        {},
+      ),
+    [openStatements],
   );
   const nextStatement = openStatements[0] ?? null;
   const nextPaymentAccount = nextStatement
@@ -155,16 +166,24 @@ export default function AccountsPage() {
 
       <div className="app-shell page-stack">
         {nextStatement && nextPaymentAccount && (
-          <section className="section-card p-4 md:p-5" aria-labelledby="next-payment-title">
+          <section
+            className="section-card p-4 md:p-5"
+            aria-labelledby="next-payment-title"
+          >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p id="next-payment-title" className="text-sm font-medium">Próximo pago</p>
+                <p id="next-payment-title" className="text-sm font-medium">
+                  Próximo pago
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {nextPaymentAccount.name} · {getDueLabel(nextStatement.due_date)}
+                  {nextPaymentAccount.name} ·{" "}
+                  {getDueLabel(nextStatement.due_date)}
                 </p>
               </div>
               <p className="text-xl font-semibold tabular-nums text-amber-700">
-                {formatCOP(getStatementPaymentSummary(nextStatement).remainingAmount)}
+                {formatCOP(
+                  getStatementPaymentSummary(nextStatement).remainingAmount,
+                )}
               </p>
             </div>
             <Button
@@ -179,15 +198,21 @@ export default function AccountsPage() {
         <dl className="grid gap-3 sm:grid-cols-3">
           <div className="section-card p-4">
             <dt className="text-xs text-muted-foreground">Disponible</dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums">{formatCOP(accountTotals.liquidFunds)}</dd>
+            <dd className="mt-1 text-lg font-semibold tabular-nums">
+              {formatCOP(accountTotals.liquidFunds)}
+            </dd>
           </div>
           <div className="section-card p-4">
             <dt className="text-xs text-muted-foreground">Deuda de tarjetas</dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums text-rose-700">{formatCOP(accountTotals.cardDebt)}</dd>
+            <dd className="mt-1 text-lg font-semibold tabular-nums text-rose-700">
+              {formatCOP(accountTotals.cardDebt)}
+            </dd>
           </div>
           <div className="section-card p-4">
             <dt className="text-xs text-muted-foreground">Posición neta</dt>
-            <dd className={`mt-1 text-lg font-semibold tabular-nums ${accountTotals.netPosition >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+            <dd
+              className={`mt-1 text-lg font-semibold tabular-nums ${accountTotals.netPosition >= 0 ? "text-emerald-700" : "text-rose-700"}`}
+            >
               {formatCOP(accountTotals.netPosition)}
             </dd>
           </div>
@@ -201,9 +226,12 @@ export default function AccountsPage() {
           </div>
         ) : accounts.length === 0 ? (
           <div className="empty-state text-muted-foreground">
-            <p className="font-medium text-foreground">Sin cuentas registradas</p>
+            <p className="font-medium text-foreground">
+              Sin cuentas registradas
+            </p>
             <p className="text-xs mt-1">
-              Agrega tus cuentas de ahorro, tarjetas o efectivo para llevar el control de tu saldo
+              Agrega tus cuentas de ahorro, tarjetas o efectivo para llevar el
+              control de tu saldo
             </p>
             <Button className="mt-4" onClick={() => setFormOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
@@ -241,22 +269,29 @@ export default function AccountsPage() {
       {statementFormAccount && (
         <CreditCardStatementForm
           open={!!statementFormAccount}
-          onOpenChange={(open) => { if (!open) setStatementFormAccount(undefined); }}
+          onOpenChange={(open) => {
+            if (!open) setStatementFormAccount(undefined);
+          }}
           account={statementFormAccount}
           onSubmit={handleStatementSubmit}
         />
       )}
 
-      {paymentFormAccount && openStatementsByAccountId[paymentFormAccount.id]?.[0] && (
-        <CreditCardPaymentForm
-          open={!!paymentFormAccount}
-          onOpenChange={(open) => { if (!open) setPaymentFormAccount(undefined); }}
-          creditCardAccount={paymentFormAccount}
-          pendingStatement={openStatementsByAccountId[paymentFormAccount.id][0]}
-          sourceAccounts={sourceAccounts}
-          onSubmit={handlePaymentSubmit}
-        />
-      )}
+      {paymentFormAccount &&
+        openStatementsByAccountId[paymentFormAccount.id]?.[0] && (
+          <CreditCardPaymentForm
+            open={!!paymentFormAccount}
+            onOpenChange={(open) => {
+              if (!open) setPaymentFormAccount(undefined);
+            }}
+            creditCardAccount={paymentFormAccount}
+            pendingStatement={
+              openStatementsByAccountId[paymentFormAccount.id][0]
+            }
+            sourceAccounts={sourceAccounts}
+            onSubmit={handlePaymentSubmit}
+          />
+        )}
     </div>
   );
 }

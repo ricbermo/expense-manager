@@ -1,6 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { getAllowedUserEmail, isAllowedUserEmail } from "@/lib/auth/allowed-user";
+import { type NextRequest, NextResponse } from "next/server";
+import {
+  getAllowedUserEmail,
+  isAllowedUserEmail,
+} from "@/lib/auth/allowed-user";
 import { isProtectedPath, isPublicPath } from "@/lib/auth/route-access";
 
 function applyCookies(from: NextResponse, to: NextResponse) {
@@ -12,7 +15,7 @@ function applyCookies(from: NextResponse, to: NextResponse) {
 function redirectWithCookies(
   request: NextRequest,
   source: NextResponse,
-  pathname: string
+  pathname: string,
 ) {
   const destination = new URL(pathname, request.url);
   const response = NextResponse.redirect(destination);
@@ -44,7 +47,7 @@ export async function middleware(request: NextRequest) {
           });
         },
       },
-    }
+    },
   );
 
   const {
@@ -79,5 +82,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/accounts/:path*", "/transactions/:path*", "/budgets/:path*", "/ajustes/:path*"],
+  matcher: [
+    "/",
+    "/login",
+    "/accounts/:path*",
+    "/transactions/:path*",
+    "/budgets/:path*",
+    "/ajustes/:path*",
+  ],
 };
