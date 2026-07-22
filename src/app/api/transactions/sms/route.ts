@@ -38,7 +38,7 @@ function ensureShortcutAuth(
             k === "SHORTCUT_API_KEY",
         ),
         headerPresent,
-        headerPrefix: headerPresent ? header.slice(0, 25) + "..." : "(none)",
+        headerPrefix: headerPresent ? `${header.slice(0, 25)}...` : "(none)",
         tokenLength: token.length,
         cfEnvKeys: (() => {
           try {
