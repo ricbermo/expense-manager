@@ -21,7 +21,7 @@ Opening **Nuevo** starts on **Gasto**. The compact first view contains:
 5. A primary submit action labelled **Guardar gasto**.
 6. A secondary, full-width **Más detalles** disclosure.
 
-The initial expense path must not require reading or skipping optional controls. Income and transfer retain their own required account fields; transfer requires a visible destination account and never inherits the expense’s negative presentation.
+The initial expense path must not require reading or skipping optional controls. Income and transfer retain their existing account-validation behavior; transfer exposes a visible destination account but keeps the current optional-destination rule and never inherits the expense’s negative presentation.
 
 ### Expanded details
 
