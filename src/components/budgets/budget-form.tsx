@@ -172,7 +172,7 @@ export function BudgetForm({
                   onValueChange={(v) => field.onChange(v ?? "")}
                 >
                   <SelectTrigger id="budget-category">
-                    <SelectValue placeholder="Selecciona categoria">
+                    <SelectValue placeholder="Selecciona categoría">
                       {() => selectedCategory?.name ?? "Selecciona categoría"}
                     </SelectValue>
                   </SelectTrigger>
@@ -204,7 +204,7 @@ export function BudgetForm({
           </div>
 
           {submitError && (
-            <p className="text-xs text-rose-600" role="alert">
+            <p className="text-xs text-chart-expense" role="alert">
               {submitError}
             </p>
           )}

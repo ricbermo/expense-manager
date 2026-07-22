@@ -4,7 +4,12 @@ export interface BudgetProgressInput {
   spent: number;
 }
 
-export type BudgetPriorityKind = "exceeded" | "alert" | "healthy" | "invalid";
+export type BudgetPriorityKind =
+  | "exceeded"
+  | "at_limit"
+  | "alert"
+  | "healthy"
+  | "invalid";
 
 export interface BudgetCopyResult {
   sourceCount: number;
@@ -25,7 +30,10 @@ export function getBudgetPriority(budget: BudgetProgressInput) {
   }
 
   const percentage = Math.round((budget.spent / budget.limit_amount) * 100);
-  if (percentage >= 100) return { kind: "exceeded" as const, percentage };
+  if (budget.spent > budget.limit_amount)
+    return { kind: "exceeded" as const, percentage };
+  if (budget.spent === budget.limit_amount)
+    return { kind: "at_limit" as const, percentage };
   if (percentage >= 80) return { kind: "alert" as const, percentage };
   return { kind: "healthy" as const, percentage };
 }
@@ -35,9 +43,10 @@ export function orderBudgetsByPriority<T extends BudgetProgressInput>(
 ) {
   const rank: Record<BudgetPriorityKind, number> = {
     exceeded: 0,
-    alert: 1,
-    healthy: 2,
-    invalid: 3,
+    at_limit: 1,
+    alert: 2,
+    healthy: 3,
+    invalid: 4,
   };
 
   return budgets
@@ -60,6 +69,22 @@ export function getBudgetSummary(budgets: BudgetProgressInput[]) {
       budgetCount: exceeded.length,
       amount: exceeded.reduce(
         (total, budget) => total + (budget.spent - budget.limit_amount),
+        0,
+      ),
+    };
+  }
+
+  const atRisk = budgets.filter((budget) => {
+    const kind = getBudgetPriority(budget).kind;
+    return kind === "at_limit" || kind === "alert";
+  });
+  if (atRisk.length > 0) {
+    return {
+      kind: "alert" as const,
+      budgetCount: atRisk.length,
+      amount: atRisk.reduce(
+        (total, budget) =>
+          total + Math.max(0, budget.limit_amount - budget.spent),
         0,
       ),
     };

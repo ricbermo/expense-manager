@@ -14,17 +14,18 @@ const budget = (id, limitAmount, spent) => ({
   spent,
 });
 
-test("orders exceeded budgets before alerts and healthy budgets stably", () => {
+test("orders exceeded before at-limit, alerts, and healthy budgets stably", () => {
   const ordered = orderBudgetsByPriority([
     budget("healthy", 100_000, 50_000),
     budget("alert", 100_000, 80_000),
+    budget("at-limit", 100_000, 100_000),
     budget("exceeded", 100_000, 110_000),
     budget("healthy-second", 100_000, 30_000),
   ]);
 
   assert.deepEqual(
     ordered.map((item) => item.id),
-    ["exceeded", "alert", "healthy", "healthy-second"],
+    ["exceeded", "at-limit", "alert", "healthy", "healthy-second"],
   );
 });
 
@@ -38,13 +39,34 @@ test("summarizes exceeded budgets before available money", () => {
   );
 });
 
-test("summarizes available money when no budget is exceeded", () => {
+test("summarizes available money when no budget is exceeded or near limit", () => {
   assert.deepEqual(
     getBudgetSummary([
-      budget("a", 100_000, 80_000),
+      budget("a", 100_000, 70_000),
       budget("b", 200_000, 50_000),
     ]),
-    { kind: "available", budgetCount: 0, amount: 170_000 },
+    { kind: "available", budgetCount: 0, amount: 180_000 },
+  );
+});
+
+test("summarizes near-limit budgets before available money", () => {
+  assert.deepEqual(
+    getBudgetSummary([
+      budget("a", 100_000, 85_000),
+      budget("b", 200_000, 50_000),
+    ]),
+    { kind: "alert", budgetCount: 1, amount: 15_000 },
+  );
+});
+
+test("groups at-limit and alert budgets in the alert summary", () => {
+  assert.deepEqual(
+    getBudgetSummary([
+      budget("at-limit", 100_000, 100_000),
+      budget("alert", 100_000, 82_000),
+      budget("healthy", 200_000, 50_000),
+    ]),
+    { kind: "alert", budgetCount: 2, amount: 18_000 },
   );
 });
 
@@ -52,6 +74,17 @@ test("marks invalid persisted limits without computing a percentage", () => {
   assert.deepEqual(getBudgetPriority(budget("invalid", 0, 10_000)), {
     kind: "invalid",
     percentage: null,
+  });
+});
+
+test("marks at-limit budgets distinctly from exceeded", () => {
+  assert.deepEqual(getBudgetPriority(budget("at-limit", 100_000, 100_000)), {
+    kind: "at_limit",
+    percentage: 100,
+  });
+  assert.deepEqual(getBudgetPriority(budget("exceeded", 100_000, 100_001)), {
+    kind: "exceeded",
+    percentage: 100,
   });
 });
 

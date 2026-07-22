@@ -44,7 +44,9 @@ export default function BudgetsPage() {
   const summary = useMemo(() => getBudgetSummary(budgets), [budgets]);
   const priorityBudget = orderedBudgets.find((budget) => {
     const priority = getBudgetPriority(budget).kind;
-    return priority === "exceeded" || priority === "alert";
+    return (
+      priority === "exceeded" || priority === "at_limit" || priority === "alert"
+    );
   });
 
   const changeMonth = (delta: number) => {
@@ -127,7 +129,7 @@ export default function BudgetsPage() {
               className="justify-between sm:justify-start"
               buttonClassName="h-11 w-11"
             />
-            <div className="grid grid-cols-1 gap-2 sm:flex">
+            <div className="grid grid-cols-2 gap-2 sm:flex">
               <Button
                 variant="outline"
                 className="h-11"
@@ -209,26 +211,39 @@ export default function BudgetsPage() {
               className="section-card p-4"
               aria-labelledby="budget-summary-heading"
             >
-              <p
+              <h2
                 id="budget-summary-heading"
                 className="text-sm font-medium text-foreground"
               >
                 {summary.kind === "exceeded"
                   ? `${summary.budgetCount} ${summary.budgetCount === 1 ? "presupuesto excedido" : "presupuestos excedidos"}`
-                  : "Todos los presupuestos están dentro del límite"}
-              </p>
+                  : summary.kind === "alert"
+                    ? `${summary.budgetCount} ${summary.budgetCount === 1 ? "presupuesto cerca del límite" : "presupuestos cerca del límite"}`
+                    : "Todos los presupuestos están dentro del límite"}
+              </h2>
               <p
-                className={`mt-1 text-sm font-semibold tabular-nums ${summary.kind === "exceeded" ? "text-rose-700" : "text-chart-income"}`}
+                className={cn(
+                  "mt-1 text-sm font-semibold tabular-nums",
+                  summary.kind === "exceeded"
+                    ? "text-chart-expense"
+                    : summary.kind === "alert"
+                      ? "text-amber-700 dark:text-amber-400"
+                      : "text-chart-income",
+                )}
               >
                 {summary.kind === "exceeded"
                   ? `${formatCOP(summary.amount)} por encima del límite`
-                  : `${formatCOP(summary.amount)} disponible`}
+                  : summary.kind === "alert"
+                    ? `${formatCOP(summary.amount)} disponible antes de excederse`
+                    : `${formatCOP(summary.amount)} disponible`}
               </p>
               {priorityBudget ? (
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
                   <div className="min-w-0">
-                    <p className="font-medium">{priorityBudget.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate font-medium">
+                      {priorityBudget.name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
                       {priorityBudget.categories.name}
                     </p>
                   </div>
@@ -247,17 +262,18 @@ export default function BudgetsPage() {
                 </div>
               ) : null}
             </section>
-            <div className="space-y-3">
+            <ul className="space-y-3">
               {orderedBudgets.map((budget) => (
-                <BudgetCard
-                  key={budget.id}
-                  budget={budget}
-                  movementsHref={`/transactions?month=${month}&budget=${budget.id}`}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
+                <li key={budget.id}>
+                  <BudgetCard
+                    budget={budget}
+                    movementsHref={`/transactions?month=${month}&budget=${budget.id}`}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           </>
         )}
       </div>
