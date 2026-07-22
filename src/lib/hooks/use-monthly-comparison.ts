@@ -44,7 +44,7 @@ export function useMonthlyComparison() {
     const supabase = createClient();
     const { start, end, months } = getTrailing6Months();
 
-    const [{ data }, { data: accountsData }] = await Promise.all([
+    const [transactionsResult, accountsResult] = await Promise.all([
       supabase
         .from("transactions")
         .select("date, type, amount, to_account_id, categories(name)")
@@ -53,6 +53,14 @@ export function useMonthlyComparison() {
         .in("type", ["income", "expense"]),
       supabase.from("accounts").select("id, type"),
     ]);
+
+    const firstError = [transactionsResult.error, accountsResult.error].find(
+      (queryError) => queryError !== null,
+    );
+    if (firstError) throw firstError;
+
+    const data = transactionsResult.data;
+    const accountsData = accountsResult.data;
 
     const creditCardAccountIds = new Set(
       ((accountsData ?? []) as { id: string; type: string }[])
@@ -94,10 +102,19 @@ export function useMonthlyComparison() {
     });
   }, []);
 
-  const { data: comparison = [], isLoading: loading } = useSWR(
-    swrKeys.monthlyComparison(),
-    fetchComparison,
-  );
+  const {
+    data: comparison = [],
+    error,
+    isLoading: loading,
+    isValidating,
+    mutate,
+  } = useSWR(swrKeys.monthlyComparison(), fetchComparison, {
+    keepPreviousData: true,
+  });
 
-  return { comparison, loading };
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
+
+  return { comparison, loading, error, refetch, isValidating };
 }

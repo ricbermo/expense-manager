@@ -20,6 +20,11 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
   const hasIncome = income > 0;
   const rate = hasIncome ? (income - expenses) / income : null;
   const isCurrentMonth = month === getCurrentMonth();
+  const [year, monthNumber] = month.split("-").map(Number);
+  const selectedMonth = new Date(year, monthNumber - 1, 1);
+  const now = new Date();
+  const isPast = selectedMonth < new Date(now.getFullYear(), now.getMonth(), 1);
+  const isFuture = !isCurrentMonth && !isPast;
 
   const priorRates = comparison
     .filter((m) => m.month !== month && m.savingsRate !== null)
@@ -69,12 +74,22 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         {rate === null
-          ? "Sin ingresos este mes"
+          ? isPast
+            ? "Mes cerrado · no hubo ingresos para calcularla"
+            : isCurrentMonth
+              ? "Sin ingresos registrados; no se puede calcular"
+              : "Mes futuro · aún no hay ingresos para calcularla"
           : rate < 0
-            ? "Gastos superan ingresos"
-            : priorAvg !== null
-              ? `Promedio ${priorRates.length}m previos: ${formatPct(priorAvg)}`
-              : "Ahorrado del ingreso del mes"}
+            ? "Gastos superan ingresos; el porcentaje queda en negativo"
+            : isFuture
+              ? "Mes futuro · porcentaje calculado con los movimientos registrados hasta ahora"
+              : priorAvg !== null
+                ? `Del ingreso que queda tras gastos · promedio de ${priorRates.length} meses previos: ${formatPct(priorAvg)}`
+                : isCurrentMonth && priorRates.length < 3
+                  ? "Del ingreso que queda después de gastos · aún no hay 3 meses comparables"
+                  : isPast
+                    ? "Mes cerrado · porcentaje del ingreso que quedó tras gastos"
+                    : "Porcentaje del ingreso que queda después de gastos"}
       </p>
     </div>
   );

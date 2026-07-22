@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useSWR from "swr";
 import { createClient } from "@/lib/supabase/client";
 import { swrKeys } from "@/lib/swr/keys";
@@ -53,6 +53,7 @@ interface DashboardData {
 }
 
 export function useDashboard(month: string) {
+  const [dataMonth, setDataMonth] = useState<string | null>(null);
   const defaultData: DashboardData = {
     totalIncome: 0,
     totalExpenses: 0,
@@ -82,11 +83,11 @@ export function useDashboard(month: string) {
 
     // Fetch current + previous month transactions, accounts, budgets, and CC statements in parallel
     const [
-      { data: transactions },
-      { data: prevTransactions },
-      { data: accounts },
-      { data: budgetData },
-      { data: ccStatementData },
+      transactionsResult,
+      prevTransactionsResult,
+      accountsResult,
+      budgetResult,
+      ccStatementResult,
     ] = await Promise.all([
       supabase
         .from("transactions")
@@ -110,6 +111,21 @@ export function useDashboard(month: string) {
         )
         .is("paid_at", null),
     ]);
+
+    const firstError = [
+      transactionsResult.error,
+      prevTransactionsResult.error,
+      accountsResult.error,
+      budgetResult.error,
+      ccStatementResult.error,
+    ].find((queryError) => queryError !== null);
+    if (firstError) throw firstError;
+
+    const transactions = transactionsResult.data;
+    const prevTransactions = prevTransactionsResult.data;
+    const accounts = accountsResult.data;
+    const budgetData = budgetResult.data;
+    const ccStatementData = ccStatementResult.data;
 
     type TxnRow = {
       id: string;
@@ -306,7 +322,7 @@ export function useDashboard(month: string) {
       (ccStatementData ?? []) as unknown as CCStatementRow[]
     )
       .map((s) => {
-        const due = new Date(s.due_date + "T00:00:00");
+        const due = new Date(`${s.due_date}T00:00:00`);
         const daysUntilDue = Math.round(
           (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
         );
@@ -340,7 +356,7 @@ export function useDashboard(month: string) {
   }, [month]);
 
   const {
-    data = defaultData,
+    data: fetchedData,
     error,
     isLoading: loading,
     isValidating,
@@ -348,10 +364,17 @@ export function useDashboard(month: string) {
   } = useSWR(swrKeys.dashboard(month), fetchDashboard, {
     keepPreviousData: true,
   });
+  const data = fetchedData ?? defaultData;
+
+  useEffect(() => {
+    if (fetchedData && !loading && !isValidating && !error) {
+      setDataMonth(month);
+    }
+  }, [error, fetchedData, isValidating, loading, month]);
 
   const refetch = useCallback(async () => {
     await mutate();
   }, [mutate]);
 
-  return { data, loading, error, refetch, isValidating };
+  return { data, dataMonth, loading, error, refetch, isValidating };
 }

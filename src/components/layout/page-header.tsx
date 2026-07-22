@@ -14,7 +14,12 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <header className={cn("app-shell pb-3 pt-6", className)}>
+    <header
+      className={cn(
+        "app-shell pb-3 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(5rem+env(safe-area-inset-top))]",
+        className,
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">

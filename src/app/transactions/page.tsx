@@ -471,6 +471,7 @@ function TransactionsPageContent() {
         onUpdate={updateTransaction}
         accounts={accounts}
         editTransaction={editingTransaction}
+        initialMonth={month}
       />
     </div>
   );

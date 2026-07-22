@@ -6,11 +6,13 @@ import {
   ChevronDown,
   ChevronRight,
   CreditCard,
+  Plus,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExpenseProjectionCard } from "@/components/dashboard/expense-projection-card";
 import { IncomeByCategory } from "@/components/dashboard/income-by-category";
 import { MonthlyComparison } from "@/components/dashboard/monthly-comparison";
@@ -55,8 +57,14 @@ function DeltaPill({
 export default function DashboardPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [showAnalysis, setShowAnalysis] = useState(false);
-  const { data, loading, error, refetch, isValidating } = useDashboard(month);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
+  const { data, dataMonth, loading, error, refetch, isValidating } =
+    useDashboard(month);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !error) setHasLoadedData(true);
+  }, [loading, error]);
 
   const changeMonth = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
@@ -79,16 +87,52 @@ export default function DashboardPage() {
   const showComposition = hasRecurring || hasOccasional;
   const showCompositionBar =
     hasRecurring && hasOccasional && data.totalExpenses > 0;
+  const isInitialLoading = loading && !hasLoadedData;
+  const cardsMonth = dataMonth ?? month;
+  const statusMessage = isInitialLoading
+    ? "Cargando datos del dashboard..."
+    : isValidating
+      ? "Actualizando datos..."
+      : error && hasLoadedData
+        ? "No se pudo actualizar; se muestran los últimos datos disponibles."
+        : null;
 
   return (
     <div>
       <PageHeader
         title="Dashboard"
-        action={<MonthPager month={month} onChange={changeMonth} />}
+        action={
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+            <Button
+              render={<Link href={`/transactions?month=${month}`} />}
+              variant="outline"
+              size="sm"
+              className="h-11 min-h-11"
+              aria-label="Registrar movimiento"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="sm:hidden">Registrar</span>
+              <span className="hidden sm:inline">Registrar movimiento</span>
+            </Button>
+            <MonthPager month={month} onChange={changeMonth} />
+          </div>
+        }
       />
 
-      <div className="app-shell page-stack">
-        {loading ? (
+      <div
+        className="app-shell page-stack"
+        aria-busy={isInitialLoading || isValidating}
+      >
+        {statusMessage ? (
+          <p
+            className="text-xs text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            {statusMessage}
+          </p>
+        ) : null}
+        {isInitialLoading ? (
           <div className="space-y-3">
             <div className="section-card h-28 animate-pulse" />
             <div className="section-card h-40 animate-pulse" />
@@ -97,7 +141,7 @@ export default function DashboardPage() {
               <div className="section-card h-20 animate-pulse" />
             </div>
           </div>
-        ) : error ? (
+        ) : error && !hasLoadedData ? (
           <div className="section-card flex flex-col items-center gap-3 p-8 text-center">
             <AlertCircle className="h-8 w-8 text-muted-foreground" />
             <div>
@@ -113,11 +157,7 @@ export default function DashboardPage() {
             </Button>
           </div>
         ) : (
-          <div
-            className={`space-y-5 transition-opacity duration-200 ${
-              isValidating ? "opacity-60" : "opacity-100"
-            }`}
-          >
+          <div className="space-y-5">
             <section
               className="section-card p-5 md:p-6"
               aria-label="Neto del mes"
@@ -204,6 +244,10 @@ export default function DashboardPage() {
                               pago mínimo
                             </p>
                           </div>
+                          <ChevronRight
+                            className="h-4 w-4 shrink-0 text-muted-foreground"
+                            aria-hidden="true"
+                          />
                         </button>
                       );
                     })}
@@ -252,6 +296,10 @@ export default function DashboardPage() {
                             {formatCOP(alert.spent)} / {formatCOP(alert.limit)}
                           </p>
                         </div>
+                        <ChevronRight
+                          className="h-4 w-4 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
                       </button>
                     ))}
                   </div>
@@ -343,12 +391,12 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <SavingsRateCard
-                month={month}
+                month={cardsMonth}
                 income={data.totalIncome}
                 expenses={data.totalExpenses}
               />
               <ExpenseProjectionCard
-                month={month}
+                month={cardsMonth}
                 expensesMTD={data.totalExpenses}
               />
             </div>
@@ -451,7 +499,7 @@ export default function DashboardPage() {
                 />
               </button>
               {showAnalysis && (
-                <div className="space-y-3 animate-in fade-in duration-200">
+                <div className="grid gap-3 animate-in fade-in duration-200 md:grid-cols-2">
                   <SpendingByCategory data={data.categorySpending} />
                   <MonthlyTrend data={data.dailySpending} />
                   <MonthlyComparison />

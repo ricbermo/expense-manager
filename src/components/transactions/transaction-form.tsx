@@ -52,6 +52,12 @@ function getTodayLocalDate() {
   return `${year}-${month}-${day}`;
 }
 
+function getNewTransactionDate(initialMonth?: string) {
+  return !initialMonth || initialMonth === getTodayLocalDate().slice(0, 7)
+    ? getTodayLocalDate()
+    : `${initialMonth}-01`;
+}
+
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -72,6 +78,7 @@ interface TransactionFormProps {
   ) => Promise<void>;
   accounts: Account[];
   editTransaction?: (Transaction & { categories?: Category | null }) | null;
+  initialMonth?: string;
 }
 
 interface TransactionFormValues {
@@ -95,13 +102,14 @@ const INSTALLMENT_OPTIONS = [1, 3, 6, 9, 12, 18, 24, 36, 48];
 
 function getDefaultValues(
   editTransaction?: (Transaction & { categories?: Category | null }) | null,
+  initialMonth?: string,
 ): TransactionFormValues {
   if (!editTransaction) {
     return {
       type: "expense",
       amount: "",
       description: "",
-      date: getTodayLocalDate(),
+      date: getNewTransactionDate(initialMonth),
       categoryId: "",
       budgetId: "",
       accountId: "",
@@ -144,6 +152,7 @@ export function TransactionForm({
   onUpdate,
   accounts,
   editTransaction,
+  initialMonth,
 }: TransactionFormProps) {
   const {
     control,
@@ -153,7 +162,7 @@ export function TransactionForm({
     setValue,
     formState: { isSubmitting },
   } = useForm<TransactionFormValues>({
-    defaultValues: getDefaultValues(editTransaction),
+    defaultValues: getDefaultValues(editTransaction, initialMonth),
   });
   const [showDetails, setShowDetails] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -215,7 +224,7 @@ export function TransactionForm({
       return;
     }
 
-    const nextValues = getDefaultValues(editTransaction);
+    const nextValues = getDefaultValues(editTransaction, initialMonth);
     previousTypeRef.current = nextValues.type;
     hydratedBudgetFromEditRef.current = false;
     setShowDetails(
@@ -237,7 +246,7 @@ export function TransactionForm({
     );
     setSubmitAttempted(false);
     reset(nextValues);
-  }, [open, editTransaction, reset]);
+  }, [open, editTransaction, initialMonth, reset]);
 
   useEffect(() => {
     if (loadingBudgets) {
@@ -490,7 +499,7 @@ export function TransactionForm({
         await onSubmit(transaction);
         toast.success("Movimiento registrado");
       }
-      reset(getDefaultValues());
+      reset(getDefaultValues(null, initialMonth));
       onOpenChange(false);
     } catch {
       toast.error("No se pudo guardar el movimiento");

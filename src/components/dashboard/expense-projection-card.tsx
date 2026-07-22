@@ -29,7 +29,9 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
           <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
             {formatCOP(expensesMTD)}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">Mes cerrado</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Mes cerrado · total registrado
+          </p>
         </div>
       );
     }
@@ -39,7 +41,9 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
           Proyección a fin de mes
         </p>
         <p className="mt-1 text-xl font-semibold text-muted-foreground">—</p>
-        <p className="mt-1 text-xs text-muted-foreground">Mes futuro</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Mes futuro · aún no hay datos para proyectar
+        </p>
       </div>
     );
   }
@@ -59,7 +63,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
           Proyección a fin de mes
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Datos insuficientes para proyectar
+          Disponible desde el día 5; aún hay pocos días para estimar el cierre
         </p>
       </div>
     );
@@ -117,11 +121,14 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
         {formatCOP(projected)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
+        Gastos registrados hasta hoy, llevados al día {daysInMonth}.
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
         {avg3m
           ? priorExpenses.length === 1
-            ? `Mes anterior: ${formatCOP(Math.round(avg3m))}`
-            : `Promedio ${priorExpenses.length}m previos: ${formatCOP(Math.round(avg3m))}`
-          : `Día ${day} de ${daysInMonth} · ritmo actual`}
+            ? `Comparado con el mes anterior: ${formatCOP(Math.round(avg3m))}`
+            : `Comparado con el promedio de ${priorExpenses.length} meses previos: ${formatCOP(Math.round(avg3m))}`
+          : `Día ${day} de ${daysInMonth} · sin base histórica para comparar`}
       </p>
     </div>
   );
