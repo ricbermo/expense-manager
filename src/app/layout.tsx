@@ -39,7 +39,16 @@ export default function RootLayout({
         <SettingsLink />
         <main className="flex-1">{children}</main>
         <BottomNav />
-        <Toaster position="top-center" richColors closeButton duration={3000} />
+        <Toaster
+          position="bottom-center"
+          offset={{ bottom: "1.5rem" }}
+          mobileOffset={{
+            bottom: "calc(6rem + env(safe-area-inset-bottom))",
+          }}
+          richColors
+          closeButton
+          duration={3000}
+        />
       </body>
     </html>
   );

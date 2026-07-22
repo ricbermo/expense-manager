@@ -16,7 +16,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "app-shell pb-3 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(5rem+env(safe-area-inset-top))]",
+        "app-shell pb-3 pt-[calc(1.5rem+env(safe-area-inset-top))]",
         className,
       )}
     >
