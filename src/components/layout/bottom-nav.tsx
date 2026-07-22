@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   LayoutDashboard,
   PiggyBank,
+  Plus,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
@@ -13,6 +14,12 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Movimientos", icon: ArrowLeftRight },
+  {
+    href: "/transactions?new=1",
+    label: "Registrar",
+    icon: Plus,
+    isAction: true,
+  },
   { href: "/accounts", label: "Cuentas", icon: Wallet },
   { href: "/budgets", label: "Presupuesto", icon: PiggyBank },
 ];
@@ -44,10 +51,12 @@ export function BottomNav() {
                 aria-current={isActive ? "page" : undefined}
                 aria-label={item.label}
                 className={cn(
-                  "flex h-full min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 text-[11px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                  "flex h-full min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    : item.isAction
+                      ? "bg-accent text-accent-foreground hover:bg-accent/80"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
                 <item.icon className="h-5 w-5" />

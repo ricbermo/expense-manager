@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import type { CreditCardAlert } from "@/lib/hooks/use-dashboard";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { formatCOP } from "@/lib/utils/currency";
-import { getCurrentMonth } from "@/lib/utils/dates";
+import { formatDate, getCurrentMonth } from "@/lib/utils/dates";
 
 function DeltaPill({
   current,
@@ -88,7 +88,14 @@ export default function DashboardPage() {
   const showCompositionBar =
     hasRecurring && hasOccasional && data.totalExpenses > 0;
   const isInitialLoading = loading && !hasLoadedData;
+  const isCurrentMonth = month === getCurrentMonth();
   const cardsMonth = dataMonth ?? month;
+  const statusSummary =
+    net > 0
+      ? `Te quedan ${formatCOP(net)} después de gastos.`
+      : net < 0
+        ? `Gastaste ${formatCOP(Math.abs(net))} más de lo que ingresaste.`
+        : "Ingresos y gastos están parejos.";
   const statusMessage = isInitialLoading
     ? "Cargando datos del dashboard..."
     : isValidating
@@ -100,12 +107,13 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
+        title="Resumen"
         action={
           <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
             <Button
+              nativeButton={false}
               render={<Link href={`/transactions?month=${month}`} />}
-              variant="outline"
+              variant="default"
               size="sm"
               className="h-11 min-h-11"
               aria-label="Registrar movimiento"
@@ -114,6 +122,16 @@ export default function DashboardPage() {
               <span className="sm:hidden">Registrar</span>
               <span className="hidden sm:inline">Registrar movimiento</span>
             </Button>
+            {!isCurrentMonth ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11"
+                onClick={() => setMonth(getCurrentMonth())}
+              >
+                Este mes
+              </Button>
+            ) : null}
             <MonthPager month={month} onChange={changeMonth} />
           </div>
         }
@@ -176,6 +194,7 @@ export default function DashboardPage() {
               >
                 {formatCOP(net)}
               </p>
+              <p className="mt-2 text-sm text-foreground">{statusSummary}</p>
               {showNetDelta ? (
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span
@@ -233,6 +252,9 @@ export default function DashboardPage() {
                               {alert.accountName}
                             </p>
                             <p className={`text-xs ${color}`}>{label}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Fecha límite: {formatDate(alert.dueDate)}
+                            </p>
                           </div>
                           <div className="shrink-0 text-right">
                             <p
@@ -242,6 +264,9 @@ export default function DashboardPage() {
                             </p>
                             <p className="text-xs text-muted-foreground">
                               pago mínimo
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Total: {formatCOP(alert.totalBalance)}
                             </p>
                           </div>
                           <ChevronRight
@@ -293,7 +318,11 @@ export default function DashboardPage() {
                             {alert.percentage}%
                           </p>
                           <p className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                            {formatCOP(alert.spent)} / {formatCOP(alert.limit)}
+                            {alert.percentage > 100
+                              ? `${formatCOP(alert.spent - alert.limit)} sobre el límite`
+                              : alert.percentage === 100
+                                ? "Límite alcanzado"
+                                : `${formatCOP(alert.limit - alert.spent)} restantes`}
                           </p>
                         </div>
                         <ChevronRight
@@ -401,89 +430,6 @@ export default function DashboardPage() {
               />
             </div>
 
-            {showComposition && (
-              <section className="section-card space-y-3 p-4">
-                <p className="text-sm font-semibold text-foreground">
-                  Composición de gastos
-                </p>
-                <div
-                  className={`grid gap-3 ${
-                    showCompositionBar ? "grid-cols-2" : "grid-cols-1"
-                  }`}
-                >
-                  {hasRecurring && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Recurrentes
-                      </p>
-                      <p className="text-lg font-semibold tabular-nums text-emerald-700">
-                        {formatCOP(data.recurringExpenses)}
-                      </p>
-                    </div>
-                  )}
-                  {hasOccasional && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Ocasionales
-                      </p>
-                      <p className="text-lg font-semibold tabular-nums text-orange-700">
-                        {formatCOP(data.occasionalExpenses)}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {showCompositionBar && (
-                  <div>
-                    <div className="flex h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="bg-emerald-700 transition-[width] duration-300 ease-out"
-                        style={{
-                          width: `${(data.recurringExpenses / data.totalExpenses) * 100}%`,
-                        }}
-                      />
-                      <div
-                        className="bg-orange-700 transition-[width] duration-300 ease-out"
-                        style={{
-                          width: `${(data.occasionalExpenses / data.totalExpenses) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                      <span>
-                        {Math.round(
-                          (data.recurringExpenses / data.totalExpenses) * 100,
-                        )}
-                        % recurrente
-                      </span>
-                      <span>
-                        {Math.round(
-                          (data.occasionalExpenses / data.totalExpenses) * 100,
-                        )}
-                        % ocasional
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {data.topGrowthCategory && (
-              <p className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
-                <TrendingUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span>
-                  Gasto en{" "}
-                  <span className="font-medium text-foreground">
-                    {data.topGrowthCategory.name}
-                  </span>{" "}
-                  aumentó{" "}
-                  <span className="font-medium text-foreground">
-                    {formatCOP(data.topGrowthCategory.growth)}
-                  </span>{" "}
-                  vs el mes anterior
-                </span>
-              </p>
-            )}
-
             <div className="space-y-3">
               <button
                 type="button"
@@ -500,6 +446,86 @@ export default function DashboardPage() {
               </button>
               {showAnalysis && (
                 <div className="grid gap-3 animate-in fade-in duration-200 md:grid-cols-2">
+                  {showComposition && (
+                    <section className="section-card space-y-3 p-4 md:col-span-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        Cómo se repartieron los gastos
+                      </p>
+                      <div
+                        className={`grid gap-3 ${
+                          showCompositionBar ? "grid-cols-2" : "grid-cols-1"
+                        }`}
+                      >
+                        {hasRecurring && (
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                              Gasto fijo
+                            </p>
+                            <p className="text-lg font-semibold tabular-nums text-emerald-700">
+                              {formatCOP(data.recurringExpenses)}
+                            </p>
+                          </div>
+                        )}
+                        {hasOccasional && (
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                              Gasto ocasional
+                            </p>
+                            <p className="text-lg font-semibold tabular-nums text-orange-700">
+                              {formatCOP(data.occasionalExpenses)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      {showCompositionBar && (
+                        <div>
+                          <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="bg-emerald-700 transition-[width] duration-300 ease-out"
+                              style={{
+                                width: `${(data.recurringExpenses / data.totalExpenses) * 100}%`,
+                              }}
+                            />
+                            <div
+                              className="bg-orange-700 transition-[width] duration-300 ease-out"
+                              style={{
+                                width: `${(data.occasionalExpenses / data.totalExpenses) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                            <span>
+                              {Math.round(
+                                (data.recurringExpenses / data.totalExpenses) *
+                                  100,
+                              )}
+                              % fijo
+                            </span>
+                            <span>
+                              {Math.round(
+                                (data.occasionalExpenses / data.totalExpenses) *
+                                  100,
+                              )}
+                              % ocasional
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {data.topGrowthCategory ? (
+                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                          <span>
+                            El gasto que más aumentó fue{" "}
+                            <span className="font-medium text-foreground">
+                              {data.topGrowthCategory.name}
+                            </span>{" "}
+                            ({formatCOP(data.topGrowthCategory.growth)} más que
+                            el mes anterior).
+                          </span>
+                        </p>
+                      ) : null}
+                    </section>
+                  )}
                   <SpendingByCategory data={data.categorySpending} />
                   <MonthlyTrend data={data.dailySpending} />
                   <MonthlyComparison />

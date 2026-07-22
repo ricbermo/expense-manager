@@ -52,7 +52,7 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
     <div className="section-card p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-muted-foreground">
-          Tasa de ahorro
+          Del ingreso que queda
         </p>
         {deltaPts !== null && deltaPts !== 0 && (
           <span
@@ -75,10 +75,10 @@ export function SavingsRateCard({ month, income, expenses }: Props) {
       <p className="mt-1 text-xs text-muted-foreground">
         {rate === null
           ? isPast
-            ? "Mes cerrado · no hubo ingresos para calcularla"
+            ? "Mes cerrado · no hubo ingresos para calcularlo"
             : isCurrentMonth
               ? "Sin ingresos registrados; no se puede calcular"
-              : "Mes futuro · aún no hay ingresos para calcularla"
+              : "Mes futuro · aún no hay ingresos para calcularlo"
           : rate < 0
             ? "Gastos superan ingresos; el porcentaje queda en negativo"
             : isFuture

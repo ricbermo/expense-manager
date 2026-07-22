@@ -38,7 +38,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
     return (
       <div className="section-card p-4">
         <p className="text-sm font-medium text-muted-foreground">
-          Proyección a fin de mes
+          Gasto estimado al cierre
         </p>
         <p className="mt-1 text-xl font-semibold text-muted-foreground">—</p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -60,7 +60,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
     return (
       <div className="section-card p-4">
         <p className="text-sm font-medium text-muted-foreground">
-          Proyección a fin de mes
+          Gasto estimado al cierre
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Disponible desde el día 5; aún hay pocos días para estimar el cierre
@@ -98,7 +98,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
     <div className="section-card p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-muted-foreground">
-          Proyección a fin de mes
+          Gasto estimado al cierre
         </p>
         {pct !== null && pct !== 0 && (
           <span

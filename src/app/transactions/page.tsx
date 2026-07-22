@@ -36,7 +36,9 @@ function TransactionsPageContent() {
   const requestedMonth = searchParams.get("month");
   const [localMonth, setLocalMonth] = useState(getCurrentMonth);
   const month = requestedMonth ?? localMonth;
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(
+    () => searchParams.get("new") === "1",
+  );
   const [editingTransaction, setEditingTransaction] =
     useState<TransactionWithRelations | null>(null);
   const {
@@ -274,7 +276,7 @@ function TransactionsPageContent() {
                 <Filter className="h-3.5 w-3.5" />
                 Filtros
                 {hasActiveFilters && (
-                  <Badge className="h-5 w-5 rounded-full p-0 text-[11px] flex items-center justify-center ml-0.5">
+                  <Badge className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs">
                     {activeFilterCount}
                   </Badge>
                 )}
