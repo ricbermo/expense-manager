@@ -166,6 +166,9 @@ export function TransactionForm({
   });
   const [showDetails, setShowDetails] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const lastAccountIdRef = useRef<string | null>(null);
 
   const watchedType = useWatch({ control, name: "type" });
   const watchedAmount = useWatch({ control, name: "amount" });
@@ -225,6 +228,9 @@ export function TransactionForm({
     }
 
     const nextValues = getDefaultValues(editTransaction, initialMonth);
+    if (!editTransaction && lastAccountIdRef.current) {
+      nextValues.accountId = lastAccountIdRef.current;
+    }
     previousTypeRef.current = nextValues.type;
     hydratedBudgetFromEditRef.current = false;
     setShowDetails(
@@ -245,8 +251,16 @@ export function TransactionForm({
         : false,
     );
     setSubmitAttempted(false);
+    setSaveAndAddAnother(false);
     reset(nextValues);
   }, [open, editTransaction, initialMonth, reset]);
+
+  useEffect(() => {
+    if (!open || isEditing) return;
+
+    const frame = requestAnimationFrame(() => amountInputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [isEditing, open]);
 
   useEffect(() => {
     if (loadingBudgets) {
@@ -419,6 +433,14 @@ export function TransactionForm({
   const hasRequiredValues = !!amount && !!accountId && hasValidDestination;
   const canSave = !isSubmitting && hasRequiredValues;
 
+  const resetForNewTransaction = () => {
+    const nextValues = getDefaultValues(null, initialMonth);
+    if (lastAccountIdRef.current) {
+      nextValues.accountId = lastAccountIdRef.current;
+    }
+    reset(nextValues);
+  };
+
   const onFormSubmit = async (values: TransactionFormValues) => {
     const hasValidSubmission =
       !!values.amount &&
@@ -485,6 +507,7 @@ export function TransactionForm({
     };
 
     try {
+      lastAccountIdRef.current = values.accountId;
       if (isEditing && onUpdate && editTransaction) {
         await onUpdate(editTransaction.id, transaction);
         toast.success("Movimiento actualizado");
@@ -499,8 +522,15 @@ export function TransactionForm({
         await onSubmit(transaction);
         toast.success("Movimiento registrado");
       }
-      reset(getDefaultValues(null, initialMonth));
-      onOpenChange(false);
+      if (saveAndAddAnother && !isEditing) {
+        resetForNewTransaction();
+        setShowDetails(false);
+        setSubmitAttempted(false);
+        setSaveAndAddAnother(false);
+      } else {
+        resetForNewTransaction();
+        onOpenChange(false);
+      }
     } catch {
       toast.error("No se pudo guardar el movimiento");
     }
@@ -561,6 +591,10 @@ export function TransactionForm({
                   type="text"
                   inputMode="numeric"
                   value={field.value}
+                  ref={(element) => {
+                    field.ref(element);
+                    amountInputRef.current = element;
+                  }}
                   onChange={(e) =>
                     field.onChange(formatIntegerInput(e.target.value))
                   }
@@ -628,9 +662,26 @@ export function TransactionForm({
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting}
+            onClick={() => setSaveAndAddAnother(false)}
+          >
             {isSubmitting ? "Guardando..." : submitLabel}
           </Button>
+
+          {!isEditing && (
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full"
+              disabled={isSubmitting}
+              onClick={() => setSaveAndAddAnother(true)}
+            >
+              Guardar y añadir otro
+            </Button>
+          )}
 
           <Button
             type="button"
@@ -722,7 +773,12 @@ export function TransactionForm({
                         />
                       )}
                     />
-                    <span className="text-sm">Es pago de deuda</span>
+                    <div>
+                      <span className="text-sm">Es pago de deuda</span>
+                      <p className="text-xs text-muted-foreground">
+                        Registra el pago como movimiento hacia una deuda.
+                      </p>
+                    </div>
                   </label>
 
                   {isDebtPayment && (
@@ -764,6 +820,9 @@ export function TransactionForm({
                   {isCreditCardPurchase && (
                     <div className="space-y-2">
                       <Label htmlFor="installments">Cuotas</Label>
+                      <p className="text-xs text-muted-foreground">
+                        El gasto se repartirá entre las cuotas seleccionadas.
+                      </p>
                       <Controller
                         name="installments"
                         control={control}
@@ -868,7 +927,12 @@ export function TransactionForm({
                             />
                           )}
                         />
-                        <span className="text-sm">Gasto compartido</span>
+                        <div>
+                          <span className="text-sm">Gasto compartido</span>
+                          <p className="text-xs text-muted-foreground">
+                            Calcula tu parte y el reembolso esperado.
+                          </p>
+                        </div>
                       </label>
 
                       {isSharedExpense && (

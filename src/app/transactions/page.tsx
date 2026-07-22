@@ -2,7 +2,7 @@
 
 import { Filter, Plus, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MonthPager } from "@/components/layout/month-pager";
 import { PageHeader } from "@/components/layout/page-header";
@@ -25,6 +25,7 @@ import {
   useTransactions,
 } from "@/lib/hooks/use-transactions";
 import { formatMonthYear, getCurrentMonth } from "@/lib/utils/dates";
+import { shouldHandleNewTransactionShortcut } from "@/lib/utils/transactions-presentation";
 
 type TypeFilter = "all" | "expense" | "income" | "transfer";
 type OccasionalFilter = "all" | "occasional" | "recurring";
@@ -58,9 +59,24 @@ function TransactionsPageContent() {
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [activeMutationId, setActiveMutationId] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [occasionalFilter, setOccasionalFilter] =
     useState<OccasionalFilter>("all");
   const budgetFilter = searchParams.get("budget") ?? "";
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (!shouldHandleNewTransactionShortcut(event)) return;
+
+      event.preventDefault();
+      setEditingTransaction(null);
+      setFormOpen(true);
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   const hasActiveFilters =
     Boolean(search) ||
@@ -176,29 +192,44 @@ function TransactionsPageContent() {
   };
 
   const handleAccept = async (transaction: TransactionWithRelations) => {
+    setActiveMutationId(transaction.id);
+    setMutationError(null);
     try {
       await updateTransaction(transaction.id, { status: "confirmed" });
       toast.success("Movimiento confirmado");
     } catch {
+      setMutationError("No se pudo confirmar el movimiento. Intenta de nuevo.");
       toast.error("No se pudo confirmar el movimiento");
+    } finally {
+      setActiveMutationId(null);
     }
   };
 
   const handleDiscard = async (transaction: TransactionWithRelations) => {
+    setActiveMutationId(transaction.id);
+    setMutationError(null);
     try {
       await deleteTransaction(transaction.id);
       toast.success("Movimiento descartado");
     } catch {
+      setMutationError("No se pudo descartar el movimiento. Intenta de nuevo.");
       toast.error("No se pudo descartar el movimiento");
+    } finally {
+      setActiveMutationId(null);
     }
   };
 
   const handleDelete = async (id: string) => {
+    setActiveMutationId(id);
+    setMutationError(null);
     try {
       await deleteTransaction(id);
       toast.success("Movimiento eliminado");
     } catch {
+      setMutationError("No se pudo eliminar el movimiento. Intenta de nuevo.");
       toast.error("No se pudo eliminar el movimiento");
+    } finally {
+      setActiveMutationId(null);
     }
   };
 
@@ -208,12 +239,19 @@ function TransactionsPageContent() {
         title="Movimientos"
         description="Registra ingresos, gastos y transferencias por mes"
         action={
-          <div className="flex items-center gap-2">
-            <MonthPager month={month} onChange={changeMonth} />
-            <Button size="sm" onClick={() => setFormOpen(true)}>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <Button
+              size="sm"
+              className="order-first w-full sm:order-last sm:w-auto"
+              onClick={() => {
+                setEditingTransaction(null);
+                setFormOpen(true);
+              }}
+            >
               <Plus className="h-4 w-4 mr-1" />
-              Nuevo
+              Registrar movimiento
             </Button>
+            <MonthPager month={month} onChange={changeMonth} />
           </div>
         }
       />
@@ -225,8 +263,26 @@ function TransactionsPageContent() {
             onEdit={handleEdit}
             onAccept={handleAccept}
             onDiscard={handleDiscard}
+            pendingTransactionId={activeMutationId}
           />
         )}
+
+        {mutationError ? (
+          <div
+            role="alert"
+            className="section-card flex items-center justify-between gap-3 p-3"
+          >
+            <p className="text-sm text-destructive">{mutationError}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-11 shrink-0"
+              onClick={() => setMutationError(null)}
+            >
+              Cerrar
+            </Button>
+          </div>
+        ) : null}
 
         {transactions.length > 0 && (
           <div className="space-y-2">
@@ -451,7 +507,7 @@ function TransactionsPageContent() {
               <div className="empty-state text-muted-foreground">
                 <p>No se encontraron movimientos</p>
                 <p className="text-xs mt-1">
-                  Intenta con otro filtro o busqueda
+                  Intenta con otro filtro o búsqueda
                 </p>
               </div>
             ) : (
@@ -459,6 +515,7 @@ function TransactionsPageContent() {
                 transactions={filteredTransactions}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                deletingTransactionId={activeMutationId}
               />
             )}
           </div>

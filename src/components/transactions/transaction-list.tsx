@@ -38,13 +38,15 @@ const typeLabels = {
 interface TransactionListProps {
   transactions: TransactionWithRelations[];
   onEdit: (transaction: TransactionWithRelations) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
+  deletingTransactionId?: string | null;
 }
 
 export function TransactionList({
   transactions,
   onEdit,
   onDelete,
+  deletingTransactionId,
 }: TransactionListProps) {
   // Group by date
   const grouped = transactions.reduce<
@@ -110,27 +112,32 @@ export function TransactionList({
                     )}
                     {((t.tags && t.tags.length > 0) ||
                       (t.installments && t.installments >= 2)) && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {t.installments && t.installments >= 2 && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs px-1.5 py-0 h-4"
-                          >
-                            {t.installments} cuotas ·{" "}
-                            {formatCOP(Math.floor(t.amount / t.installments))}
-                            /mes
-                          </Badge>
-                        )}
-                        {t.tags?.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="text-xs px-1.5 py-0 h-4"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-xs text-muted-foreground underline-offset-2 hover:underline">
+                          Ver detalles
+                        </summary>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {t.installments && t.installments >= 2 && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs px-1.5 py-0 h-4"
+                            >
+                              {t.installments} cuotas ·{" "}
+                              {formatCOP(Math.floor(t.amount / t.installments))}
+                              /mes
+                            </Badge>
+                          )}
+                          {t.tags?.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs px-1.5 py-0 h-4"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </details>
                     )}
                   </div>
                   <div className="text-right flex items-center gap-1">
@@ -145,13 +152,16 @@ export function TransactionList({
                       size="icon"
                       className="h-11 w-11 text-muted-foreground transition-colors duration-200 hover:text-primary"
                       onClick={() => onEdit(t)}
+                      disabled={deletingTransactionId === t.id}
                       aria-label={`Editar ${t.description || t.categories?.name || "movimiento"}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <InlineConfirm
                       onConfirm={() => onDelete(t.id)}
-                      label="Eliminar"
+                      label="Eliminar movimiento"
+                      cancelLabel="Cancelar"
+                      disabled={deletingTransactionId === t.id}
                     />
                   </div>
                 </div>
