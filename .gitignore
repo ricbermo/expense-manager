@@ -57,3 +57,7 @@ public/swe-worker-*.js
 !.dev.vars.example
 !.env.example
 .superpowers/
+
+# Local agent artifacts
+/.impeccable/critique/
+/docs/superpowers/

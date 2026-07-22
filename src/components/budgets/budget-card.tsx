@@ -1,28 +1,36 @@
 "use client";
 
+import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/ui/inline-confirm";
 import { formatCOP } from "@/lib/utils/currency";
 import type { BudgetWithCategory } from "@/lib/hooks/use-budgets";
+import { getBudgetPriority } from "@/lib/utils/budget-presentation";
 
 interface BudgetCardProps {
   budget: BudgetWithCategory;
+  movementsHref: string;
   onEdit: (budget: BudgetWithCategory) => void;
   onDelete: (id: string) => void;
 }
 
-export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
-  const percentage = Math.round((budget.spent / budget.limit_amount) * 100);
+export function BudgetCard({ budget, movementsHref, onEdit, onDelete }: BudgetCardProps) {
+  const progress = getBudgetPriority(budget);
+  const percentage = progress.percentage;
   const remaining = budget.limit_amount - budget.spent;
-  const status =
-    percentage >= 100 ? "Excedido" : percentage >= 80 ? "En alerta" : "Saludable";
+  const status = {
+    exceeded: "Excedido",
+    alert: "En alerta",
+    healthy: "Dentro del límite",
+    invalid: "Límite inválido",
+  }[progress.kind];
 
   const progressColor =
-    percentage >= 100
+    progress.kind === "exceeded"
       ? "bg-rose-600"
-      : percentage >= 80
+      : progress.kind === "alert"
         ? "bg-amber-500"
         : "bg-emerald-600";
 
@@ -56,25 +64,37 @@ export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
           />
         </div>
       </div>
-      <div className="space-y-1">
-        <div className="h-2 w-full rounded-full bg-muted">
+      {percentage !== null ? (
+        <div className="space-y-1">
           <div
-            className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
-            style={{ width: `${Math.min(percentage, 100)}%` }}
-          />
+            className="h-2 w-full overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-label={`${budget.name}: ${percentage}% del límite mensual`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.min(percentage, 100)}
+          >
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
+              style={{ width: `${Math.min(percentage, 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">{percentage}% del límite</p>
         </div>
-        <p className="text-xs text-muted-foreground">{percentage}% del limite</p>
-      </div>
-      <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">
-          {formatCOP(budget.spent)} gastado
-        </span>
-        <span className={remaining >= 0 ? "text-emerald-600" : "text-rose-600"}>
+      ) : (
+        <p className="text-xs text-muted-foreground">Revisa el límite mensual</p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span className="tabular-nums text-muted-foreground">{formatCOP(budget.spent)} gastado</span>
+        <span className={`tabular-nums ${remaining >= 0 ? "text-chart-income" : "text-rose-700"}`}>
           {remaining >= 0
             ? `${formatCOP(remaining)} disponible`
             : `${formatCOP(Math.abs(remaining))} excedido`}
         </span>
       </div>
+      <Button render={<Link href={movementsHref} />} variant="outline" className="h-11 w-full">
+        Ver gastos
+      </Button>
     </Card>
   );
 }

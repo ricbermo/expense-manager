@@ -23,7 +23,7 @@ export function InlineConfirm({
         <Button
           variant="destructive"
           size="sm"
-          className="h-7 px-2 text-xs"
+          className="h-11 px-3 text-xs"
           onClick={() => {
             onConfirm();
             setConfirming(false);
@@ -34,7 +34,7 @@ export function InlineConfirm({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-xs"
+          className="h-11 px-3 text-xs"
           onClick={() => setConfirming(false)}
         >
           No

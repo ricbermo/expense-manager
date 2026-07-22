@@ -160,7 +160,7 @@ export function BudgetForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="budget-category">Categoria</Label>
+            <Label htmlFor="budget-category">Categoría</Label>
             <Controller
               name="categoryId"
               control={control}
@@ -168,7 +168,7 @@ export function BudgetForm({
                 <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                   <SelectTrigger id="budget-category">
                     <SelectValue placeholder="Selecciona categoria">
-                      {() => selectedCategory?.name ?? "Selecciona categoria"}
+                      {() => selectedCategory?.name ?? "Selecciona categoría"}
                     </SelectValue>
                     </SelectTrigger>
                   <SelectContent>
@@ -184,7 +184,7 @@ export function BudgetForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="limit">Limite mensual (COP)</Label>
+            <Label htmlFor="limit">Límite mensual (COP)</Label>
             <Input
               id="limit"
               type="text"

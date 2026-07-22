@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search, X, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -25,8 +26,13 @@ import { formatMonthYear, getCurrentMonth } from "@/lib/utils/dates";
 type TypeFilter = "all" | "expense" | "income" | "transfer";
 type OccasionalFilter = "all" | "occasional" | "recurring";
 
-export default function TransactionsPage() {
-  const [month, setMonth] = useState(getCurrentMonth);
+function TransactionsPageContent() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const requestedMonth = searchParams.get("month");
+  const [localMonth, setLocalMonth] = useState(getCurrentMonth);
+  const month = requestedMonth ?? localMonth;
   const [formOpen, setFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithRelations | null>(null);
   const {
@@ -47,6 +53,7 @@ export default function TransactionsPage() {
   const [maxAmount, setMaxAmount] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [occasionalFilter, setOccasionalFilter] = useState<OccasionalFilter>("all");
+  const budgetFilter = searchParams.get("budget") ?? "";
 
   const activeFilterCount = [accountFilter, minAmount, maxAmount].filter(Boolean).length;
 
@@ -62,6 +69,9 @@ export default function TransactionsPage() {
     }
     if (accountFilter) {
       result = result.filter((t) => t.account_id === accountFilter);
+    }
+    if (budgetFilter) {
+      result = result.filter((t) => t.budget_id === budgetFilter);
     }
     if (minAmount) {
       const min = Number(minAmount.replace(/\D/g, ""));
@@ -88,14 +98,37 @@ export default function TransactionsPage() {
       );
     }
     return result;
-  }, [transactions, search, typeFilter, accountFilter, minAmount, maxAmount, occasionalFilter]);
+  }, [
+    transactions,
+    search,
+    typeFilter,
+    accountFilter,
+    budgetFilter,
+    minAmount,
+    maxAmount,
+    occasionalFilter,
+  ]);
 
   const changeMonth = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
     const d = new Date(y, m - 1 + delta, 1);
-    setMonth(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-    );
+    const nextMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!requestedMonth && !budgetFilter) {
+      setLocalMonth(nextMonth);
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("month", nextMonth);
+    params.delete("budget");
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const clearBudgetFilter = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("budget");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
   };
 
   const handleEdit = (transaction: TransactionWithRelations) => {
@@ -171,6 +204,21 @@ export default function TransactionsPage() {
 
         {transactions.length > 0 && (
           <div className="space-y-2">
+            {budgetFilter ? (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2">
+                <p className="min-w-0 text-xs text-muted-foreground">
+                  Mostrando gastos del presupuesto seleccionado
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 shrink-0"
+                  onClick={clearBudgetFilter}
+                >
+                  Quitar filtro
+                </Button>
+              </div>
+            ) : null}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -368,5 +416,13 @@ export default function TransactionsPage() {
         editTransaction={editingTransaction}
       />
     </div>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<div className="app-shell py-6 text-sm text-muted-foreground">Cargando movimientos...</div>}>
+      <TransactionsPageContent />
+    </Suspense>
   );
 }

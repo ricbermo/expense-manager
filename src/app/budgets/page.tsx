@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Plus, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -9,16 +10,37 @@ import { Button } from "@/components/ui/button";
 import { BudgetCard } from "@/components/budgets/budget-card";
 import { BudgetForm } from "@/components/budgets/budget-form";
 import { useBudgets, type BudgetWithCategory } from "@/lib/hooks/use-budgets";
+import {
+  getBudgetCopyMessage,
+  getBudgetPriority,
+  getBudgetSummary,
+  orderBudgetsByPriority,
+} from "@/lib/utils/budget-presentation";
 import { formatCOP } from "@/lib/utils/currency";
 import { getCurrentMonth } from "@/lib/utils/dates";
 
 export default function BudgetsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [formOpen, setFormOpen] = useState(false);
+  const [copying, setCopying] = useState(false);
   const [editingBudget, setEditingBudget] =
     useState<BudgetWithCategory | null>(null);
-  const { budgets, loading, createBudget, updateBudget, deleteBudget, copyFromPreviousMonth } =
-    useBudgets(month);
+  const {
+    budgets,
+    loading,
+    error,
+    refetch,
+    createBudget,
+    updateBudget,
+    deleteBudget,
+    copyFromPreviousMonth,
+  } = useBudgets(month);
+  const orderedBudgets = useMemo(() => orderBudgetsByPriority(budgets), [budgets]);
+  const summary = useMemo(() => getBudgetSummary(budgets), [budgets]);
+  const priorityBudget = orderedBudgets.find((budget) => {
+    const priority = getBudgetPriority(budget).kind;
+    return priority === "exceeded" || priority === "alert";
+  });
 
   const changeMonth = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
@@ -45,6 +67,18 @@ export default function BudgetsPage() {
   const handleCreate = () => {
     setEditingBudget(null);
     setFormOpen(true);
+  };
+
+  const handleCopyPreviousMonth = async () => {
+    setCopying(true);
+    try {
+      const result = await copyFromPreviousMonth();
+      toast.success(getBudgetCopyMessage(result));
+    } catch {
+      toast.error("No se pudieron copiar los presupuestos.");
+    } finally {
+      setCopying(false);
+    }
   };
 
   const handleFormOpenChange = (open: boolean) => {
@@ -77,60 +111,39 @@ export default function BudgetsPage() {
     });
   };
 
-  const totalBudget = budgets.reduce((s, b) => s + b.limit_amount, 0);
-  const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
-
   return (
     <div className="pb-6">
       <PageHeader
         title="Presupuesto"
-        description="Monitorea limites y gasto acumulado por categoria"
+        description="Monitorea límites y gasto acumulado por categoría"
         action={
-          <div className="flex items-center gap-2">
-            <MonthPager month={month} onChange={changeMonth} />
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                try {
-                  await copyFromPreviousMonth();
-                  toast.success("Presupuestos copiados del mes anterior");
-                } catch {
-                  toast.error("No se pudieron copiar los presupuestos");
-                }
-              }}
-              title="Copiar del mes anterior"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button size="sm" onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-1" />
-              Nuevo
-            </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <MonthPager
+              month={month}
+              onChange={changeMonth}
+              className="justify-between sm:justify-start"
+              buttonClassName="h-11 w-11"
+            />
+            <div className="grid grid-cols-1 gap-2 sm:flex">
+              <Button
+                variant="outline"
+                className="h-11"
+                disabled={copying}
+                onClick={() => void handleCopyPreviousMonth()}
+              >
+                <Copy className="h-4 w-4" />
+                {copying ? "Copiando..." : "Copiar mes anterior"}
+              </Button>
+              <Button className="h-11" onClick={handleCreate}>
+                <Plus className="h-4 w-4" />
+                Nuevo
+              </Button>
+            </div>
           </div>
         }
       />
 
       <div className="app-shell page-stack">
-        {budgets.length > 0 && (
-          <div className="kpi-card">
-            <div className="flex justify-between text-sm">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Gastado
-                </p>
-                <p className="font-semibold text-rose-600">{formatCOP(totalSpent)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Presupuesto
-                </p>
-                <p className="font-semibold">{formatCOP(totalBudget)}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
@@ -140,42 +153,91 @@ export default function BudgetsPage() {
               />
             ))}
           </div>
+        ) : error && budgets.length === 0 ? (
+          <div className="empty-state text-muted-foreground">
+            <p className="font-medium text-foreground">No se pudieron cargar los presupuestos</p>
+            <p className="mt-1 text-xs">{error}</p>
+            <Button className="mt-4 h-11" onClick={() => void refetch()}>
+              Reintentar
+            </Button>
+          </div>
         ) : budgets.length === 0 ? (
           <div className="empty-state text-muted-foreground">
             <p className="font-medium text-foreground">Sin presupuestos este mes</p>
-            <p className="text-xs mt-1">Define limites de gasto por categoria para detectar cuando te excedes y poder ahorrar mas</p>
-            <div className="flex gap-2 mt-4">
-              <Button onClick={handleCreate}>
-                <Plus className="mr-1 h-4 w-4" />
+            <p className="mt-1 text-xs">Define límites de gasto por categoría para detectar cuándo te excedes.</p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Button className="h-11" onClick={handleCreate}>
+                <Plus className="h-4 w-4" />
                 Crear presupuesto
               </Button>
               <Button
                 variant="outline"
-                onClick={async () => {
-                  try {
-                    await copyFromPreviousMonth();
-                    toast.success("Presupuestos copiados del mes anterior");
-                  } catch {
-                    toast.error("No se pudieron copiar los presupuestos");
-                  }
-                }}
+                className="h-11"
+                disabled={copying}
+                onClick={() => void handleCopyPreviousMonth()}
               >
-                <Copy className="mr-1 h-4 w-4" />
+                <Copy className="h-4 w-4" />
                 Copiar del mes anterior
               </Button>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            {budgets.map((budget) => (
-              <BudgetCard
-                key={budget.id}
-                budget={budget}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+          <>
+            {error ? (
+              <div className="section-card p-3">
+                <p className="text-sm font-medium">Error al actualizar los presupuestos</p>
+                <p className="mt-1 text-xs text-muted-foreground">{error}</p>
+                <Button variant="ghost" className="mt-2 h-11" onClick={() => void refetch()}>
+                  Reintentar
+                </Button>
+              </div>
+            ) : null}
+            <section className="section-card p-4" aria-labelledby="budget-summary-heading">
+              <p id="budget-summary-heading" className="text-sm font-medium text-foreground">
+                {summary.kind === "exceeded"
+                  ? `${summary.budgetCount} ${summary.budgetCount === 1 ? "presupuesto excedido" : "presupuestos excedidos"}`
+                  : "Todos los presupuestos están dentro del límite"}
+              </p>
+              <p className={`mt-1 text-sm font-semibold tabular-nums ${summary.kind === "exceeded" ? "text-rose-700" : "text-chart-income"}`}>
+                {summary.kind === "exceeded"
+                  ? `${formatCOP(summary.amount)} por encima del límite`
+                  : `${formatCOP(summary.amount)} disponible`}
+              </p>
+              {priorityBudget ? (
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">{priorityBudget.name}</p>
+                    <p className="text-xs text-muted-foreground">{priorityBudget.categories.name}</p>
+                  </div>
+                  <Button
+                    render={
+                      <Link
+                        href={{
+                          pathname: "/transactions",
+                          query: { month, budget: priorityBudget.id },
+                        }}
+                      />
+                    }
+                    variant="outline"
+                    className="h-11 shrink-0"
+                  >
+                    Ver gastos
+                  </Button>
+                </div>
+              ) : null}
+            </section>
+            <div className="space-y-3">
+              {orderedBudgets.map((budget) => (
+                <BudgetCard
+                  key={budget.id}
+                  budget={budget}
+                  movementsHref={`/transactions?month=${month}&budget=${budget.id}`}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

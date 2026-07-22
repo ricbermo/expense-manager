@@ -5,6 +5,10 @@ import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
 import type { Budget, Category } from "@/lib/types/database";
+import {
+  getBudgetErrorMessage,
+  type BudgetCopyResult,
+} from "@/lib/utils/budget-presentation";
 
 export interface BudgetWithCategory extends Budget {
   categories: Category;
@@ -36,22 +40,28 @@ export function useBudgets(month: string) {
     const supabase = createClient();
 
     // Fetch budgets with categories
-    const { data: budgetData } = await supabase
+    const { data: budgetData, error: budgetError } = await supabase
       .from("budgets")
       .select("*, categories(*)")
       .eq("month", `${month}-01`);
+    if (budgetError) {
+      throw budgetError;
+    }
 
     // Fetch expenses for this month
     const startDate = `${month}-01`;
     const [y, m] = month.split("-").map(Number);
     const endDate = `${y}-${String(m + 1).padStart(2, "0")}-01`;
 
-    const { data: expenses } = await supabase
+    const { data: expenses, error: expensesError } = await supabase
       .from("transactions")
       .select("id, category_id, budget_id, amount")
       .eq("type", "expense")
       .gte("date", startDate)
       .lt("date", endDate);
+    if (expensesError) {
+      throw expensesError;
+    }
 
     const expenseRows =
       (expenses as {
@@ -65,11 +75,14 @@ export function useBudgets(month: string) {
 
     let reimbursementsByExpenseId: Record<string, number> = {};
     if (expenseIds.length > 0) {
-      const { data: reimbursements } = await supabase
+      const { data: reimbursements, error: reimbursementsError } = await supabase
         .from("transactions")
         .select("related_expense_id, amount")
         .eq("type", "income")
         .in("related_expense_id", expenseIds);
+      if (reimbursementsError) {
+        throw reimbursementsError;
+      }
 
       reimbursementsByExpenseId =
         (reimbursements as {
@@ -130,6 +143,7 @@ export function useBudgets(month: string) {
   const {
     data: budgets = [],
     isLoading: loading,
+    error,
     mutate,
   } = useSWR(swrKeys.budgets(month), fetchBudgets);
 
@@ -191,63 +205,84 @@ export function useBudgets(month: string) {
     await revalidateDashboard();
   };
 
-  const copyFromPreviousMonth = async () => {
+  const copyFromPreviousMonth = async (): Promise<BudgetCopyResult> => {
     const [y, m] = month.split("-").map(Number);
     const prevDate = new Date(y, m - 2, 1);
     const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
 
     const supabase = createClient();
-    const { data: prevBudgets } = await supabase
+    const { data: prevBudgets, error: previousBudgetsError } = await supabase
       .from("budgets")
       .select("name, category_id, limit_amount")
       .eq("month", `${prevMonth}-01`);
-
-    if (prevBudgets && prevBudgets.length > 0) {
-      const prev = prevBudgets as unknown as {
-        name: string;
-        category_id: string;
-        limit_amount: number;
-      }[];
-
-      const { data: currentBudgets } = await supabase
-        .from("budgets")
-        .select("name")
-        .eq("month", `${month}-01`);
-
-      const existingNames = new Set(
-        (currentBudgets as { name: string }[] | null)?.map((b) =>
-          b.name.trim().toLowerCase()
-        ) ?? []
-      );
-
-      const inserts = prev.map((b) => ({
-        name: b.name,
-        category_id: b.category_id,
-        month: `${month}-01`,
-        limit_amount: b.limit_amount,
-      }))
-        .filter((b) => {
-          const normalized = b.name.trim().toLowerCase();
-          if (existingNames.has(normalized)) {
-            return false;
-          }
-          existingNames.add(normalized);
-          return true;
-        });
-
-      if (inserts.length > 0) {
-        const { error } = await supabase.from("budgets").insert(inserts as never[]);
-        const mappedError = mapBudgetError(error);
-        if (mappedError) throw mappedError;
-        await mutate();
-        await revalidateDashboard();
-      }
+    if (previousBudgetsError) {
+      throw previousBudgetsError;
     }
+
+    const prev = (prevBudgets as unknown as {
+      name: string;
+      category_id: string;
+      limit_amount: number;
+    }[] | null) ?? [];
+    if (prev.length === 0) {
+      return { sourceCount: 0, copiedCount: 0, skippedCount: 0 };
+    }
+
+    const { data: currentBudgets, error: currentBudgetsError } = await supabase
+      .from("budgets")
+      .select("name")
+      .eq("month", `${month}-01`);
+    if (currentBudgetsError) {
+      throw currentBudgetsError;
+    }
+
+    const existingNames = new Set(
+      (currentBudgets as { name: string }[] | null)?.map((b) =>
+        b.name.trim().toLowerCase()
+      ) ?? []
+    );
+
+    const inserts = prev.map((b) => ({
+      name: b.name,
+      category_id: b.category_id,
+      month: `${month}-01`,
+      limit_amount: b.limit_amount,
+    }))
+      .filter((b) => {
+        const normalized = b.name.trim().toLowerCase();
+        if (existingNames.has(normalized)) {
+          return false;
+        }
+        existingNames.add(normalized);
+        return true;
+      });
+
+    const skippedCount = prev.length - inserts.length;
+    if (inserts.length === 0) {
+      return { sourceCount: prev.length, copiedCount: 0, skippedCount };
+    }
+
+    const { error: insertError } = await supabase.from("budgets").insert(inserts as never[]);
+    const mappedError = mapBudgetError(insertError);
+    if (mappedError) throw mappedError;
+    await mutate();
+    await revalidateDashboard();
+
+    return { sourceCount: prev.length, copiedCount: inserts.length, skippedCount };
   };
+
+  const normalizedError = error
+    ? getBudgetErrorMessage(
+        typeof error === "object" && error !== null
+          ? (error as { message?: string })
+          : null
+      )
+    : null;
 
   return {
     budgets,
     loading,
+    error: normalizedError,
     createBudget,
     updateBudget,
     deleteBudget,

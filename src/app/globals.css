@@ -19,6 +19,7 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
   --color-chart-5: var(--chart-5);
+  --color-chart-income: var(--chart-income);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
@@ -72,7 +73,7 @@
   --chart-3: #ca8a04;
   --chart-4: #dc2626;
   --chart-5: #475569;
-  --chart-income: #059669;
+  --chart-income: #047857;
   --chart-expense: #e11d48;
   --radius: 0.625rem;
   --sidebar: #ffffff;

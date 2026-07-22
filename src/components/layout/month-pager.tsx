@@ -6,15 +6,16 @@ interface MonthPagerProps {
   month: string;
   onChange: (delta: number) => void;
   className?: string;
+  buttonClassName?: string;
 }
 
-export function MonthPager({ month, onChange, className }: MonthPagerProps) {
+export function MonthPager({ month, onChange, className, buttonClassName }: MonthPagerProps) {
   return (
     <div className={`flex items-center gap-1 ${className ?? ""}`}>
       <Button
         variant="ghost"
         size="icon"
-        className="relative before:absolute before:inset-[-6px] before:content-['']"
+        className={`relative before:absolute before:inset-[-6px] before:content-[''] ${buttonClassName ?? ""}`}
         onClick={() => onChange(-1)}
         aria-label="Mes anterior"
       >
@@ -29,7 +30,7 @@ export function MonthPager({ month, onChange, className }: MonthPagerProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="relative before:absolute before:inset-[-6px] before:content-['']"
+        className={`relative before:absolute before:inset-[-6px] before:content-[''] ${buttonClassName ?? ""}`}
         onClick={() => onChange(1)}
         aria-label="Mes siguiente"
       >

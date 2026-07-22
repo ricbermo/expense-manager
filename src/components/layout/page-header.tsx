@@ -24,7 +24,7 @@ export function PageHeader({
             <p className="text-sm text-muted-foreground">{description}</p>
           )}
         </div>
-        {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
+        {action && <div className="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">{action}</div>}
       </div>
     </header>
   );
