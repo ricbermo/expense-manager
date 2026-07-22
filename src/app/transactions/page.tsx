@@ -60,9 +60,24 @@ function TransactionsPageContent() {
     useState<OccasionalFilter>("all");
   const budgetFilter = searchParams.get("budget") ?? "";
 
-  const activeFilterCount = [accountFilter, minAmount, maxAmount].filter(
-    Boolean,
-  ).length;
+  const hasActiveFilters =
+    Boolean(search) ||
+    typeFilter !== "all" ||
+    occasionalFilter !== "all" ||
+    Boolean(accountFilter) ||
+    Boolean(minAmount) ||
+    Boolean(maxAmount) ||
+    Boolean(budgetFilter);
+
+  const activeFilterCount = [
+    search,
+    typeFilter !== "all" ? typeFilter : "",
+    occasionalFilter !== "all" ? occasionalFilter : "",
+    accountFilter,
+    minAmount,
+    maxAmount,
+    budgetFilter,
+  ].filter(Boolean).length;
 
   const pendingTransactions = useMemo(
     () => transactions.filter((t) => t.status === "pending"),
@@ -82,11 +97,11 @@ function TransactionsPageContent() {
     }
     if (minAmount) {
       const min = Number(minAmount.replace(/\D/g, ""));
-      if (!isNaN(min)) result = result.filter((t) => t.amount >= min);
+      if (!Number.isNaN(min)) result = result.filter((t) => t.amount >= min);
     }
     if (maxAmount) {
       const max = Number(maxAmount.replace(/\D/g, ""));
-      if (!isNaN(max)) result = result.filter((t) => t.amount <= max);
+      if (!Number.isNaN(max)) result = result.filter((t) => t.amount <= max);
     }
     if (occasionalFilter === "occasional") {
       result = result.filter((t) => t.type === "expense" && t.is_occasional);
@@ -138,6 +153,16 @@ function TransactionsPageContent() {
     router.replace(query ? `${pathname}?${query}` : pathname);
   };
 
+  const clearAllFilters = () => {
+    setSearch("");
+    setTypeFilter("all");
+    setOccasionalFilter("all");
+    setAccountFilter("");
+    setMinAmount("");
+    setMaxAmount("");
+    clearBudgetFilter();
+  };
+
   const handleEdit = (transaction: TransactionWithRelations) => {
     setEditingTransaction(transaction);
     setFormOpen(true);
@@ -172,14 +197,6 @@ function TransactionsPageContent() {
       toast.success("Movimiento eliminado");
     } catch {
       toast.error("No se pudo eliminar el movimiento");
-    }
-  };
-
-  const handleToggleOccasional = async (id: string, value: boolean) => {
-    try {
-      await updateTransaction(id, { is_occasional: value });
-    } catch {
-      toast.error("No se pudo actualizar el gasto");
     }
   };
 
@@ -229,79 +246,97 @@ function TransactionsPageContent() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por descripcion, categoria, cuenta..."
+                placeholder="Buscar por descripción, categoría, cuenta..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-8 h-9"
+                className="h-11 pl-9 pr-12"
               />
               {search && (
                 <button
                   type="button"
+                  aria-label="Limpiar búsqueda"
                   onClick={() => setSearch("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
             </div>
             <div className="flex items-center justify-between gap-2">
-              <div className="flex gap-1 flex-1 overflow-x-auto">
-                {(
-                  [
-                    ["all", "Todos"],
-                    ["expense", "Gastos"],
-                    ["income", "Ingresos"],
-                    ["transfer", "Transferencias"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <Button
-                    key={value}
-                    variant={typeFilter === value ? "default" : "ghost"}
-                    size="sm"
-                    className="h-7 px-2.5 text-xs shrink-0"
-                    onClick={() => setTypeFilter(value)}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
               <Button
                 variant={showFilters ? "default" : "outline"}
                 size="sm"
-                className="h-7 px-2.5 text-xs shrink-0 gap-1"
+                className="h-11 px-3 text-xs shrink-0 gap-1"
+                aria-expanded={showFilters}
+                aria-controls="transaction-filters"
                 onClick={() => setShowFilters((v) => !v)}
               >
                 <Filter className="h-3.5 w-3.5" />
                 Filtros
-                {activeFilterCount > 0 && (
+                {hasActiveFilters && (
                   <Badge className="h-5 w-5 rounded-full p-0 text-[11px] flex items-center justify-center ml-0.5">
                     {activeFilterCount}
                   </Badge>
                 )}
               </Button>
             </div>
-            <div className="flex gap-1 overflow-x-auto">
-              {(
-                [
-                  ["all", "Todos"],
-                  ["occasional", "Ocasionales"],
-                  ["recurring", "Recurrentes"],
-                ] as const
-              ).map(([value, label]) => (
-                <Button
-                  key={value}
-                  variant={occasionalFilter === value ? "default" : "ghost"}
-                  size="sm"
-                  className="h-7 px-2.5 text-xs shrink-0"
-                  onClick={() => setOccasionalFilter(value)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
 
             {showFilters && (
-              <div className="rounded-lg border border-border/60 p-3 space-y-3">
+              <div
+                id="transaction-filters"
+                className="rounded-lg border border-border/60 p-3 space-y-3"
+              >
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Tipo
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {(
+                      [
+                        ["all", "Todos"],
+                        ["expense", "Gastos"],
+                        ["income", "Ingresos"],
+                        ["transfer", "Transferencias"],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        variant={typeFilter === value ? "default" : "outline"}
+                        size="sm"
+                        className="h-11 px-3 text-xs"
+                        onClick={() => setTypeFilter(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Frecuencia
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {(
+                      [
+                        ["all", "Todas"],
+                        ["occasional", "Ocasionales"],
+                        ["recurring", "Recurrentes"],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        variant={
+                          occasionalFilter === value ? "default" : "outline"
+                        }
+                        size="sm"
+                        className="h-11 px-3 text-xs"
+                        onClick={() => setOccasionalFilter(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-1.5">
                   <p className="text-xs font-medium text-muted-foreground">
                     Cuenta
@@ -310,7 +345,7 @@ function TransactionsPageContent() {
                     value={accountFilter}
                     onValueChange={(v) => setAccountFilter(v ?? "")}
                   >
-                    <SelectTrigger className="h-8 text-xs">
+                    <SelectTrigger className="h-11 text-xs">
                       <SelectValue placeholder="Todas las cuentas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -333,7 +368,7 @@ function TransactionsPageContent() {
                       placeholder="0"
                       value={minAmount}
                       onChange={(e) => setMinAmount(e.target.value)}
-                      className="h-8 text-xs"
+                      className="h-11 text-xs"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -345,22 +380,18 @@ function TransactionsPageContent() {
                       placeholder="Sin límite"
                       value={maxAmount}
                       onChange={(e) => setMaxAmount(e.target.value)}
-                      className="h-8 text-xs"
+                      className="h-11 text-xs"
                     />
                   </div>
                 </div>
-                {activeFilterCount > 0 && (
+                {hasActiveFilters && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs w-full"
-                    onClick={() => {
-                      setAccountFilter("");
-                      setMinAmount("");
-                      setMaxAmount("");
-                    }}
+                    className="h-11 text-xs w-full"
+                    onClick={clearAllFilters}
                   >
-                    Limpiar filtros
+                    Limpiar todo
                   </Button>
                 )}
               </div>
@@ -426,7 +457,6 @@ function TransactionsPageContent() {
                 transactions={filteredTransactions}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onToggleOccasional={handleToggleOccasional}
               />
             )}
           </div>

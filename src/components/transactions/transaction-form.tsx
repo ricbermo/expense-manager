@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import useSWR from "swr";
@@ -36,6 +36,7 @@ import {
   parseIntegerInput,
 } from "@/lib/utils/number-input-format";
 import { isDestinationSelectionValid } from "@/lib/utils/transaction-destination-rules";
+import { shouldShowTransactionDetails } from "@/lib/utils/transaction-form-details";
 
 type BudgetWithCategory = Budget & { categories: Category | null };
 
@@ -154,6 +155,8 @@ export function TransactionForm({
   } = useForm<TransactionFormValues>({
     defaultValues: getDefaultValues(editTransaction),
   });
+  const [showDetails, setShowDetails] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const watchedType = useWatch({ control, name: "type" });
   const watchedAmount = useWatch({ control, name: "amount" });
@@ -215,6 +218,24 @@ export function TransactionForm({
     const nextValues = getDefaultValues(editTransaction);
     previousTypeRef.current = nextValues.type;
     hydratedBudgetFromEditRef.current = false;
+    setShowDetails(
+      editTransaction
+        ? shouldShowTransactionDetails({
+            type: editTransaction.type,
+            budget_id: editTransaction.budget_id,
+            category_id: editTransaction.category_id,
+            description: editTransaction.description,
+            tags: editTransaction.tags,
+            to_account_id: editTransaction.to_account_id,
+            installments: editTransaction.installments,
+            is_occasional: editTransaction.is_occasional,
+            is_debt_payment:
+              editTransaction.type === "expense" &&
+              !!editTransaction.to_account_id,
+          })
+        : false,
+    );
+    setSubmitAttempted(false);
     reset(nextValues);
   }, [open, editTransaction, reset]);
 
@@ -356,7 +377,7 @@ export function TransactionForm({
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
   const getBudgetLabel = useCallback((budget: BudgetWithCategory) => {
-    const categoryLabel = budget.categories?.name ?? "Sin categoria";
+    const categoryLabel = budget.categories?.name ?? "Sin categoría";
     return `${budget.name} · ${categoryLabel}`;
   }, []);
   const selectedIncomeCategory = incomeCategories.find(
@@ -386,10 +407,24 @@ export function TransactionForm({
     }
   }, [isCreditCardPurchase, installments, setValue]);
 
-  const canSave =
-    !isSubmitting && !!amount && !!accountId && hasValidDestination;
+  const hasRequiredValues = !!amount && !!accountId && hasValidDestination;
+  const canSave = !isSubmitting && hasRequiredValues;
 
   const onFormSubmit = async (values: TransactionFormValues) => {
+    const hasValidSubmission =
+      !!values.amount &&
+      !!values.accountId &&
+      isDestinationSelectionValid(
+        values.type,
+        values.accountId,
+        values.toAccountId,
+      );
+
+    if (!hasValidSubmission) {
+      setSubmitAttempted(true);
+      return;
+    }
+
     const debtAccount = debtAccounts.find((a) => a.id === values.toAccountId);
     const isCreditCardPayment =
       values.type === "expense" &&
@@ -441,8 +476,8 @@ export function TransactionForm({
     };
 
     try {
-      if (isEditing && onUpdate) {
-        await onUpdate(editTransaction!.id, transaction);
+      if (isEditing && onUpdate && editTransaction) {
+        await onUpdate(editTransaction.id, transaction);
         toast.success("Movimiento actualizado");
       } else if (
         !isEditing &&
@@ -468,6 +503,14 @@ export function TransactionForm({
     transfer: "Transferencia",
   };
 
+  const submitLabel = isEditing
+    ? "Actualizar"
+    : `Guardar ${typeLabels[type].toLowerCase()}`;
+
+  const submitForm = handleSubmit(onFormSubmit, () => {
+    setSubmitAttempted(true);
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
@@ -476,7 +519,7 @@ export function TransactionForm({
             {isEditing ? "Editar movimiento" : "Nuevo movimiento"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+        <form onSubmit={submitForm} className="space-y-4">
           <div className="grid grid-cols-3 gap-1.5">
             {(["expense", "income", "transfer"] as TransactionType[]).map(
               (t) => (
@@ -485,7 +528,12 @@ export function TransactionForm({
                   type="button"
                   variant={type === t ? "default" : "outline"}
                   className="h-11 text-sm font-medium"
-                  onClick={() => setValue("type", t)}
+                  onClick={() => {
+                    setValue("type", t);
+                    if (t !== "expense") {
+                      setShowDetails(true);
+                    }
+                  }}
                 >
                   {typeLabels[t]}
                 </Button>
@@ -508,93 +556,12 @@ export function TransactionForm({
                     field.onChange(formatIntegerInput(e.target.value))
                   }
                   placeholder="50.000"
-                  required
+                  aria-required="true"
                   className="text-2xl font-bold h-14"
                 />
               )}
             />
           </div>
-
-          {type === "expense" && (
-            <div className="space-y-2">
-              <Label htmlFor="budget">Budget (opcional)</Label>
-              <Controller
-                name="budgetId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v ?? "")}
-                  >
-                    <SelectTrigger id="budget" className="w-full">
-                      <SelectValue placeholder="Sin budget">
-                        {() =>
-                          selectedBudget
-                            ? getBudgetLabel(selectedBudget)
-                            : "Sin budget"
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="w-[min(92vw,34rem)] min-w-[var(--anchor-width)]">
-                      <SelectItem value="" label="Sin budget">
-                        Sin budget
-                      </SelectItem>
-                      {loadingBudgets ? (
-                        <SelectItem value="__loading" disabled>
-                          Cargando budgets...
-                        </SelectItem>
-                      ) : (
-                        budgets.map((b) => {
-                          const budgetLabel = getBudgetLabel(b);
-
-                          return (
-                            <SelectItem
-                              key={b.id}
-                              value={b.id}
-                              label={budgetLabel}
-                            >
-                              {budgetLabel}
-                            </SelectItem>
-                          );
-                        })
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          )}
-
-          {type === "income" && (
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Controller
-                name="categoryId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v ?? "")}
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Selecciona categoria">
-                        {() =>
-                          selectedIncomeCategory?.name ?? "Selecciona categoria"
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {incomeCategories.map((c) => (
-                        <SelectItem key={c.id} value={c.id} label={c.name}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label htmlFor="account">
@@ -612,7 +579,7 @@ export function TransactionForm({
                   value={field.value}
                   onValueChange={(v) => field.onChange(v ?? "")}
                 >
-                  <SelectTrigger id="account">
+                  <SelectTrigger id="account" className="h-11">
                     <SelectValue placeholder="Selecciona cuenta">
                       {() => selectedOriginAccount?.name ?? "Selecciona cuenta"}
                     </SelectValue>
@@ -629,41 +596,365 @@ export function TransactionForm({
             />
           </div>
 
-          {type === "expense" && (
-            <div className="space-y-3">
-              <label
-                htmlFor="isDebtPayment"
-                className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
-              >
-                <Controller
-                  name="isDebtPayment"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="isDebtPayment"
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        const nextChecked = !!checked;
-                        field.onChange(nextChecked);
+          <div className="space-y-2">
+            <Label htmlFor="date">Fecha</Label>
+            <Input
+              id="date"
+              type="date"
+              className="h-11"
+              {...register("date")}
+            />
+          </div>
 
-                        if (!nextChecked) {
-                          setValue("toAccountId", "");
-                        }
+          {submitAttempted && !canSave && (
+            <div role="alert" className="space-y-1 text-xs text-destructive">
+              {(!amount || !accountId) && (
+                <p>Completa monto y cuenta antes de guardar.</p>
+              )}
+              {!hasValidDestination && toAccountId && (
+                <p>
+                  La cuenta destino debe ser distinta a la cuenta de origen.
+                </p>
+              )}
+            </div>
+          )}
 
-                        if (nextChecked) {
-                          setValue("isSharedExpense", false);
-                          setValue("splitBetween", 2);
-                        }
-                      }}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Guardando..." : submitLabel}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            aria-expanded={showDetails}
+            aria-controls="transaction-details"
+            onClick={() => setShowDetails((visible) => !visible)}
+          >
+            {showDetails ? "Ocultar detalles" : "Más detalles"}
+          </Button>
+
+          {showDetails && (
+            <div id="transaction-details" className="space-y-4">
+              {type === "expense" && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="budget">Presupuesto (opcional)</Label>
+                    <Controller
+                      name="budgetId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={(v) => field.onChange(v ?? "")}
+                        >
+                          <SelectTrigger id="budget" className="w-full">
+                            <SelectValue placeholder="Sin presupuesto">
+                              {() =>
+                                selectedBudget
+                                  ? getBudgetLabel(selectedBudget)
+                                  : "Sin presupuesto"
+                              }
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="w-[min(92vw,34rem)] min-w-[var(--anchor-width)]">
+                            <SelectItem value="" label="Sin presupuesto">
+                              Sin presupuesto
+                            </SelectItem>
+                            {loadingBudgets ? (
+                              <SelectItem value="__loading" disabled>
+                                Cargando presupuestos...
+                              </SelectItem>
+                            ) : (
+                              budgets.map((b) => {
+                                const budgetLabel = getBudgetLabel(b);
+
+                                return (
+                                  <SelectItem
+                                    key={b.id}
+                                    value={b.id}
+                                    label={budgetLabel}
+                                  >
+                                    {budgetLabel}
+                                  </SelectItem>
+                                );
+                              })
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     />
-                  )}
-                />
-                <span className="text-sm">Es pago de deuda</span>
-              </label>
+                  </div>
 
-              {isDebtPayment && (
+                  <label
+                    htmlFor="isDebtPayment"
+                    className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+                  >
+                    <Controller
+                      name="isDebtPayment"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isDebtPayment"
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            const nextChecked = !!checked;
+                            field.onChange(nextChecked);
+
+                            if (!nextChecked) {
+                              setValue("toAccountId", "");
+                            }
+
+                            if (nextChecked) {
+                              setValue("isSharedExpense", false);
+                              setValue("splitBetween", 2);
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                    <span className="text-sm">Es pago de deuda</span>
+                  </label>
+
+                  {isDebtPayment && (
+                    <div className="space-y-2">
+                      <Label htmlFor="debtAccount">Deuda a pagar</Label>
+                      <Controller
+                        name="toAccountId"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={(v) => field.onChange(v ?? "")}
+                          >
+                            <SelectTrigger id="debtAccount">
+                              <SelectValue placeholder="Selecciona deuda">
+                                {() =>
+                                  selectedDebtAccount?.name ??
+                                  "Selecciona deuda"
+                                }
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {debtAccounts.map((a) => (
+                                <SelectItem
+                                  key={a.id}
+                                  value={a.id}
+                                  label={a.name}
+                                >
+                                  {a.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  {isCreditCardPurchase && (
+                    <div className="space-y-2">
+                      <Label htmlFor="installments">Cuotas</Label>
+                      <Controller
+                        name="installments"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value || "1"}
+                            onValueChange={(v) => field.onChange(v)}
+                          >
+                            <SelectTrigger id="installments">
+                              <SelectValue>
+                                {() => {
+                                  const n = Number(field.value || "1");
+                                  return n === 1 ? "1 cuota" : `${n} cuotas`;
+                                }}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {INSTALLMENT_OPTIONS.map((n) => {
+                                const label =
+                                  n === 1 ? "1 cuota" : `${n} cuotas`;
+                                return (
+                                  <SelectItem
+                                    key={n}
+                                    value={String(n)}
+                                    label={label}
+                                  >
+                                    {label}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {amount && Number(installments) >= 2 && (
+                        <p className="text-xs text-muted-foreground">
+                          Cuota mensual:{" "}
+                          {formatIntegerInput(
+                            String(
+                              Math.floor(
+                                parseIntegerInput(amount) /
+                                  Number(installments),
+                              ),
+                            ),
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <label
+                    htmlFor="isOccasional"
+                    className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+                  >
+                    <Controller
+                      name="isOccasional"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isOccasional"
+                          checked={field.value}
+                          onCheckedChange={(checked) =>
+                            field.onChange(!!checked)
+                          }
+                        />
+                      )}
+                    />
+                    <div>
+                      <span className="text-sm">Gasto ocasional</span>
+                      <p className="text-xs text-muted-foreground">
+                        No se repetirá el próximo mes
+                      </p>
+                    </div>
+                  </label>
+
+                  {!isEditing && (
+                    <>
+                      <label
+                        htmlFor="isSharedExpense"
+                        className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+                      >
+                        <Controller
+                          name="isSharedExpense"
+                          control={control}
+                          render={({ field }) => (
+                            <Checkbox
+                              id="isSharedExpense"
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                const nextChecked = !!checked;
+                                field.onChange(nextChecked);
+
+                                if (nextChecked) {
+                                  setValue("isDebtPayment", false);
+                                  setValue("toAccountId", "");
+                                }
+
+                                if (!nextChecked) {
+                                  setValue("splitBetween", 2);
+                                }
+                              }}
+                            />
+                          )}
+                        />
+                        <span className="text-sm">Gasto compartido</span>
+                      </label>
+
+                      {isSharedExpense && (
+                        <div className="space-y-2">
+                          <Label htmlFor="splitBetween">Dividir entre</Label>
+                          <Controller
+                            name="splitBetween"
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                id="splitBetween"
+                                type="number"
+                                min={2}
+                                max={10}
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    Math.max(
+                                      2,
+                                      Math.min(10, Number(e.target.value) || 2),
+                                    ),
+                                  )
+                                }
+                              />
+                            )}
+                          />
+
+                          {amount && (
+                            <div className="text-xs text-muted-foreground space-y-0.5">
+                              <p>
+                                Tu parte:{" "}
+                                {formatIntegerInput(
+                                  String(
+                                    Math.floor(
+                                      parseIntegerInput(amount) / splitBetween,
+                                    ),
+                                  ),
+                                )}
+                              </p>
+                              <p>
+                                Reembolso:{" "}
+                                {formatIntegerInput(
+                                  String(
+                                    parseIntegerInput(amount) -
+                                      Math.floor(
+                                        parseIntegerInput(amount) /
+                                          splitBetween,
+                                      ),
+                                  ),
+                                )}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {type === "income" && (
                 <div className="space-y-2">
-                  <Label htmlFor="debtAccount">Deuda a pagar</Label>
+                  <Label htmlFor="category">Categoría</Label>
+                  <Controller
+                    name="categoryId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v ?? "")}
+                      >
+                        <SelectTrigger id="category">
+                          <SelectValue placeholder="Selecciona categoría">
+                            {() =>
+                              selectedIncomeCategory?.name ??
+                              "Selecciona categoría"
+                            }
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {incomeCategories.map((c) => (
+                            <SelectItem key={c.id} value={c.id} label={c.name}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              )}
+
+              {type === "transfer" && (
+                <div className="space-y-2">
+                  <Label htmlFor="toAccount">Cuenta destino</Label>
                   <Controller
                     name="toAccountId"
                     control={control}
@@ -672,15 +963,16 @@ export function TransactionForm({
                         value={field.value}
                         onValueChange={(v) => field.onChange(v ?? "")}
                       >
-                        <SelectTrigger id="debtAccount">
-                          <SelectValue placeholder="Selecciona deuda">
+                        <SelectTrigger id="toAccount">
+                          <SelectValue placeholder="Selecciona cuenta destino">
                             {() =>
-                              selectedDebtAccount?.name ?? "Selecciona deuda"
+                              selectedDestinationAccount?.name ??
+                              "Selecciona cuenta destino"
                             }
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {debtAccounts.map((a) => (
+                          {destinationAccounts.map((a) => (
                             <SelectItem key={a.id} value={a.id} label={a.name}>
                               {a.name}
                             </SelectItem>
@@ -692,239 +984,35 @@ export function TransactionForm({
                 </div>
               )}
 
-              {isCreditCardPurchase && (
-                <div className="space-y-2">
-                  <Label htmlFor="installments">Cuotas</Label>
-                  <Controller
-                    name="installments"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        value={field.value || "1"}
-                        onValueChange={(v) => field.onChange(v)}
-                      >
-                        <SelectTrigger id="installments">
-                          <SelectValue>
-                            {() => {
-                              const n = Number(field.value || "1");
-                              return n === 1 ? "1 cuota" : `${n} cuotas`;
-                            }}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {INSTALLMENT_OPTIONS.map((n) => {
-                            const label = n === 1 ? "1 cuota" : `${n} cuotas`;
-                            return (
-                              <SelectItem
-                                key={n}
-                                value={String(n)}
-                                label={label}
-                              >
-                                {label}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {amount && Number(installments) >= 2 && (
-                    <p className="text-xs text-muted-foreground">
-                      Cuota mensual:{" "}
-                      {formatIntegerInput(
-                        String(
-                          Math.floor(
-                            parseIntegerInput(amount) / Number(installments),
-                          ),
-                        ),
-                      )}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <label
-                htmlFor="isOccasional"
-                className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
-              >
-                <Controller
-                  name="isOccasional"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="isOccasional"
-                      checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(!!checked)}
-                    />
-                  )}
-                />
-                <div>
-                  <span className="text-sm">Gasto ocasional</span>
+              {(type === "income" || type === "transfer") &&
+                liquidAccounts.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    No se repetirá el próximo mes
+                    No hay cuentas de ahorro o efectivo disponibles
                   </p>
-                </div>
-              </label>
-
-              {!isEditing && (
-                <>
-                  <label
-                    htmlFor="isSharedExpense"
-                    className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
-                  >
-                    <Controller
-                      name="isSharedExpense"
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          id="isSharedExpense"
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            const nextChecked = !!checked;
-                            field.onChange(nextChecked);
-
-                            if (nextChecked) {
-                              setValue("isDebtPayment", false);
-                              setValue("toAccountId", "");
-                            }
-
-                            if (!nextChecked) {
-                              setValue("splitBetween", 2);
-                            }
-                          }}
-                        />
-                      )}
-                    />
-                    <span className="text-sm">Gasto compartido</span>
-                  </label>
-
-                  {isSharedExpense && (
-                    <div className="space-y-2">
-                      <Label htmlFor="splitBetween">Dividir entre</Label>
-                      <Controller
-                        name="splitBetween"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            id="splitBetween"
-                            type="number"
-                            min={2}
-                            max={10}
-                            value={field.value}
-                            onChange={(e) =>
-                              field.onChange(
-                                Math.max(
-                                  2,
-                                  Math.min(10, Number(e.target.value) || 2),
-                                ),
-                              )
-                            }
-                          />
-                        )}
-                      />
-
-                      {amount && (
-                        <div className="text-xs text-muted-foreground space-y-0.5">
-                          <p>
-                            Tu parte:{" "}
-                            {formatIntegerInput(
-                              String(
-                                Math.floor(
-                                  parseIntegerInput(amount) / splitBetween,
-                                ),
-                              ),
-                            )}
-                          </p>
-                          <p>
-                            Reembolso:{" "}
-                            {formatIntegerInput(
-                              String(
-                                parseIntegerInput(amount) -
-                                  Math.floor(
-                                    parseIntegerInput(amount) / splitBetween,
-                                  ),
-                              ),
-                            )}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {type === "transfer" && (
-            <div className="space-y-2">
-              <Label htmlFor="toAccount">Cuenta destino</Label>
-              <Controller
-                name="toAccountId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v ?? "")}
-                  >
-                    <SelectTrigger id="toAccount">
-                      <SelectValue placeholder="Selecciona cuenta destino">
-                        {() =>
-                          selectedDestinationAccount?.name ??
-                          "Selecciona cuenta destino"
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {destinationAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id} label={a.name}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 )}
-              />
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción (opcional)</Label>
+                <Input
+                  id="description"
+                  {...register("description")}
+                  placeholder="Ej: Almuerzo en restaurante"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tags">Etiquetas (opcional)</Label>
+                <Input
+                  id="tags"
+                  {...register("tags")}
+                  placeholder="Ej: trabajo, ocio, fijo"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Separa con comas
+                </p>
+              </div>
             </div>
           )}
-
-          {(type === "income" || type === "transfer") &&
-            liquidAccounts.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                No hay cuentas de ahorro o efectivo disponibles
-              </p>
-            )}
-
-          <div className="space-y-2">
-            <Label htmlFor="date">Fecha</Label>
-            <Input id="date" type="date" {...register("date")} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripcion (opcional)</Label>
-            <Input
-              id="description"
-              {...register("description")}
-              placeholder="Ej: Almuerzo en restaurante"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tags">Etiquetas (opcional)</Label>
-            <Input
-              id="tags"
-              {...register("tags")}
-              placeholder="Ej: trabajo, ocio, fijo"
-            />
-            <p className="text-xs text-muted-foreground">Separa con comas</p>
-          </div>
-
-          <Button type="submit" className="w-full" disabled={!canSave}>
-            {isSubmitting
-              ? "Guardando..."
-              : isEditing
-                ? "Actualizar"
-                : "Guardar"}
-          </Button>
         </form>
       </DialogContent>
     </Dialog>

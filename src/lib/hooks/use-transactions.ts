@@ -16,6 +16,7 @@ export interface TransactionWithRelations extends Transaction {
   categories: Category | null;
   budgets: { name: string } | null;
   accounts: Account | null;
+  destination_account: Account | null;
 }
 
 export function useTransactions(month?: string) {
@@ -28,7 +29,7 @@ export function useTransactions(month?: string) {
     let query = supabase
       .from("transactions")
       .select(
-        "*, categories(*), budgets(name), accounts:accounts!transactions_account_id_fkey(*)",
+        "*, categories(*), budgets(name), accounts:accounts!transactions_account_id_fkey(*), destination_account:accounts!transactions_to_account_id_fkey(*)",
       )
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
