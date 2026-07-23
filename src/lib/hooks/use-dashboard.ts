@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useSWR from "swr";
 import { createClient } from "@/lib/supabase/client";
-import type { AccountType } from "@/lib/types/database";
 import { swrKeys } from "@/lib/swr/keys";
+import type { AccountType } from "@/lib/types/database";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
 interface CategorySpending {
@@ -53,6 +53,7 @@ interface DashboardData {
 }
 
 export function useDashboard(month: string) {
+  const [dataMonth, setDataMonth] = useState<string | null>(null);
   const defaultData: DashboardData = {
     totalIncome: 0,
     totalExpenses: 0,
@@ -82,11 +83,11 @@ export function useDashboard(month: string) {
 
     // Fetch current + previous month transactions, accounts, budgets, and CC statements in parallel
     const [
-      { data: transactions },
-      { data: prevTransactions },
-      { data: accounts },
-      { data: budgetData },
-      { data: ccStatementData },
+      transactionsResult,
+      prevTransactionsResult,
+      accountsResult,
+      budgetResult,
+      ccStatementResult,
     ] = await Promise.all([
       supabase
         .from("transactions")
@@ -98,18 +99,33 @@ export function useDashboard(month: string) {
         .select("*, categories(name, color)")
         .gte("date", prevStartDate)
         .lt("date", prevEndDate),
-      supabase
-        .from("accounts")
-        .select("id, balance, type"),
+      supabase.from("accounts").select("id, balance, type"),
       supabase
         .from("budgets")
         .select("id, name, limit_amount, category_id, categories(name)")
         .eq("month", startDate),
       supabase
         .from("credit_card_statements")
-        .select("id, account_id, minimum_payment, total_balance, due_date, accounts(name)")
+        .select(
+          "id, account_id, minimum_payment, total_balance, due_date, accounts(name)",
+        )
         .is("paid_at", null),
     ]);
+
+    const firstError = [
+      transactionsResult.error,
+      prevTransactionsResult.error,
+      accountsResult.error,
+      budgetResult.error,
+      ccStatementResult.error,
+    ].find((queryError) => queryError !== null);
+    if (firstError) throw firstError;
+
+    const transactions = transactionsResult.data;
+    const prevTransactions = prevTransactionsResult.data;
+    const accounts = accountsResult.data;
+    const budgetData = budgetResult.data;
+    const ccStatementData = ccStatementResult.data;
 
     type TxnRow = {
       id: string;
@@ -128,7 +144,7 @@ export function useDashboard(month: string) {
     type AccountRow = { id: string; balance: number; type: AccountType };
     const accountRows = (accounts ?? []) as unknown as AccountRow[];
     const creditCardAccountIds = new Set(
-      accountRows.filter((a) => a.type === "credit_card").map((a) => a.id)
+      accountRows.filter((a) => a.type === "credit_card").map((a) => a.id),
     );
     const isCreditCardPayment = (t: TxnRow) =>
       !!t.to_account_id && creditCardAccountIds.has(t.to_account_id);
@@ -200,7 +216,8 @@ export function useDashboard(month: string) {
         if (isCreditCardPayment(t)) return;
         prevTotalExpenses += t.amount;
         if (t.categories) {
-          prevCatMap[t.categories.name] = (prevCatMap[t.categories.name] || 0) + t.amount;
+          prevCatMap[t.categories.name] =
+            (prevCatMap[t.categories.name] || 0) + t.amount;
         }
       }
     });
@@ -219,15 +236,15 @@ export function useDashboard(month: string) {
 
     const totalBalance = accountRows.reduce(
       (sum, a) => sum + normalizeStoredBalance(a.type, a.balance ?? 0),
-      0
+      0,
     );
 
     const categorySpending = Object.values(catMap).sort(
-      (a, b) => b.amount - a.amount
+      (a, b) => b.amount - a.amount,
     );
 
     const incomeByCategory = Object.values(incomeCatMap).sort(
-      (a, b) => b.amount - a.amount
+      (a, b) => b.amount - a.amount,
     );
 
     const dailySpending = Object.entries(dayMap)
@@ -252,27 +269,40 @@ export function useDashboard(month: string) {
       if (t.type !== "expense") return;
       if (isCreditCardPayment(t)) return;
       if (t.budget_id) {
-        spentByBudgetId[t.budget_id] = (spentByBudgetId[t.budget_id] || 0) + t.amount;
+        spentByBudgetId[t.budget_id] =
+          (spentByBudgetId[t.budget_id] || 0) + t.amount;
       } else if (t.category_id) {
-        spentByCategoryId[t.category_id] = (spentByCategoryId[t.category_id] || 0) + t.amount;
+        spentByCategoryId[t.category_id] =
+          (spentByCategoryId[t.category_id] || 0) + t.amount;
       }
     });
 
-    const categoryUsageCount = budgets.reduce<Record<string, number>>((acc, b) => {
-      acc[b.category_id] = (acc[b.category_id] ?? 0) + 1;
-      return acc;
-    }, {});
+    const categoryUsageCount = budgets.reduce<Record<string, number>>(
+      (acc, b) => {
+        acc[b.category_id] = (acc[b.category_id] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
 
     const budgetAlerts: BudgetAlert[] = budgets
       .map((b) => {
         const catName = b.categories?.name ?? "";
         const directSpent = spentByBudgetId[b.id] ?? 0;
-        const legacySpent = categoryUsageCount[b.category_id] === 1
-          ? (spentByCategoryId[b.category_id] ?? 0)
-          : 0;
+        const legacySpent =
+          categoryUsageCount[b.category_id] === 1
+            ? (spentByCategoryId[b.category_id] ?? 0)
+            : 0;
         const spent = directSpent + legacySpent;
-        const percentage = b.limit_amount > 0 ? Math.round((spent / b.limit_amount) * 100) : 0;
-        return { name: b.name, categoryName: catName, percentage, spent, limit: b.limit_amount };
+        const percentage =
+          b.limit_amount > 0 ? Math.round((spent / b.limit_amount) * 100) : 0;
+        return {
+          name: b.name,
+          categoryName: catName,
+          percentage,
+          spent,
+          limit: b.limit_amount,
+        };
       })
       .filter((a) => a.percentage >= 80)
       .sort((a, b) => b.percentage - a.percentage);
@@ -288,10 +318,14 @@ export function useDashboard(month: string) {
     };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const creditCardAlerts: CreditCardAlert[] = ((ccStatementData ?? []) as unknown as CCStatementRow[])
+    const creditCardAlerts: CreditCardAlert[] = (
+      (ccStatementData ?? []) as unknown as CCStatementRow[]
+    )
       .map((s) => {
-        const due = new Date(s.due_date + "T00:00:00");
-        const daysUntilDue = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const due = new Date(`${s.due_date}T00:00:00`);
+        const daysUntilDue = Math.round(
+          (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+        );
         return {
           id: s.id,
           accountId: s.account_id,
@@ -322,14 +356,25 @@ export function useDashboard(month: string) {
   }, [month]);
 
   const {
-    data = defaultData,
+    data: fetchedData,
+    error,
     isLoading: loading,
+    isValidating,
     mutate,
-  } = useSWR(swrKeys.dashboard(month), fetchDashboard);
+  } = useSWR(swrKeys.dashboard(month), fetchDashboard, {
+    keepPreviousData: true,
+  });
+  const data = fetchedData ?? defaultData;
+
+  useEffect(() => {
+    if (fetchedData && !loading && !isValidating && !error) {
+      setDataMonth(month);
+    }
+  }, [error, fetchedData, isValidating, loading, month]);
 
   const refetch = useCallback(async () => {
     await mutate();
   }, [mutate]);
 
-  return { data, loading, refetch };
+  return { data, dataMonth, loading, error, refetch, isValidating };
 }

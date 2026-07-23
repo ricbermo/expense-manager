@@ -2,17 +2,20 @@
 
 import {
   ArrowDownLeft,
-  ArrowUpRight,
   ArrowLeftRight,
+  ArrowUpRight,
   Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/ui/inline-confirm";
+import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
 import { formatCOP } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
-import type { TransactionWithRelations } from "@/lib/hooks/use-transactions";
-import { buildTransactionMetaLine } from "@/lib/utils/transaction-list-meta";
+import {
+  buildTransactionMetaLine,
+  getTransactionAmountPrefix,
+} from "@/lib/utils/transaction-list-meta";
 
 const typeIcons = {
   expense: ArrowUpRight,
@@ -23,7 +26,7 @@ const typeIcons = {
 const typeColors = {
   expense: "text-rose-600",
   income: "text-emerald-600",
-  transfer: "text-blue-700",
+  transfer: "text-muted-foreground",
 } as const;
 
 const typeLabels = {
@@ -35,15 +38,15 @@ const typeLabels = {
 interface TransactionListProps {
   transactions: TransactionWithRelations[];
   onEdit: (transaction: TransactionWithRelations) => void;
-  onDelete: (id: string) => void;
-  onToggleOccasional: (id: string, value: boolean) => void;
+  onDelete: (id: string) => void | Promise<void>;
+  deletingTransactionId?: string | null;
 }
 
 export function TransactionList({
   transactions,
   onEdit,
   onDelete,
-  onToggleOccasional,
+  deletingTransactionId,
 }: TransactionListProps) {
   // Group by date
   const grouped = transactions.reduce<
@@ -59,9 +62,9 @@ export function TransactionList({
     <div className="space-y-4">
       {Object.entries(grouped).map(([date, items]) => (
         <section key={date} className="space-y-2">
-          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {formatDate(date)}
-          </p>
+          </h2>
           <div className="space-y-2">
             {items.map((t) => {
               const Icon = typeIcons[t.type];
@@ -86,47 +89,62 @@ export function TransactionList({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {t.description || t.categories?.name || t.type}
+                      {t.description ||
+                        t.categories?.name ||
+                        typeLabels[t.type]}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {buildTransactionMetaLine({
-                        typeLabel: typeLabels[t.type],
+                        type: t.type,
                         accountName: t.accounts?.name ?? "Sin cuenta",
+                        destinationAccountName:
+                          t.destination_account?.name ?? null,
                         budgetName: t.budgets?.name ?? null,
                       })}
                     </p>
-                    {t.type === "expense" && (
-                      <label className="inline-flex items-center gap-1.5 mt-0.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={t.is_occasional}
-                          onChange={() => onToggleOccasional(t.id, !t.is_occasional)}
-                          className="h-3 w-3 accent-orange-500"
-                        />
-                        <span className="text-xs text-muted-foreground">ocasional</span>
-                      </label>
+                    {t.type === "expense" && t.is_occasional && (
+                      <Badge
+                        variant="outline"
+                        className="mt-1 h-5 px-1.5 text-xs text-muted-foreground"
+                      >
+                        Ocasional
+                      </Badge>
                     )}
                     {((t.tags && t.tags.length > 0) ||
                       (t.installments && t.installments >= 2)) && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {t.installments && t.installments >= 2 && (
-                          <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
-                            {t.installments} cuotas ·{" "}
-                            {formatCOP(Math.floor(t.amount / t.installments))}
-                            /mes
-                          </Badge>
-                        )}
-                        {t.tags?.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0 h-4">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-xs text-muted-foreground underline-offset-2 hover:underline">
+                          Ver detalles
+                        </summary>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {t.installments && t.installments >= 2 && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs px-1.5 py-0 h-4"
+                            >
+                              {t.installments} cuotas ·{" "}
+                              {formatCOP(Math.floor(t.amount / t.installments))}
+                              /mes
+                            </Badge>
+                          )}
+                          {t.tags?.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs px-1.5 py-0 h-4"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </details>
                     )}
                   </div>
                   <div className="text-right flex items-center gap-1">
-                    <p className={`text-sm font-semibold tabular-nums ${typeColors[t.type]}`}>
-                      {t.type === "income" ? "+" : "-"}
+                    <p
+                      className={`text-sm font-semibold tabular-nums ${typeColors[t.type]}`}
+                    >
+                      {getTransactionAmountPrefix(t.type)}
                       {formatCOP(t.amount)}
                     </p>
                     <Button
@@ -134,13 +152,16 @@ export function TransactionList({
                       size="icon"
                       className="h-11 w-11 text-muted-foreground transition-colors duration-200 hover:text-primary"
                       onClick={() => onEdit(t)}
+                      disabled={deletingTransactionId === t.id}
                       aria-label={`Editar ${t.description || t.categories?.name || "movimiento"}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <InlineConfirm
                       onConfirm={() => onDelete(t.id)}
-                      label="Eliminar"
+                      label="Eliminar movimiento"
+                      cancelLabel="Cancelar"
+                      disabled={deletingTransactionId === t.id}
                     />
                   </div>
                 </div>

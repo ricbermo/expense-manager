@@ -19,10 +19,16 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
   --color-chart-5: var(--chart-5);
+  --color-chart-income: var(--chart-income);
+  --color-chart-expense: var(--chart-expense);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-caution: var(--caution);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -46,6 +52,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --font-size-mini: 0.6875rem;
 }
 
 :root {
@@ -72,6 +79,12 @@
   --chart-3: #ca8a04;
   --chart-4: #dc2626;
   --chart-5: #475569;
+  --positive: #059669;
+  --negative: #e11d48;
+  --warning: #d97706;
+  --caution: #ea580c;
+  --chart-income: #047857;
+  --chart-expense: #e11d48;
   --radius: 0.625rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #0f172a;
@@ -81,6 +94,18 @@
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #dbe4ee;
   --sidebar-ring: #1e3a8a;
+  --acc-savings-bg: #d1fae5;
+  --acc-savings-text: #047857;
+  --acc-cash-bg: oklch(0.95 0.03 145);
+  --acc-cash-text: oklch(0.45 0.12 145);
+  --acc-credit-bg: oklch(0.95 0.04 75);
+  --acc-credit-text: oklch(0.5 0.14 70);
+  --acc-loan-bg: oklch(0.95 0.04 240);
+  --acc-loan-text: oklch(0.45 0.18 240);
+  --alert-warning-bg: #dbeafe;
+  --alert-warning-border: #93c5fd;
+  --alert-warning-text: #1e3a8a;
+  --alert-warning-text-secondary: #3b82f6;
 }
 
 .dark {
@@ -107,6 +132,12 @@
   --chart-3: #fcd34d;
   --chart-4: #fca5a5;
   --chart-5: #94a3b8;
+  --positive: #5eead4;
+  --negative: #fca5a5;
+  --warning: #fcd34d;
+  --caution: #fdba74;
+  --chart-income: #5eead4;
+  --chart-expense: #fca5a5;
   --sidebar: #0b1220;
   --sidebar-foreground: #e2e8f0;
   --sidebar-primary: #e2e8f0;
@@ -115,6 +146,18 @@
   --sidebar-accent-foreground: #e2e8f0;
   --sidebar-border: #1e293b;
   --sidebar-ring: #60a5fa;
+  --acc-savings-bg: #064e3b;
+  --acc-savings-text: #6ee7b7;
+  --acc-cash-bg: oklch(0.3 0.06 145);
+  --acc-cash-text: oklch(0.85 0.06 145);
+  --acc-credit-bg: oklch(0.3 0.06 70);
+  --acc-credit-text: oklch(0.85 0.08 70);
+  --acc-loan-bg: oklch(0.3 0.06 240);
+  --acc-loan-text: oklch(0.8 0.06 240);
+  --alert-warning-bg: #172554;
+  --alert-warning-border: #1e3a8a;
+  --alert-warning-text: #bfdbfe;
+  --alert-warning-text-secondary: #93c5fd;
 }
 
 @layer base {
@@ -123,10 +166,6 @@
   }
   body {
     @apply bg-background text-foreground min-h-screen;
-    background-image:
-      radial-gradient(circle at 10% -10%, rgba(30, 58, 138, 0.1), transparent 34%),
-      radial-gradient(circle at 92% 8%, rgba(202, 138, 4, 0.08), transparent 30%);
-    background-attachment: fixed;
   }
   html {
     @apply font-sans;
@@ -135,11 +174,13 @@
 
 @layer components {
   .app-shell {
-    @apply mx-auto w-full max-w-5xl px-4;
+    @apply mx-auto w-full max-w-5xl;
+    padding-inline: max(1rem, env(safe-area-inset-left))
+      max(1rem, env(safe-area-inset-right));
   }
 
   .page-stack {
-    @apply space-y-5 pb-28 md:pb-8;
+    @apply space-y-5 pb-[calc(7rem+env(safe-area-inset-bottom))];
   }
 
   .section-card {
@@ -150,12 +191,23 @@
     @apply rounded-2xl border border-border/90 bg-card p-4 text-card-foreground shadow-sm md:p-5;
   }
 
-  .month-toolbar {
-    @apply flex items-center justify-between rounded-2xl border border-border/90 bg-card px-3 py-2 text-card-foreground shadow-sm;
+  .clickable-card {
+    @apply rounded-2xl border border-border/90 bg-card text-card-foreground shadow-sm transition-colors hover:border-primary/30 focus-visible:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset;
   }
 
   .empty-state {
     @apply rounded-2xl border border-border/90 bg-card px-6 py-10 text-center text-card-foreground shadow-sm;
+  }
+
+  [data-sonner-toaster][data-y-position="bottom"] {
+    top: auto !important;
+    bottom: var(--offset-bottom) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: var(--mobile-offset-bottom) !important;
   }
 }
 
@@ -168,4 +220,24 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+.recharts-cartesian-axis-tick text {
+  fill: var(--muted-foreground);
+}
+
+.recharts-default-tooltip {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.75rem !important;
+  color: var(--foreground) !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--muted-foreground) !important;
+}
+
+.recharts-tooltip-item {
+  color: var(--foreground) !important;
 }

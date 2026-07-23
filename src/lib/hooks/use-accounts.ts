@@ -3,8 +3,8 @@
 import { useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase/client";
-import type { Account } from "@/lib/types/database";
 import { swrKeyPrefix, swrKeys } from "@/lib/swr/keys";
+import type { Account } from "@/lib/types/database";
 import { normalizeStoredBalance } from "@/lib/utils/account-balance";
 
 export function useAccounts() {
@@ -16,7 +16,7 @@ export function useAccounts() {
       .from("accounts")
       .select("*")
       .order("created_at", { ascending: false });
-    return (data ?? []) as Account[];
+    return ((data ?? []) as Account[]).filter((a) => !a.archived_at);
   }, []);
 
   const {
@@ -33,12 +33,12 @@ export function useAccounts() {
     await globalMutate(
       (key) => Array.isArray(key) && key[0] === swrKeyPrefix.dashboard,
       undefined,
-      { revalidate: true }
+      { revalidate: true },
     );
   }, [globalMutate]);
 
   const createAccount = async (
-    account: Omit<Account, "id" | "created_at">
+    account: Omit<Account, "id" | "created_at" | "archived_at">,
   ) => {
     const supabase = createClient();
     const payload = {
@@ -58,7 +58,7 @@ export function useAccounts() {
 
   const updateAccount = async (
     id: string,
-    updates: Partial<Omit<Account, "id" | "created_at">>
+    updates: Partial<Omit<Account, "id" | "created_at" | "archived_at">>,
   ) => {
     const supabase = createClient();
     const accountType = updates.type ?? accounts.find((a) => a.id === id)?.type;
@@ -83,11 +83,33 @@ export function useAccounts() {
 
   const deleteAccount = async (id: string) => {
     const supabase = createClient();
-    const { error } = await supabase.from("accounts").delete().eq("id", id);
+    const { error } = await supabase
+      .from("accounts")
+      .update({ archived_at: new Date().toISOString() } as never)
+      .eq("id", id);
     if (error) throw error;
     await mutate();
     await revalidateDashboard();
   };
 
-  return { accounts, loading, createAccount, updateAccount, deleteAccount, refetch };
+  const restoreAccount = async (id: string) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("accounts")
+      .update({ archived_at: null } as never)
+      .eq("id", id);
+    if (error) throw error;
+    await mutate();
+    await revalidateDashboard();
+  };
+
+  return {
+    accounts,
+    loading,
+    createAccount,
+    updateAccount,
+    deleteAccount,
+    restoreAccount,
+    refetch,
+  };
 }

@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  isProtectedPath,
-  isPublicPath,
-} from "../src/lib/auth/route-access.ts";
+import { isProtectedPath, isPublicPath } from "../src/lib/auth/route-access.ts";
 
 test("/login es publica", () => {
   assert.equal(isPublicPath("/login"), true);

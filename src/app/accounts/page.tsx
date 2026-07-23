@@ -1,51 +1,138 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useSWRConfig } from "swr";
-import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { AccountCard } from "@/components/accounts/account-card";
 import { AccountForm } from "@/components/accounts/account-form";
-import { CreditCardStatementForm } from "@/components/accounts/credit-card-statement-form";
 import { CreditCardPaymentForm } from "@/components/accounts/credit-card-payment-form";
-import { useAccounts } from "@/lib/hooks/use-accounts";
+import { CreditCardStatementForm } from "@/components/accounts/credit-card-statement-form";
+import { PageHeader } from "@/components/layout/page-header";
+import { SettingsLink } from "@/components/layout/settings-link";
+import { Button } from "@/components/ui/button";
 import { useAccountActivity } from "@/lib/hooks/use-account-activity";
+import { useAccounts } from "@/lib/hooks/use-accounts";
 import { useCreditCardStatements } from "@/lib/hooks/use-credit-card-statements";
-import { createClient } from "@/lib/supabase/client";
-import { normalizeStoredBalance } from "@/lib/utils/account-balance";
-import { formatCOP } from "@/lib/utils/currency";
 import type { Account } from "@/lib/types/database";
+import {
+  getAccountBalances,
+  getStatementPaymentSummary,
+  orderAccountsForReconciliation,
+} from "@/lib/utils/credit-card-statements";
+import { formatCOP } from "@/lib/utils/currency";
 
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+const MONTH_NAMES = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+function getDueLabel(date: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDate = new Date(`${date}T12:00:00`);
+  const days = Math.round((dueDate.getTime() - today.getTime()) / 86_400_000);
+
+  if (days === 0) return "Vence hoy";
+  if (days === 1) return "Vence mañana";
+  if (days === -1) return "Venció ayer";
+  if (days < 0) return `Venció hace ${Math.abs(days)} días`;
+  return `Vence en ${days} días`;
 }
 
 export default function AccountsPage() {
-  const { accounts, loading, createAccount, updateAccount, deleteAccount } = useAccounts();
-  const [month] = useState(getCurrentMonth);
+  const {
+    accounts,
+    loading,
+    createAccount,
+    updateAccount,
+    deleteAccount,
+    restoreAccount,
+  } = useAccounts();
+  const month = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
+  const monthLabel = useMemo(() => {
+    return MONTH_NAMES[new Date().getMonth()];
+  }, []);
   const { activity } = useAccountActivity(month);
-  const { pendingByAccountId, createStatement, markAsPaid } = useCreditCardStatements();
-  const { mutate: globalMutate } = useSWRConfig();
+  const { openStatements, createStatement, recordPayment } =
+    useCreditCardStatements();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Account | undefined>();
-  const [statementFormAccount, setStatementFormAccount] = useState<Account | undefined>();
-  const [paymentFormAccount, setPaymentFormAccount] = useState<Account | undefined>();
+  const [statementFormAccount, setStatementFormAccount] = useState<
+    Account | undefined
+  >();
+  const [paymentFormAccount, setPaymentFormAccount] = useState<
+    Account | undefined
+  >();
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
+        if (!formOpen) {
+          e.preventDefault();
+          setEditing(undefined);
+          setFormOpen(true);
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [formOpen]);
 
   const sourceAccounts = useMemo(
     () => accounts.filter((a) => a.type === "savings" || a.type === "cash"),
-    [accounts]
+    [accounts],
   );
 
-  const totalBalance = accounts.reduce(
-    (sum, a) => sum + normalizeStoredBalance(a.type, a.balance),
-    0
+  const accountTotals = useMemo(() => getAccountBalances(accounts), [accounts]);
+  const accountCounts = useMemo(
+    () => ({
+      liquid: accounts.filter((a) => a.type === "savings" || a.type === "cash")
+        .length,
+      credit: accounts.filter((a) => a.type === "credit_card").length,
+      total: accounts.length,
+    }),
+    [accounts],
   );
+  const orderedAccounts = useMemo(
+    () => orderAccountsForReconciliation(accounts, openStatements),
+    [accounts, openStatements],
+  );
+  const openStatementsByAccountId = useMemo(
+    () =>
+      openStatements.reduce<Record<string, typeof openStatements>>(
+        (grouped, statement) => {
+          const statements = grouped[statement.account_id] ?? [];
+          statements.push(statement);
+          grouped[statement.account_id] = statements;
+          return grouped;
+        },
+        {},
+      ),
+    [openStatements],
+  );
+  const nextStatement = openStatements[0] ?? null;
+  const nextPaymentAccount = nextStatement
+    ? accounts.find((account) => account.id === nextStatement.account_id)
+    : undefined;
 
-  const handleSubmit = async (data: Omit<Account, "id" | "created_at">) => {
+  const handleSubmit = async (
+    data: Omit<Account, "id" | "created_at" | "archived_at">,
+  ) => {
     if (editing) {
       await updateAccount(editing.id, data);
       setEditing(undefined);
@@ -62,9 +149,22 @@ export default function AccountsPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteAccount(id);
-      toast.success("Cuenta eliminada");
+      toast.success("Cuenta archivada", {
+        action: {
+          label: "Deshacer",
+          onClick: async () => {
+            try {
+              await restoreAccount(id);
+              toast.success("Cuenta restaurada");
+            } catch {
+              toast.error("No se pudo restaurar la cuenta.");
+            }
+          },
+        },
+        duration: 10_000,
+      });
     } catch {
-      toast.error("No se pudo eliminar la cuenta");
+      toast.error("No se pudo archivar la cuenta.");
     }
   };
 
@@ -78,8 +178,9 @@ export default function AccountsPage() {
     try {
       await createStatement(data);
       toast.success("Extracto registrado");
-    } catch {
-      toast.error("No se pudo guardar el extracto");
+    } catch (error) {
+      toast.error("No se pudo guardar el extracto.");
+      throw error;
     }
   };
 
@@ -88,36 +189,21 @@ export default function AccountsPage() {
     sourceAccountId: string;
     date: string;
     description: string;
-    statementId: string | null;
+    statementId: string;
   }) => {
     if (!paymentFormAccount) return;
     try {
-      const supabase = createClient();
-      const { data: txnData, error } = await supabase
-        .from("transactions")
-        .insert({
-          type: "transfer",
-          amount: data.amount,
-          description: data.description || null,
-          date: data.date,
-          account_id: data.sourceAccountId,
-          to_account_id: paymentFormAccount.id,
-          category_id: null,
-          budget_id: null,
-          related_expense_id: null,
-          tags: [],
-        } as never)
-        .select("id")
-        .single();
-      if (error) throw error;
-      const txnId = (txnData as { id: string }).id;
-      if (data.statementId) {
-        await markAsPaid(data.statementId, txnId);
-      }
-      await globalMutate(() => true, undefined, { revalidate: true });
-      toast.success("Pago registrado correctamente");
-    } catch {
-      toast.error("No se pudo registrar el pago");
+      await recordPayment({
+        statementId: data.statementId,
+        sourceAccountId: data.sourceAccountId,
+        amount: data.amount,
+        date: data.date,
+        description: data.description,
+      });
+      toast.success("Pago registrado");
+    } catch (error) {
+      toast.error("No se pudo registrar el pago.");
+      throw error;
     }
   };
 
@@ -125,58 +211,157 @@ export default function AccountsPage() {
     <div className="pb-6">
       <PageHeader
         title="Cuentas"
-        description="Control de ahorros, credito y prestamos"
+        description="Control de ahorros, crédito y préstamos"
         action={
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditing(undefined);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Nueva
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                setEditing(undefined);
+                setFormOpen(true);
+              }}
+              title="Nueva cuenta (⌘N)"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva
+            </Button>
+            <SettingsLink />
+          </div>
         }
       />
 
       <div className="app-shell page-stack">
-        <div className="kpi-card">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Balance total
-          </p>
-          <p
-            className={`mt-1 text-2xl font-semibold ${totalBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+        {nextStatement && nextPaymentAccount ? (
+          <section
+            className="rounded-2xl border p-4 shadow-sm md:p-5"
+            style={{
+              backgroundColor: "var(--alert-warning-bg)",
+              borderColor: "var(--alert-warning-border)",
+            }}
+            aria-labelledby="next-payment-title"
           >
-            {formatCOP(totalBalance)}
-          </p>
-        </div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p
+                  id="next-payment-title"
+                  className="text-sm font-medium"
+                  style={{ color: "var(--alert-warning-text)" }}
+                >
+                  Próximo pago
+                </p>
+                <p
+                  className="mt-1 text-xs"
+                  style={{ color: "var(--alert-warning-text-secondary)" }}
+                >
+                  {nextPaymentAccount.name} ·{" "}
+                  {getDueLabel(nextStatement.due_date)}
+                </p>
+              </div>
+              <p className="text-xl font-semibold tabular-nums text-warning">
+                {formatCOP(
+                  getStatementPaymentSummary(nextStatement).remainingAmount,
+                )}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        <dl className="grid gap-3 sm:grid-cols-3">
+          <div className="section-card p-4">
+            <dt className="text-xs text-muted-foreground">Disponible</dt>
+            <dd className="mt-1 text-lg font-semibold tabular-nums">
+              {formatCOP(accountTotals.liquidFunds)}
+            </dd>
+            {accountCounts.liquid > 0 && (
+              <dd className="mt-1 text-mini text-muted-foreground/70">
+                {accountCounts.liquid}{" "}
+                {accountCounts.liquid === 1 ? "cuenta" : "cuentas"}
+              </dd>
+            )}
+          </div>
+          <div className="section-card p-4">
+            <dt className="text-xs text-muted-foreground">Deuda de tarjetas</dt>
+            <dd className="mt-1 text-lg font-semibold tabular-nums text-negative">
+              {formatCOP(accountTotals.cardDebt)}
+            </dd>
+            {accountCounts.credit > 0 && (
+              <dd className="mt-1 text-mini text-muted-foreground/70">
+                {accountCounts.credit}{" "}
+                {accountCounts.credit === 1 ? "tarjeta" : "tarjetas"}
+              </dd>
+            )}
+          </div>
+          <div className="section-card p-4">
+            <dt className="text-xs text-muted-foreground">
+              Posición neta
+              <span
+                className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-mini font-semibold leading-none text-muted-foreground align-middle cursor-help"
+                title="Tus ahorros y efectivo, menos tus deudas"
+                aria-describedby="net-position-desc"
+              >
+                ?
+              </span>
+              <span id="net-position-desc" className="sr-only">
+                Tus ahorros y efectivo, menos tus deudas.
+              </span>
+            </dt>
+            <dd
+              className={`mt-1 text-lg font-semibold tabular-nums ${accountTotals.netPosition >= 0 ? "text-positive" : "text-negative"}`}
+            >
+              {formatCOP(accountTotals.netPosition)}
+            </dd>
+            {accountCounts.total > 0 && (
+              <dd className="mt-1 text-mini text-muted-foreground/70">
+                {accountCounts.total}{" "}
+                {accountCounts.total === 1 ? "cuenta" : "cuentas"}
+              </dd>
+            )}
+          </div>
+        </dl>
 
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div key={i} className="section-card h-32 animate-pulse" />
+              <div
+                key={i}
+                className="section-card motion-safe:animate-pulse p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-muted" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 rounded bg-muted" />
+                    <div className="h-3 w-20 rounded bg-muted" />
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="h-3 w-16 rounded bg-muted" />
+                  <div className="h-7 w-28 rounded bg-muted" />
+                </div>
+              </div>
             ))}
           </div>
         ) : accounts.length === 0 ? (
-          <div className="empty-state text-muted-foreground">
-            <p className="font-medium text-foreground">Sin cuentas registradas</p>
-            <p className="text-xs mt-1">
-              Agrega tus cuentas de ahorro, tarjetas o efectivo para llevar el control de tu balance
+          <div className="empty-state text-muted-foreground" role="status">
+            <p className="font-medium text-foreground">
+              Sin cuentas registradas
             </p>
-            <Button className="mt-4" onClick={() => setFormOpen(true)}>
+            <p className="text-xs mt-1">
+              Agrega tus cuentas de ahorro, tarjetas o efectivo para llevar el
+              control de tu saldo
+            </p>
+            <Button className="mt-4 h-8" onClick={() => setFormOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
               Agregar primera cuenta
             </Button>
           </div>
         ) : (
           <div className="space-y-3">
-            {accounts.map((account) => (
+            {orderedAccounts.map((account) => (
               <AccountCard
                 key={account.id}
                 account={account}
                 activity={activity[account.id]}
-                pendingStatement={pendingByAccountId[account.id]}
+                openStatements={openStatementsByAccountId[account.id] ?? []}
+                monthLabel={monthLabel}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onRegisterStatement={setStatementFormAccount}
@@ -200,22 +385,29 @@ export default function AccountsPage() {
       {statementFormAccount && (
         <CreditCardStatementForm
           open={!!statementFormAccount}
-          onOpenChange={(open) => { if (!open) setStatementFormAccount(undefined); }}
+          onOpenChange={(open) => {
+            if (!open) setStatementFormAccount(undefined);
+          }}
           account={statementFormAccount}
           onSubmit={handleStatementSubmit}
         />
       )}
 
-      {paymentFormAccount && (
-        <CreditCardPaymentForm
-          open={!!paymentFormAccount}
-          onOpenChange={(open) => { if (!open) setPaymentFormAccount(undefined); }}
-          creditCardAccount={paymentFormAccount}
-          pendingStatement={pendingByAccountId[paymentFormAccount.id] ?? null}
-          sourceAccounts={sourceAccounts}
-          onSubmit={handlePaymentSubmit}
-        />
-      )}
+      {paymentFormAccount &&
+        openStatementsByAccountId[paymentFormAccount.id]?.[0] && (
+          <CreditCardPaymentForm
+            open={!!paymentFormAccount}
+            onOpenChange={(open) => {
+              if (!open) setPaymentFormAccount(undefined);
+            }}
+            creditCardAccount={paymentFormAccount}
+            pendingStatement={
+              openStatementsByAccountId[paymentFormAccount.id][0]
+            }
+            sourceAccounts={sourceAccounts}
+            onSubmit={handlePaymentSubmit}
+          />
+        )}
     </div>
   );
 }

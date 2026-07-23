@@ -1,10 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,20 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { createClient } from "@/lib/supabase/client";
 import { useCategories } from "@/lib/hooks/use-categories";
-import {
-  formatIntegerInput,
-  parseIntegerInput,
-} from "@/lib/utils/number-input-format";
-import { isDestinationSelectionValid } from "@/lib/utils/transaction-destination-rules";
+import { createClient } from "@/lib/supabase/client";
 import type {
   Account,
   Budget,
@@ -36,6 +32,12 @@ import type {
   TransactionStatus,
   TransactionType,
 } from "@/lib/types/database";
+import {
+  formatIntegerInput,
+  parseIntegerInput,
+} from "@/lib/utils/number-input-format";
+import { isDestinationSelectionValid } from "@/lib/utils/transaction-destination-rules";
+import { shouldShowTransactionDetails } from "@/lib/utils/transaction-form-details";
 
 type BudgetWithCategory = Budget & { categories: Category | null };
 
@@ -51,20 +53,33 @@ function getTodayLocalDate() {
   return `${year}-${month}-${day}`;
 }
 
+function getNewTransactionDate(initialMonth?: string) {
+  return !initialMonth || initialMonth === getTodayLocalDate().slice(0, 7)
+    ? getTodayLocalDate()
+    : `${initialMonth}-01`;
+}
+
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus }) => Promise<void>;
+  onSubmit: (
+    data: Omit<Transaction, "id" | "created_at" | "status"> & {
+      status?: TransactionStatus;
+    },
+  ) => Promise<void>;
   onSubmitShared: (
-    data: Omit<Transaction, "id" | "created_at" | "status"> & { status?: TransactionStatus },
-    splitBetween: number
+    data: Omit<Transaction, "id" | "created_at" | "status"> & {
+      status?: TransactionStatus;
+    },
+    splitBetween: number,
   ) => Promise<void>;
   onUpdate?: (
     id: string,
-    data: Partial<Omit<Transaction, "id" | "created_at">>
+    data: Partial<Omit<Transaction, "id" | "created_at">>,
   ) => Promise<void>;
   accounts: Account[];
   editTransaction?: (Transaction & { categories?: Category | null }) | null;
+  initialMonth?: string;
 }
 
 interface TransactionFormValues {
@@ -87,14 +102,15 @@ interface TransactionFormValues {
 const INSTALLMENT_OPTIONS = [1, 3, 6, 9, 12, 18, 24, 36, 48];
 
 function getDefaultValues(
-  editTransaction?: (Transaction & { categories?: Category | null }) | null
+  editTransaction?: (Transaction & { categories?: Category | null }) | null,
+  initialMonth?: string,
 ): TransactionFormValues {
   if (!editTransaction) {
     return {
       type: "expense",
       amount: "",
       description: "",
-      date: getTodayLocalDate(),
+      date: getNewTransactionDate(initialMonth),
       categoryId: "",
       budgetId: "",
       accountId: "",
@@ -137,6 +153,7 @@ export function TransactionForm({
   onUpdate,
   accounts,
   editTransaction,
+  initialMonth,
 }: TransactionFormProps) {
   const {
     control,
@@ -146,8 +163,13 @@ export function TransactionForm({
     setValue,
     formState: { isSubmitting },
   } = useForm<TransactionFormValues>({
-    defaultValues: getDefaultValues(editTransaction),
+    defaultValues: getDefaultValues(editTransaction, initialMonth),
   });
+  const [showDetails, setShowDetails] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const lastAccountIdRef = useRef<string | null>(null);
 
   const watchedType = useWatch({ control, name: "type" });
   const watchedAmount = useWatch({ control, name: "amount" });
@@ -198,7 +220,7 @@ export function TransactionForm({
 
   const { data: budgets = [], isLoading: loadingBudgets } = useSWR(
     ["budgets-options", selectedMonth],
-    fetchBudgets
+    fetchBudgets,
   );
 
   useEffect(() => {
@@ -206,11 +228,40 @@ export function TransactionForm({
       return;
     }
 
-    const nextValues = getDefaultValues(editTransaction);
+    const nextValues = getDefaultValues(editTransaction, initialMonth);
+    if (!editTransaction && lastAccountIdRef.current) {
+      nextValues.accountId = lastAccountIdRef.current;
+    }
     previousTypeRef.current = nextValues.type;
     hydratedBudgetFromEditRef.current = false;
+    setShowDetails(
+      editTransaction
+        ? shouldShowTransactionDetails({
+            type: editTransaction.type,
+            budget_id: editTransaction.budget_id,
+            category_id: editTransaction.category_id,
+            description: editTransaction.description,
+            tags: editTransaction.tags,
+            to_account_id: editTransaction.to_account_id,
+            installments: editTransaction.installments,
+            is_occasional: editTransaction.is_occasional,
+            is_debt_payment:
+              editTransaction.type === "expense" &&
+              !!editTransaction.to_account_id,
+          })
+        : false,
+    );
+    setSubmitAttempted(false);
+    setSaveAndAddAnother(false);
     reset(nextValues);
-  }, [open, editTransaction, reset]);
+  }, [open, editTransaction, initialMonth, reset]);
+
+  useEffect(() => {
+    if (!open || isEditing) return;
+
+    const frame = requestAnimationFrame(() => amountInputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [isEditing, open]);
 
   useEffect(() => {
     if (loadingBudgets) {
@@ -247,7 +298,9 @@ export function TransactionForm({
       return;
     }
 
-    const matchingBudgets = budgets.filter((b) => b.category_id === editCategoryId);
+    const matchingBudgets = budgets.filter(
+      (b) => b.category_id === editCategoryId,
+    );
 
     if (matchingBudgets.length === 1) {
       setValue("budgetId", matchingBudgets[0].id);
@@ -267,12 +320,12 @@ export function TransactionForm({
 
   const liquidAccounts = useMemo(
     () => accounts.filter(isLiquidAccount),
-    [accounts]
+    [accounts],
   );
 
   const expenseOriginAccounts = useMemo(
     () => accounts.filter((a) => a.type !== "loan"),
-    [accounts]
+    [accounts],
   );
 
   const originAccounts =
@@ -282,13 +335,12 @@ export function TransactionForm({
 
   const destinationAccounts = useMemo(
     () => liquidAccounts.filter((a) => a.id !== accountId),
-    [liquidAccounts, accountId]
+    [liquidAccounts, accountId],
   );
 
   const debtAccounts = useMemo(
-    () =>
-      accounts.filter((a) => a.type === "credit_card" || a.type === "loan"),
-    [accounts]
+    () => accounts.filter((a) => a.type === "credit_card" || a.type === "loan"),
+    [accounts],
   );
 
   useEffect(() => {
@@ -349,10 +401,12 @@ export function TransactionForm({
 
   const selectedBudget = budgets.find((b) => b.id === budgetId);
   const getBudgetLabel = useCallback((budget: BudgetWithCategory) => {
-    const categoryLabel = budget.categories?.name ?? "Sin categoria";
+    const categoryLabel = budget.categories?.name ?? "Sin categoría";
     return `${budget.name} · ${categoryLabel}`;
   }, []);
-  const selectedIncomeCategory = incomeCategories.find((c) => c.id === categoryId);
+  const selectedIncomeCategory = incomeCategories.find(
+    (c) => c.id === categoryId,
+  );
   const selectedOriginAccount = originAccounts.find((a) => a.id === accountId);
   const selectedDebtAccount = debtAccounts.find((a) => a.id === toAccountId);
   const selectedDestinationAccount =
@@ -363,7 +417,7 @@ export function TransactionForm({
   const hasValidDestination = isDestinationSelectionValid(
     type,
     accountId,
-    toAccountId
+    toAccountId,
   );
 
   const isCreditCardPurchase =
@@ -377,9 +431,32 @@ export function TransactionForm({
     }
   }, [isCreditCardPurchase, installments, setValue]);
 
-  const canSave = !isSubmitting && !!amount && !!accountId && hasValidDestination;
+  const hasRequiredValues = !!amount && !!accountId && hasValidDestination;
+  const canSave = !isSubmitting && hasRequiredValues;
+
+  const resetForNewTransaction = () => {
+    const nextValues = getDefaultValues(null, initialMonth);
+    if (lastAccountIdRef.current) {
+      nextValues.accountId = lastAccountIdRef.current;
+    }
+    reset(nextValues);
+  };
 
   const onFormSubmit = async (values: TransactionFormValues) => {
+    const hasValidSubmission =
+      !!values.amount &&
+      !!values.accountId &&
+      isDestinationSelectionValid(
+        values.type,
+        values.accountId,
+        values.toAccountId,
+      );
+
+    if (!hasValidSubmission) {
+      setSubmitAttempted(true);
+      return;
+    }
+
     const debtAccount = debtAccounts.find((a) => a.id === values.toAccountId);
     const isCreditCardPayment =
       values.type === "expense" &&
@@ -407,12 +484,14 @@ export function TransactionForm({
       budget_id: effectiveType === "expense" ? values.budgetId || null : null,
       category_id:
         effectiveType === "expense"
-          ? selectedBudget?.category_id ?? null
+          ? (selectedBudget?.category_id ?? null)
           : effectiveType === "income"
             ? values.categoryId || null
             : null,
       account_id: values.accountId,
-      related_expense_id: isEditing ? (editTransaction?.related_expense_id ?? null) : null,
+      related_expense_id: isEditing
+        ? (editTransaction?.related_expense_id ?? null)
+        : null,
       to_account_id:
         effectiveType === "transfer" || effectiveType === "expense"
           ? values.toAccountId || null
@@ -423,24 +502,36 @@ export function TransactionForm({
         .filter(Boolean),
       installments: installmentsValue,
       is_occasional: effectiveType === "expense" ? values.isOccasional : false,
-      status: (isEditing && editTransaction?.status === "pending" ? "confirmed" : undefined) as
-        | TransactionStatus
-        | undefined,
+      status: (isEditing && editTransaction?.status === "pending"
+        ? "confirmed"
+        : undefined) as TransactionStatus | undefined,
     };
 
     try {
-      if (isEditing && onUpdate) {
-        await onUpdate(editTransaction!.id, transaction);
+      lastAccountIdRef.current = values.accountId;
+      if (isEditing && onUpdate && editTransaction) {
+        await onUpdate(editTransaction.id, transaction);
         toast.success("Movimiento actualizado");
-      } else if (!isEditing && values.isSharedExpense && values.type === "expense") {
+      } else if (
+        !isEditing &&
+        values.isSharedExpense &&
+        values.type === "expense"
+      ) {
         await onSubmitShared(transaction, values.splitBetween);
         toast.success("Gasto compartido registrado");
       } else {
         await onSubmit(transaction);
         toast.success("Movimiento registrado");
       }
-      reset(getDefaultValues());
-      onOpenChange(false);
+      if (saveAndAddAnother && !isEditing) {
+        resetForNewTransaction();
+        setShowDetails(false);
+        setSubmitAttempted(false);
+        setSaveAndAddAnother(false);
+      } else {
+        resetForNewTransaction();
+        onOpenChange(false);
+      }
     } catch {
       toast.error("No se pudo guardar el movimiento");
     }
@@ -452,192 +543,520 @@ export function TransactionForm({
     transfer: "Transferencia",
   };
 
+  const submitLabel = isEditing
+    ? "Actualizar"
+    : `Guardar ${typeLabels[type].toLowerCase()}`;
+
+  const submitForm = handleSubmit(onFormSubmit, () => {
+    setSubmitAttempted(true);
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar movimiento" : "Nuevo movimiento"}</DialogTitle>
+      <DialogContent className="max-h-[min(90vh,48rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto p-5 sm:p-6">
+        <DialogHeader className="pr-8">
+          <DialogTitle>
+            {isEditing ? "Editar movimiento" : "Nuevo movimiento"}
+          </DialogTitle>
+          <DialogDescription>
+            Completa los datos principales. Puedes añadir detalles si los
+            necesitas.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-          <div className="grid grid-cols-3 gap-1.5">
-            {(
-              ["expense", "income", "transfer"] as TransactionType[]
-            ).map((t) => (
-              <Button
-                key={t}
-                type="button"
-                variant={type === t ? "default" : "outline"}
-                className="h-11 text-sm font-medium"
-                onClick={() => setValue("type", t)}
-              >
-                {typeLabels[t]}
-              </Button>
-            ))}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Monto (COP)</Label>
-            <Controller
-              name="amount"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="amount"
-                  type="text"
-                  inputMode="numeric"
-                  value={field.value}
-                  onChange={(e) =>
-                    field.onChange(formatIntegerInput(e.target.value))
-                  }
-                  placeholder="50.000"
-                  required
-                  className="text-2xl font-bold h-14"
-                />
+        <form
+          onSubmit={submitForm}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submitForm();
+          }}
+          className="space-y-5"
+        >
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Tipo de movimiento
+            </legend>
+            <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-muted/50 p-1">
+              {(["expense", "income", "transfer"] as TransactionType[]).map(
+                (t) => (
+                  <Button
+                    key={t}
+                    type="button"
+                    variant={type === t ? "default" : "ghost"}
+                    className="h-10 text-sm font-medium"
+                    onClick={() => {
+                      setValue("type", t);
+                      if (t !== "expense") {
+                        setShowDetails(true);
+                      }
+                    }}
+                  >
+                    {typeLabels[t]}
+                  </Button>
+                ),
               )}
-            />
-          </div>
+            </div>
+          </fieldset>
 
-          {type === "expense" && (
+          <div className="space-y-4 rounded-xl border border-border/60 bg-card p-3 sm:p-4">
             <div className="space-y-2">
-              <Label htmlFor="budget">Budget (opcional)</Label>
+              <Label htmlFor="amount">Monto (COP)</Label>
               <Controller
-                name="budgetId"
+                name="amount"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Input
+                    id="amount"
+                    type="text"
+                    inputMode="numeric"
                     value={field.value}
-                    onValueChange={(v) => field.onChange(v ?? "")}
-                  >
-                      <SelectTrigger id="budget" className="w-full">
-                        <SelectValue placeholder="Sin budget">
+                    ref={(element) => {
+                      field.ref(element);
+                      amountInputRef.current = element;
+                    }}
+                    onChange={(e) =>
+                      field.onChange(formatIntegerInput(e.target.value))
+                    }
+                    placeholder="50.000"
+                    aria-required="true"
+                    className="h-12 text-xl font-semibold"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="account">
+                  {type === "transfer"
+                    ? "Cuenta origen"
+                    : type === "expense"
+                      ? "Cuenta para pagar"
+                      : "Cuenta"}
+                </Label>
+                <Controller
+                  name="accountId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v ?? "")}
+                    >
+                      <SelectTrigger id="account" className="h-11">
+                        <SelectValue placeholder="Selecciona cuenta">
                           {() =>
-                            selectedBudget ? getBudgetLabel(selectedBudget) : "Sin budget"
+                            selectedOriginAccount?.name ?? "Selecciona cuenta"
                           }
                         </SelectValue>
                       </SelectTrigger>
-                    <SelectContent className="w-[min(92vw,34rem)] min-w-[var(--anchor-width)]">
-                      <SelectItem value="" label="Sin budget">
-                        Sin budget
-                      </SelectItem>
-                      {loadingBudgets ? (
-                        <SelectItem value="__loading" disabled>
-                          Cargando budgets...
-                        </SelectItem>
-                        ) : (
-                        budgets.map((b) => {
-                          const budgetLabel = getBudgetLabel(b);
-
-                          return (
-                            <SelectItem key={b.id} value={b.id} label={budgetLabel}>
-                              {budgetLabel}
-                            </SelectItem>
-                          );
-                        })
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          )}
-
-          {type === "income" && (
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Controller
-                name="categoryId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v ?? "")}
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Selecciona categoria">
-                        {() => selectedIncomeCategory?.name ?? "Selecciona categoria"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {incomeCategories.map((c) => (
-                        <SelectItem key={c.id} value={c.id} label={c.name}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="account">
-              {type === "transfer"
-                ? "Cuenta origen"
-                : type === "expense"
-                  ? "Cuenta para pagar"
-                  : "Cuenta"}
-            </Label>
-            <Controller
-              name="accountId"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={(v) => field.onChange(v ?? "")}
-                >
-                  <SelectTrigger id="account">
-                    <SelectValue placeholder="Selecciona cuenta">
-                      {() => selectedOriginAccount?.name ?? "Selecciona cuenta"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {originAccounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id} label={a.name}>
-                        {a.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          {type === "expense" && (
-            <div className="space-y-3">
-              <label
-                htmlFor="isDebtPayment"
-                className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
-              >
-                <Controller
-                  name="isDebtPayment"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="isDebtPayment"
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        const nextChecked = !!checked;
-                        field.onChange(nextChecked);
-
-                        if (!nextChecked) {
-                          setValue("toAccountId", "");
-                        }
-
-                        if (nextChecked) {
-                          setValue("isSharedExpense", false);
-                          setValue("splitBetween", 2);
-                        }
-                      }}
-                    />
+                      <SelectContent>
+                        {originAccounts.map((a) => (
+                          <SelectItem key={a.id} value={a.id} label={a.name}>
+                            {a.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 />
-                <span className="text-sm">Es pago de deuda</span>
-              </label>
+              </div>
 
-              {isDebtPayment && (
+              <div className="space-y-2">
+                <Label htmlFor="date">Fecha</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  className="h-11"
+                  {...register("date")}
+                />
+              </div>
+            </div>
+          </div>
+
+          {submitAttempted && !canSave && (
+            <div role="alert" className="space-y-1 text-xs text-destructive">
+              {(!amount || !accountId) && (
+                <p>Completa monto y cuenta antes de guardar.</p>
+              )}
+              {!hasValidDestination && toAccountId && (
+                <p>
+                  La cuenta destino debe ser distinta a la cuenta de origen.
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-3 border-t border-border/60 pt-4">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                type="submit"
+                className="w-full sm:flex-1"
+                disabled={isSubmitting}
+                onClick={() => setSaveAndAddAnother(false)}
+              >
+                {isSubmitting ? "Guardando..." : submitLabel}
+              </Button>
+
+              {!isEditing && (
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={isSubmitting}
+                  onClick={() => setSaveAndAddAnother(true)}
+                >
+                  Guardar y añadir otro
+                </Button>
+              )}
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 w-full text-muted-foreground"
+              aria-expanded={showDetails}
+              aria-controls="transaction-details"
+              onClick={() => setShowDetails((visible) => !visible)}
+            >
+              {showDetails
+                ? "Ocultar opciones avanzadas"
+                : "Opciones avanzadas"}
+            </Button>
+          </div>
+
+          {showDetails && (
+            <div id="transaction-details" className="space-y-4">
+              {type === "expense" && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="budget">Presupuesto (opcional)</Label>
+                    <Controller
+                      name="budgetId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={(v) => field.onChange(v ?? "")}
+                        >
+                          <SelectTrigger id="budget" className="h-11 w-full">
+                            <SelectValue placeholder="Sin presupuesto">
+                              {() =>
+                                selectedBudget
+                                  ? getBudgetLabel(selectedBudget)
+                                  : "Sin presupuesto"
+                              }
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="w-[min(92vw,34rem)] min-w-[var(--anchor-width)]">
+                            <SelectItem value="" label="Sin presupuesto">
+                              Sin presupuesto
+                            </SelectItem>
+                            {loadingBudgets ? (
+                              <SelectItem value="__loading" disabled>
+                                Cargando presupuestos...
+                              </SelectItem>
+                            ) : (
+                              budgets.map((b) => {
+                                const budgetLabel = getBudgetLabel(b);
+
+                                return (
+                                  <SelectItem
+                                    key={b.id}
+                                    value={b.id}
+                                    label={budgetLabel}
+                                  >
+                                    {budgetLabel}
+                                  </SelectItem>
+                                );
+                              })
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <label
+                    htmlFor="isDebtPayment"
+                    className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+                  >
+                    <Controller
+                      name="isDebtPayment"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isDebtPayment"
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            const nextChecked = !!checked;
+                            field.onChange(nextChecked);
+
+                            if (!nextChecked) {
+                              setValue("toAccountId", "");
+                            }
+
+                            if (nextChecked) {
+                              setValue("isSharedExpense", false);
+                              setValue("splitBetween", 2);
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                    <div>
+                      <span className="text-sm">Es pago de deuda</span>
+                      <p className="text-xs text-muted-foreground">
+                        Registra el pago como movimiento hacia una deuda.
+                      </p>
+                    </div>
+                  </label>
+
+                  {isDebtPayment && (
+                    <div className="space-y-2">
+                      <Label htmlFor="debtAccount">Deuda a pagar</Label>
+                      <Controller
+                        name="toAccountId"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={(v) => field.onChange(v ?? "")}
+                          >
+                            <SelectTrigger id="debtAccount" className="h-11">
+                              <SelectValue placeholder="Selecciona deuda">
+                                {() =>
+                                  selectedDebtAccount?.name ??
+                                  "Selecciona deuda"
+                                }
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {debtAccounts.map((a) => (
+                                <SelectItem
+                                  key={a.id}
+                                  value={a.id}
+                                  label={a.name}
+                                >
+                                  {a.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  {isCreditCardPurchase && (
+                    <div className="space-y-2">
+                      <Label htmlFor="installments">Cuotas</Label>
+                      <p className="text-xs text-muted-foreground">
+                        El gasto se repartirá entre las cuotas seleccionadas.
+                      </p>
+                      <Controller
+                        name="installments"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value || "1"}
+                            onValueChange={(v) => field.onChange(v)}
+                          >
+                            <SelectTrigger id="installments" className="h-11">
+                              <SelectValue>
+                                {() => {
+                                  const n = Number(field.value || "1");
+                                  return n === 1 ? "1 cuota" : `${n} cuotas`;
+                                }}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {INSTALLMENT_OPTIONS.map((n) => {
+                                const label =
+                                  n === 1 ? "1 cuota" : `${n} cuotas`;
+                                return (
+                                  <SelectItem
+                                    key={n}
+                                    value={String(n)}
+                                    label={label}
+                                  >
+                                    {label}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {amount && Number(installments) >= 2 && (
+                        <p className="text-xs text-muted-foreground">
+                          Cuota mensual:{" "}
+                          {formatIntegerInput(
+                            String(
+                              Math.floor(
+                                parseIntegerInput(amount) /
+                                  Number(installments),
+                              ),
+                            ),
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <label
+                    htmlFor="isOccasional"
+                    className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+                  >
+                    <Controller
+                      name="isOccasional"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="isOccasional"
+                          checked={field.value}
+                          onCheckedChange={(checked) =>
+                            field.onChange(!!checked)
+                          }
+                        />
+                      )}
+                    />
+                    <div>
+                      <span className="text-sm">Gasto ocasional</span>
+                      <p className="text-xs text-muted-foreground">
+                        No se repetirá el próximo mes
+                      </p>
+                    </div>
+                  </label>
+
+                  {!isEditing && (
+                    <>
+                      <label
+                        htmlFor="isSharedExpense"
+                        className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
+                      >
+                        <Controller
+                          name="isSharedExpense"
+                          control={control}
+                          render={({ field }) => (
+                            <Checkbox
+                              id="isSharedExpense"
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                const nextChecked = !!checked;
+                                field.onChange(nextChecked);
+
+                                if (nextChecked) {
+                                  setValue("isDebtPayment", false);
+                                  setValue("toAccountId", "");
+                                }
+
+                                if (!nextChecked) {
+                                  setValue("splitBetween", 2);
+                                }
+                              }}
+                            />
+                          )}
+                        />
+                        <div>
+                          <span className="text-sm">Gasto compartido</span>
+                          <p className="text-xs text-muted-foreground">
+                            Calcula tu parte y el reembolso esperado.
+                          </p>
+                        </div>
+                      </label>
+
+                      {isSharedExpense && (
+                        <div className="space-y-2">
+                          <Label htmlFor="splitBetween">Dividir entre</Label>
+                          <Controller
+                            name="splitBetween"
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                id="splitBetween"
+                                type="number"
+                                min={2}
+                                max={10}
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    Math.max(
+                                      2,
+                                      Math.min(10, Number(e.target.value) || 2),
+                                    ),
+                                  )
+                                }
+                                className="h-11"
+                              />
+                            )}
+                          />
+
+                          {amount && (
+                            <div className="text-xs text-muted-foreground space-y-0.5">
+                              <p>
+                                Tu parte:{" "}
+                                {formatIntegerInput(
+                                  String(
+                                    Math.floor(
+                                      parseIntegerInput(amount) / splitBetween,
+                                    ),
+                                  ),
+                                )}
+                              </p>
+                              <p>
+                                Reembolso:{" "}
+                                {formatIntegerInput(
+                                  String(
+                                    parseIntegerInput(amount) -
+                                      Math.floor(
+                                        parseIntegerInput(amount) /
+                                          splitBetween,
+                                      ),
+                                  ),
+                                )}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {type === "income" && (
                 <div className="space-y-2">
-                  <Label htmlFor="debtAccount">Deuda a pagar</Label>
+                  <Label htmlFor="category">Categoría</Label>
+                  <Controller
+                    name="categoryId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v ?? "")}
+                      >
+                        <SelectTrigger id="category" className="h-11">
+                          <SelectValue placeholder="Selecciona categoría">
+                            {() =>
+                              selectedIncomeCategory?.name ??
+                              "Selecciona categoría"
+                            }
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {incomeCategories.map((c) => (
+                            <SelectItem key={c.id} value={c.id} label={c.name}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              )}
+
+              {type === "transfer" && (
+                <div className="space-y-2">
+                  <Label htmlFor="toAccount">Cuenta destino</Label>
                   <Controller
                     name="toAccountId"
                     control={control}
@@ -646,13 +1065,16 @@ export function TransactionForm({
                         value={field.value}
                         onValueChange={(v) => field.onChange(v ?? "")}
                       >
-                        <SelectTrigger id="debtAccount">
-                          <SelectValue placeholder="Selecciona deuda">
-                            {() => selectedDebtAccount?.name ?? "Selecciona deuda"}
+                        <SelectTrigger id="toAccount" className="h-11">
+                          <SelectValue placeholder="Selecciona cuenta destino">
+                            {() =>
+                              selectedDestinationAccount?.name ??
+                              "Selecciona cuenta destino"
+                            }
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {debtAccounts.map((a) => (
+                          {destinationAccounts.map((a) => (
                             <SelectItem key={a.id} value={a.id} label={a.name}>
                               {a.name}
                             </SelectItem>
@@ -664,224 +1086,37 @@ export function TransactionForm({
                 </div>
               )}
 
-              {isCreditCardPurchase && (
-                <div className="space-y-2">
-                  <Label htmlFor="installments">Cuotas</Label>
-                  <Controller
-                    name="installments"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        value={field.value || "1"}
-                        onValueChange={(v) => field.onChange(v)}
-                      >
-                        <SelectTrigger id="installments">
-                          <SelectValue>
-                            {() => {
-                              const n = Number(field.value || "1");
-                              return n === 1 ? "1 cuota" : `${n} cuotas`;
-                            }}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {INSTALLMENT_OPTIONS.map((n) => {
-                            const label = n === 1 ? "1 cuota" : `${n} cuotas`;
-                            return (
-                              <SelectItem key={n} value={String(n)} label={label}>
-                                {label}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {amount && Number(installments) >= 2 && (
-                    <p className="text-xs text-muted-foreground">
-                      Cuota mensual:{" "}
-                      {formatIntegerInput(
-                        String(
-                          Math.floor(
-                            parseIntegerInput(amount) / Number(installments)
-                          )
-                        )
-                      )}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <label
-                htmlFor="isOccasional"
-                className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
-              >
-                <Controller
-                  name="isOccasional"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox
-                      id="isOccasional"
-                      checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(!!checked)}
-                    />
-                  )}
-                />
-                <div>
-                  <span className="text-sm">Gasto ocasional</span>
-                  <p className="text-xs text-muted-foreground">No se repetirá el próximo mes</p>
-                </div>
-              </label>
-
-              {!isEditing && (
-                <>
-                  <label
-                    htmlFor="isSharedExpense"
-                    className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-3 cursor-pointer transition-colors hover:bg-muted/50"
-                  >
-                    <Controller
-                      name="isSharedExpense"
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          id="isSharedExpense"
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            const nextChecked = !!checked;
-                            field.onChange(nextChecked);
-
-                            if (nextChecked) {
-                              setValue("isDebtPayment", false);
-                              setValue("toAccountId", "");
-                            }
-
-                            if (!nextChecked) {
-                              setValue("splitBetween", 2);
-                            }
-                          }}
-                        />
-                      )}
-                    />
-                    <span className="text-sm">Gasto compartido</span>
-                  </label>
-
-                  {isSharedExpense && (
-                    <div className="space-y-2">
-                      <Label htmlFor="splitBetween">Dividir entre</Label>
-                      <Controller
-                        name="splitBetween"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            id="splitBetween"
-                            type="number"
-                            min={2}
-                            max={10}
-                            value={field.value}
-                            onChange={(e) =>
-                              field.onChange(
-                                Math.max(
-                                  2,
-                                  Math.min(10, Number(e.target.value) || 2)
-                                )
-                              )
-                            }
-                          />
-                        )}
-                      />
-
-                      {amount && (
-                        <div className="text-xs text-muted-foreground space-y-0.5">
-                          <p>
-                            Tu parte:{" "}
-                            {formatIntegerInput(
-                              String(
-                                Math.floor(parseIntegerInput(amount) / splitBetween)
-                              )
-                            )}
-                          </p>
-                          <p>
-                            Reembolso:{" "}
-                            {formatIntegerInput(
-                              String(
-                                parseIntegerInput(amount) -
-                                  Math.floor(parseIntegerInput(amount) / splitBetween)
-                              )
-                            )}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {type === "transfer" && (
-            <div className="space-y-2">
-              <Label htmlFor="toAccount">Cuenta destino</Label>
-              <Controller
-                name="toAccountId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v ?? "")}
-                  >
-                    <SelectTrigger id="toAccount">
-                      <SelectValue placeholder="Selecciona cuenta destino">
-                        {() =>
-                          selectedDestinationAccount?.name ??
-                          "Selecciona cuenta destino"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {destinationAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id} label={a.name}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {(type === "income" || type === "transfer") &&
+                liquidAccounts.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No hay cuentas de ahorro o efectivo disponibles
+                  </p>
                 )}
-              />
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción (opcional)</Label>
+                <Input
+                  id="description"
+                  {...register("description")}
+                  placeholder="Ej: Almuerzo en restaurante"
+                  className="h-11"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tags">Etiquetas (opcional)</Label>
+                <Input
+                  id="tags"
+                  {...register("tags")}
+                  placeholder="Ej: trabajo, ocio, fijo"
+                  className="h-11"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Separa con comas
+                </p>
+              </div>
             </div>
           )}
-
-          {(type === "income" || type === "transfer") &&
-            liquidAccounts.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                No hay cuentas de ahorro o efectivo disponibles
-              </p>
-            )}
-
-          <div className="space-y-2">
-            <Label htmlFor="date">Fecha</Label>
-            <Input id="date" type="date" {...register("date")} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripcion (opcional)</Label>
-            <Input
-              id="description"
-              {...register("description")}
-              placeholder="Ej: Almuerzo en restaurante"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tags">Etiquetas (opcional)</Label>
-            <Input
-              id="tags"
-              {...register("tags")}
-              placeholder="Ej: trabajo, ocio, fijo"
-            />
-            <p className="text-xs text-muted-foreground">Separa con comas</p>
-          </div>
-
-          <Button type="submit" className="w-full" disabled={!canSave}>
-            {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Guardar"}
-          </Button>
         </form>
       </DialogContent>
     </Dialog>

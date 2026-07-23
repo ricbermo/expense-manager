@@ -10,7 +10,11 @@ export default function LoginPage() {
           Accede con tu correo y contraseña para continuar.
         </p>
         <div className="mt-5">
-          <Suspense fallback={<p className="text-sm text-muted-foreground">Cargando...</p>}>
+          <Suspense
+            fallback={
+              <p className="text-sm text-muted-foreground">Cargando...</p>
+            }
+          >
             <LoginForm />
           </Suspense>
         </div>

@@ -14,17 +14,26 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <header className={cn("app-shell pb-3 pt-6", className)}>
+    <header
+      className={cn(
+        "app-shell pb-3 pt-[calc(1.5rem+env(safe-area-inset-top))]",
+        className,
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+          <h1 className="text-balance text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
             {title}
           </h1>
           {description && (
             <p className="text-sm text-muted-foreground">{description}</p>
           )}
         </div>
-        {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
+        {action && (
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">
+            {action}
+          </div>
+        )}
       </div>
     </header>
   );

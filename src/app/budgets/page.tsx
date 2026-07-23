@@ -1,35 +1,59 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { Copy, Plus } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { BudgetCard } from "@/components/budgets/budget-card";
 import { BudgetForm } from "@/components/budgets/budget-form";
-import { useBudgets, type BudgetWithCategory } from "@/lib/hooks/use-budgets";
+import { MonthPager } from "@/components/layout/month-pager";
+import { PageHeader } from "@/components/layout/page-header";
+import { SettingsLink } from "@/components/layout/settings-link";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { type BudgetWithCategory, useBudgets } from "@/lib/hooks/use-budgets";
+import { cn } from "@/lib/utils";
+import {
+  getBudgetCopyMessage,
+  getBudgetPriority,
+  getBudgetSummary,
+  orderBudgetsByPriority,
+} from "@/lib/utils/budget-presentation";
 import { formatCOP } from "@/lib/utils/currency";
-import { formatMonthYear } from "@/lib/utils/dates";
-
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+import { getCurrentMonth } from "@/lib/utils/dates";
 
 export default function BudgetsPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingBudget, setEditingBudget] =
-    useState<BudgetWithCategory | null>(null);
-  const { budgets, loading, createBudget, updateBudget, deleteBudget, copyFromPreviousMonth } =
-    useBudgets(month);
+  const [copying, setCopying] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<BudgetWithCategory | null>(
+    null,
+  );
+  const {
+    budgets,
+    loading,
+    error,
+    refetch,
+    createBudget,
+    updateBudget,
+    deleteBudget,
+    copyFromPreviousMonth,
+  } = useBudgets(month);
+  const orderedBudgets = useMemo(
+    () => orderBudgetsByPriority(budgets),
+    [budgets],
+  );
+  const summary = useMemo(() => getBudgetSummary(budgets), [budgets]);
+  const priorityBudget = orderedBudgets.find((budget) => {
+    const priority = getBudgetPriority(budget).kind;
+    return (
+      priority === "exceeded" || priority === "at_limit" || priority === "alert"
+    );
+  });
 
   const changeMonth = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
     const d = new Date(y, m - 1 + delta, 1);
-    setMonth(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-    );
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -49,6 +73,18 @@ export default function BudgetsPage() {
   const handleCreate = () => {
     setEditingBudget(null);
     setFormOpen(true);
+  };
+
+  const handleCopyPreviousMonth = async () => {
+    setCopying(true);
+    try {
+      const result = await copyFromPreviousMonth();
+      toast.success(getBudgetCopyMessage(result));
+    } catch {
+      toast.error("No se pudieron copiar los presupuestos.");
+    } finally {
+      setCopying(false);
+    }
   };
 
   const handleFormOpenChange = (open: boolean) => {
@@ -81,116 +117,162 @@ export default function BudgetsPage() {
     });
   };
 
-  const totalBudget = budgets.reduce((s, b) => s + b.limit_amount, 0);
-  const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
-
   return (
     <div className="pb-6">
       <PageHeader
         title="Presupuesto"
-        description="Monitorea limites y gasto acumulado por categoria"
+        description="Monitorea límites y gasto acumulado por categoría"
         action={
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                try {
-                  await copyFromPreviousMonth();
-                  toast.success("Presupuestos copiados del mes anterior");
-                } catch {
-                  toast.error("No se pudieron copiar los presupuestos");
-                }
-              }}
-              title="Copiar del mes anterior"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button size="sm" onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-1" />
-              Nuevo
-            </Button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <MonthPager month={month} onChange={changeMonth} />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="default"
+                disabled={copying}
+                onClick={() => void handleCopyPreviousMonth()}
+              >
+                <Copy className="h-4 w-4" />
+                {copying ? "Copiando..." : "Copiar mes anterior"}
+              </Button>
+              <Button size="default" onClick={handleCreate}>
+                <Plus className="h-4 w-4" />
+                Nuevo
+              </Button>
+            </div>
+            <SettingsLink />
           </div>
         }
       />
 
       <div className="app-shell page-stack">
-        <div className="month-toolbar">
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)} aria-label="Mes anterior">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <p className="text-sm font-semibold capitalize text-foreground">
-            {formatMonthYear(`${month}-01`)}
-          </p>
-          <Button variant="ghost" size="icon" onClick={() => changeMonth(1)} aria-label="Mes siguiente">
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {budgets.length > 0 && (
-          <div className="kpi-card">
-            <div className="flex justify-between text-sm">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Gastado
-                </p>
-                <p className="font-semibold text-rose-600">{formatCOP(totalSpent)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Presupuesto
-                </p>
-                <p className="font-semibold">{formatCOP(totalBudget)}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="section-card h-24 animate-pulse"
-              />
+              <div key={i} className="section-card h-24 animate-pulse" />
             ))}
+          </div>
+        ) : error && budgets.length === 0 ? (
+          <div className="empty-state text-muted-foreground">
+            <p className="font-medium text-foreground">
+              No se pudieron cargar los presupuestos
+            </p>
+            <p className="mt-1 text-xs">{error}</p>
+            <Button className="mt-4" onClick={() => void refetch()}>
+              Reintentar
+            </Button>
           </div>
         ) : budgets.length === 0 ? (
           <div className="empty-state text-muted-foreground">
-            <p className="font-medium text-foreground">Sin presupuestos este mes</p>
-            <p className="text-xs mt-1">Define limites de gasto por categoria para detectar cuando te excedes y poder ahorrar mas</p>
-            <div className="flex gap-2 mt-4">
-              <Button onClick={handleCreate}>
-                <Plus className="mr-1 h-4 w-4" />
+            <p className="font-medium text-foreground">
+              Sin presupuestos este mes
+            </p>
+            <p className="mt-1 text-xs">
+              Define límites de gasto por categoría para detectar cuándo te
+              excedes.
+            </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Button size="default" onClick={handleCreate}>
+                <Plus className="h-4 w-4" />
                 Crear presupuesto
               </Button>
               <Button
                 variant="outline"
-                onClick={async () => {
-                  try {
-                    await copyFromPreviousMonth();
-                    toast.success("Presupuestos copiados del mes anterior");
-                  } catch {
-                    toast.error("No se pudieron copiar los presupuestos");
-                  }
-                }}
+                size="default"
+                disabled={copying}
+                onClick={() => void handleCopyPreviousMonth()}
               >
-                <Copy className="mr-1 h-4 w-4" />
+                <Copy className="h-4 w-4" />
                 Copiar del mes anterior
               </Button>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            {budgets.map((budget) => (
-              <BudgetCard
-                key={budget.id}
-                budget={budget}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+          <>
+            {error ? (
+              <div className="section-card p-3">
+                <p className="text-sm font-medium">
+                  Error al actualizar los presupuestos
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{error}</p>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  className="mt-2"
+                  onClick={() => void refetch()}
+                >
+                  Reintentar
+                </Button>
+              </div>
+            ) : null}
+            <section
+              className="section-card p-4"
+              aria-labelledby="budget-summary-heading"
+            >
+              <h2
+                id="budget-summary-heading"
+                className="text-sm font-medium text-foreground"
+              >
+                {summary.kind === "exceeded"
+                  ? `${summary.budgetCount} ${summary.budgetCount === 1 ? "presupuesto excedido" : "presupuestos excedidos"}`
+                  : summary.kind === "alert"
+                    ? `${summary.budgetCount} ${summary.budgetCount === 1 ? "presupuesto cerca del límite" : "presupuestos cerca del límite"}`
+                    : "Todos los presupuestos están dentro del límite"}
+              </h2>
+              <p
+                className={cn(
+                  "mt-1 text-sm font-semibold tabular-nums",
+                  summary.kind === "exceeded"
+                    ? "text-chart-expense"
+                    : summary.kind === "alert"
+                      ? "text-amber-700 dark:text-amber-400"
+                      : "text-chart-income",
+                )}
+              >
+                {summary.kind === "exceeded"
+                  ? `${formatCOP(summary.amount)} por encima del límite`
+                  : summary.kind === "alert"
+                    ? `${formatCOP(summary.amount)} disponible antes de excederse`
+                    : `${formatCOP(summary.amount)} disponible`}
+              </p>
+              {priorityBudget ? (
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {priorityBudget.name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {priorityBudget.categories.name}
+                    </p>
+                  </div>
+                  <Link
+                    href={{
+                      pathname: "/transactions",
+                      query: { month, budget: priorityBudget.id },
+                    }}
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "default" }),
+                      "shrink-0",
+                    )}
+                  >
+                    Ver gastos
+                  </Link>
+                </div>
+              ) : null}
+            </section>
+            <ul className="space-y-3">
+              {orderedBudgets.map((budget) => (
+                <li key={budget.id}>
+                  <BudgetCard
+                    budget={budget}
+                    movementsHref={`/transactions?month=${month}&budget=${budget.id}`}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 

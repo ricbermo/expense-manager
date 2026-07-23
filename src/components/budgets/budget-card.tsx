@@ -1,46 +1,86 @@
 "use client";
 
 import { Pencil } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { InlineConfirm } from "@/components/ui/inline-confirm";
-import { formatCOP } from "@/lib/utils/currency";
 import type { BudgetWithCategory } from "@/lib/hooks/use-budgets";
+import { cn } from "@/lib/utils";
+import { getBudgetPriority } from "@/lib/utils/budget-presentation";
+import { formatCOP } from "@/lib/utils/currency";
 
 interface BudgetCardProps {
   budget: BudgetWithCategory;
+  movementsHref: string;
   onEdit: (budget: BudgetWithCategory) => void;
   onDelete: (id: string) => void;
 }
 
-export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
-  const percentage = Math.round((budget.spent / budget.limit_amount) * 100);
+export function BudgetCard({
+  budget,
+  movementsHref,
+  onEdit,
+  onDelete,
+}: BudgetCardProps) {
+  const progress = getBudgetPriority(budget);
+  const percentage = progress.percentage;
   const remaining = budget.limit_amount - budget.spent;
-  const status =
-    percentage >= 100 ? "Excedido" : percentage >= 80 ? "En alerta" : "Saludable";
+  const status = {
+    exceeded: "Excedido",
+    at_limit: "En el límite",
+    alert: "En alerta",
+    healthy: "Dentro del límite",
+    invalid: "Límite inválido",
+  }[progress.kind];
+
+  const statusColor =
+    progress.kind === "exceeded"
+      ? "text-chart-expense"
+      : progress.kind === "at_limit" || progress.kind === "alert"
+        ? "text-amber-700 dark:text-amber-400"
+        : "text-muted-foreground";
 
   const progressColor =
-    percentage >= 100
+    progress.kind === "exceeded"
       ? "bg-rose-600"
-      : percentage >= 80
-        ? "bg-amber-500"
+      : progress.kind === "at_limit" || progress.kind === "alert"
+        ? "bg-amber-700 dark:bg-amber-500"
         : "bg-emerald-600";
 
+  const remainingColor =
+    remaining > 0
+      ? "text-chart-income"
+      : remaining < 0
+        ? "text-chart-expense"
+        : "text-muted-foreground";
+
+  const remainingLabel =
+    remaining > 0
+      ? `${formatCOP(remaining)} disponible`
+      : remaining < 0
+        ? `${formatCOP(Math.abs(remaining))} excedido`
+        : `${formatCOP(0)} disponible`;
+
   return (
-    <Card className="section-card gap-4 p-4">
+    <div className="section-card flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <div
-            className="h-3 w-3 rounded-full"
+            className="h-3 w-3 shrink-0 rounded-full"
             style={{ backgroundColor: budget.categories.color }}
+            aria-hidden="true"
           />
-          <div className="leading-tight">
-            <p className="font-medium text-sm">{budget.name}</p>
-            <p className="text-xs text-muted-foreground">{budget.categories.name}</p>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-sm font-medium">{budget.name}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {budget.categories.name}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-muted-foreground">{status}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={cn("text-xs font-semibold", statusColor)}>
+            {status}
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -56,25 +96,50 @@ export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
           />
         </div>
       </div>
-      <div className="space-y-1">
-        <div className="h-2 w-full rounded-full bg-muted">
+      {percentage !== null ? (
+        <div className="space-y-1">
           <div
-            className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
-            style={{ width: `${Math.min(percentage, 100)}%` }}
-          />
+            className="h-2 w-full overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-label={`${budget.name}: ${percentage}% del límite mensual`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percentage}
+          >
+            <div
+              className={cn(
+                "h-full rounded-full transition-transform duration-300",
+                progressColor,
+              )}
+              style={{
+                transform: `scaleX(${Math.min(percentage, 100) / 100})`,
+                transformOrigin: "left",
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {percentage}% del límite
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground">{percentage}% del limite</p>
-      </div>
-      <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Revisa el límite mensual
+        </p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span className="tabular-nums text-muted-foreground">
           {formatCOP(budget.spent)} gastado
         </span>
-        <span className={remaining >= 0 ? "text-emerald-600" : "text-rose-600"}>
-          {remaining >= 0
-            ? `${formatCOP(remaining)} disponible`
-            : `${formatCOP(Math.abs(remaining))} excedido`}
+        <span className={cn("tabular-nums", remainingColor)}>
+          {remainingLabel}
         </span>
       </div>
-    </Card>
+      <Link
+        href={movementsHref}
+        className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full")}
+      >
+        Ver gastos
+      </Link>
+    </div>
   );
 }

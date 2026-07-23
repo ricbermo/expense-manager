@@ -1,14 +1,13 @@
 "use client";
 
 import {
-  AreaChart,
   Area,
-  XAxis,
-  YAxis,
+  AreaChart,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
-import { Card } from "@/components/ui/card";
 import { formatCOP } from "@/lib/utils/currency";
 
 interface DailyData {
@@ -19,12 +18,14 @@ interface DailyData {
 export function MonthlyTrend({ data }: { data: DailyData[] }) {
   if (data.length === 0) {
     return (
-      <Card className="section-card p-4 md:p-5">
-        <p className="mb-3 text-sm font-semibold text-foreground">Tendencia diaria</p>
+      <div className="section-card p-4 md:p-5">
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          Gasto acumulado
+        </h3>
         <p className="py-6 text-center text-xs text-muted-foreground">
           Registra gastos para ver la tendencia de gasto acumulado
         </p>
-      </Card>
+      </div>
     );
   }
 
@@ -37,49 +38,73 @@ export function MonthlyTrend({ data }: { data: DailyData[] }) {
       });
       return acc;
     },
-    []
+    [],
   );
 
+  const maxAmount = chartData.at(-1)?.amount ?? 0;
+  const firstDate = data[0]?.date ?? "";
+  const lastDate = data.at(-1)?.date ?? "";
+  const formatAccessibleDate = (date: string) =>
+    new Intl.DateTimeFormat("es-CO", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(`${date}T00:00:00`));
+
   return (
-    <Card className="section-card p-4 md:p-5">
-      <p className="mb-3 text-sm font-semibold text-foreground">Gasto acumulado</p>
-      <div className="min-w-0">
-        <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={160}>
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.28} />
-                <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 10, fill: "#64748b" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis hide />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #dbe4ee",
-                borderRadius: "8px",
-                fontSize: "12px",
-              }}
-              labelStyle={{ color: "#334155" }}
-              formatter={(value) => [formatCOP(Number(value)), "Acumulado"]}
-              labelFormatter={(label) => `Dia ${label}`}
-            />
-            <Area
-              type="monotone"
-              dataKey="amount"
-              stroke="#1e3a8a"
-              fill="url(#colorAmount)"
-              strokeWidth={2}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+    <div className="section-card p-4 md:p-5">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">
+        Gasto acumulado
+      </h3>
+      <div
+        className="min-w-0"
+        role="img"
+        aria-label={`Gasto acumulado del ${formatAccessibleDate(firstDate)} al ${formatAccessibleDate(lastDate)}: ${formatCOP(maxAmount)} en total`}
+      >
+        <div aria-hidden="true">
+          <ResponsiveContainer
+            width="100%"
+            height={160}
+            minWidth={0}
+            minHeight={160}
+          >
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="var(--chart-1)"
+                    stopOpacity={0.28}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--chart-1)"
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis hide />
+              <Tooltip
+                formatter={(value) => [formatCOP(Number(value)), "Acumulado"]}
+                labelFormatter={(label) => `Día ${label}`}
+              />
+              <Area
+                type="monotone"
+                dataKey="amount"
+                stroke="var(--chart-1)"
+                fill="url(#colorAmount)"
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }

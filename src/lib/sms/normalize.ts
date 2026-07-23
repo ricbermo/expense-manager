@@ -5,7 +5,10 @@ const IGNORE_REASONS = ["internal_transfer"] as const;
 type IgnoreReason = (typeof IGNORE_REASONS)[number];
 
 function isIgnoreReason(value: unknown): value is IgnoreReason {
-  return typeof value === "string" && (IGNORE_REASONS as readonly string[]).includes(value);
+  return (
+    typeof value === "string" &&
+    (IGNORE_REASONS as readonly string[]).includes(value)
+  );
 }
 
 export function todayIso(): string {
@@ -49,16 +52,38 @@ export function normalizeParsed(raw: unknown, fallbackDate: string): ParsedSms {
   const ignoreReason = isIgnoreReason(ignoreReasonRaw) ? ignoreReasonRaw : null;
 
   const amount =
-    typeof obj.amount === "number" && Number.isFinite(obj.amount) && obj.amount >= 0
+    typeof obj.amount === "number" &&
+    Number.isFinite(obj.amount) &&
+    obj.amount >= 0
       ? Math.round(obj.amount)
       : null;
 
-  const merchant = typeof obj.merchant === "string" && obj.merchant.trim() ? obj.merchant.trim() : null;
+  const merchant =
+    typeof obj.merchant === "string" && obj.merchant.trim()
+      ? obj.merchant.trim()
+      : null;
   const description =
-    typeof obj.description === "string" && obj.description.trim() ? obj.description.trim() : null;
+    typeof obj.description === "string" && obj.description.trim()
+      ? obj.description.trim()
+      : null;
 
-  const accountId = typeof obj.accountId === "string" && obj.accountId.trim() ? obj.accountId.trim() : null;
-  const categoryId = typeof obj.categoryId === "string" && obj.categoryId.trim() ? obj.categoryId.trim() : null;
+  const accountId =
+    typeof obj.accountId === "string" && obj.accountId.trim()
+      ? obj.accountId.trim()
+      : null;
+  const categoryId =
+    typeof obj.categoryId === "string" && obj.categoryId.trim()
+      ? obj.categoryId.trim()
+      : null;
 
-  return { amount, merchant, accountId, categoryId, type, date, description, ignoreReason };
+  return {
+    amount,
+    merchant,
+    accountId,
+    categoryId,
+    type,
+    date,
+    description,
+    ignoreReason,
+  };
 }

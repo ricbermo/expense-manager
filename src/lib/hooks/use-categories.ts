@@ -3,8 +3,8 @@
 import { useCallback } from "react";
 import useSWR from "swr";
 import { createClient } from "@/lib/supabase/client";
-import type { Category, CategoryType } from "@/lib/types/database";
 import { swrKeys } from "@/lib/swr/keys";
+import type { Category, CategoryType } from "@/lib/types/database";
 
 export function useCategories(type?: CategoryType) {
   const fetchCategories = useCallback(async (): Promise<Category[]> => {

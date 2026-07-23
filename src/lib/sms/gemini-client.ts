@@ -26,7 +26,11 @@ import { getEnv } from "@/lib/env";
 export async function callGemini(
   prompt: string,
   responseSchema: unknown,
-  options: { apiKey?: string; fetchImpl?: typeof fetch; temperature?: number } = {}
+  options: {
+    apiKey?: string;
+    fetchImpl?: typeof fetch;
+    temperature?: number;
+  } = {},
 ): Promise<string> {
   const apiKey = options.apiKey ?? getEnv("GEMINI_API_KEY");
   if (!apiKey) {
@@ -54,7 +58,9 @@ export async function callGemini(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Gemini API error ${res.status}: ${text || res.statusText}`);
+    throw new Error(
+      `Gemini API error ${res.status}: ${text || res.statusText}`,
+    );
   }
 
   const json = (await res.json()) as GeminiResponseShape;

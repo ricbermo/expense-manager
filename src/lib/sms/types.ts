@@ -33,5 +33,8 @@ export const IGNORE_REASONS = ["internal_transfer"] as const;
 export type IgnoreReason = (typeof IGNORE_REASONS)[number];
 
 export function isIgnoreReason(value: unknown): value is IgnoreReason {
-  return typeof value === "string" && (IGNORE_REASONS as readonly string[]).includes(value);
+  return (
+    typeof value === "string" &&
+    (IGNORE_REASONS as readonly string[]).includes(value)
+  );
 }

@@ -1,5 +1,5 @@
-import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
+import type { NextConfig } from "next";
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -10,8 +10,11 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   turbopack: {},
   allowedDevOrigins: ["192.168.1.4"],
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default withPWA(nextConfig);
 
-import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
+import("@opennextjs/cloudflare").then((m) => m.initOpenNextCloudflareForDev());

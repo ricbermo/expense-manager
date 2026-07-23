@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  isDestinationSelectionValid,
   isDestinationRequired,
+  isDestinationSelectionValid,
 } from "../src/lib/utils/transaction-destination-rules.ts";
 
 test("transfer and expense do not require destination", () => {

@@ -3,7 +3,6 @@ import { IBM_Plex_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { SettingsLink } from "@/components/layout/settings-link";
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-sans",
@@ -25,8 +24,7 @@ export const viewport: Viewport = {
   themeColor: "#0f172a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -35,15 +33,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="es"
-      className={`${ibmPlexSans.variable} h-full antialiased`}
-    >
+    <html lang="es" className={`${ibmPlexSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <SettingsLink />
         <main className="flex-1">{children}</main>
         <BottomNav />
-        <Toaster position="top-center" richColors closeButton duration={3000} />
+        <Toaster
+          position="bottom-center"
+          offset={{ bottom: "1.5rem" }}
+          mobileOffset={{
+            bottom: "calc(6rem + env(safe-area-inset-bottom))",
+          }}
+          richColors
+          closeButton
+          duration={3000}
+        />
       </body>
     </html>
   );

@@ -13,13 +13,17 @@ export interface MonthComparison {
   savingsRate: number | null;
 }
 
-function getTrailing6Months(): { start: string; end: string; months: string[] } {
+function getTrailing6Months(): {
+  start: string;
+  end: string;
+  months: string[];
+} {
   const now = new Date();
   const months: string[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
     );
   }
   const start = `${months[0]}-01`;
@@ -31,7 +35,7 @@ function getTrailing6Months(): { start: string; end: string; months: string[] } 
 function shortMonthLabel(yyyyMM: string): string {
   const [y, m] = yyyyMM.split("-").map(Number);
   return new Intl.DateTimeFormat("es-CO", { month: "short" }).format(
-    new Date(y, m - 1, 1)
+    new Date(y, m - 1, 1),
   );
 }
 
@@ -40,7 +44,7 @@ export function useMonthlyComparison() {
     const supabase = createClient();
     const { start, end, months } = getTrailing6Months();
 
-    const [{ data }, { data: accountsData }] = await Promise.all([
+    const [transactionsResult, accountsResult] = await Promise.all([
       supabase
         .from("transactions")
         .select("date, type, amount, to_account_id, categories(name)")
@@ -50,10 +54,18 @@ export function useMonthlyComparison() {
       supabase.from("accounts").select("id, type"),
     ]);
 
+    const firstError = [transactionsResult.error, accountsResult.error].find(
+      (queryError) => queryError !== null,
+    );
+    if (firstError) throw firstError;
+
+    const data = transactionsResult.data;
+    const accountsData = accountsResult.data;
+
     const creditCardAccountIds = new Set(
       ((accountsData ?? []) as { id: string; type: string }[])
         .filter((a) => a.type === "credit_card")
-        .map((a) => a.id)
+        .map((a) => a.id),
     );
 
     const totals: Record<string, { income: number; expenses: number }> = {};
@@ -72,7 +84,8 @@ export function useMonthlyComparison() {
       if (t.type === "income" && t.categories?.name !== "Reembolso") {
         totals[mo].income += t.amount;
       } else if (t.type === "expense") {
-        if (t.to_account_id && creditCardAccountIds.has(t.to_account_id)) continue;
+        if (t.to_account_id && creditCardAccountIds.has(t.to_account_id))
+          continue;
         totals[mo].expenses += t.amount;
       }
     }
@@ -89,10 +102,19 @@ export function useMonthlyComparison() {
     });
   }, []);
 
-  const { data: comparison = [], isLoading: loading } = useSWR(
-    swrKeys.monthlyComparison(),
-    fetchComparison
-  );
+  const {
+    data: comparison = [],
+    error,
+    isLoading: loading,
+    isValidating,
+    mutate,
+  } = useSWR(swrKeys.monthlyComparison(), fetchComparison, {
+    keepPreviousData: true,
+  });
 
-  return { comparison, loading };
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
+
+  return { comparison, loading, error, refetch, isValidating };
 }

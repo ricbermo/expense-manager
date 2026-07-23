@@ -1,6 +1,6 @@
 import { callGemini } from "./gemini-client";
-import { buildPrompt } from "./prompt";
 import { normalizeParsed, todayIso } from "./normalize";
+import { buildPrompt } from "./prompt";
 import type { AccountContext, CategoryContext, ParsedSms } from "./types";
 
 const RESPONSE_SCHEMA = {
@@ -13,7 +13,11 @@ const RESPONSE_SCHEMA = {
     type: { type: "STRING", enum: ["expense", "income", "transfer"] },
     date: { type: "STRING" },
     description: { type: "STRING", nullable: true },
-    ignoreReason: { type: "STRING", enum: ["internal_transfer"], nullable: true },
+    ignoreReason: {
+      type: "STRING",
+      enum: ["internal_transfer"],
+      nullable: true,
+    },
   },
   required: ["type", "date", "ignoreReason"],
 } as const;
@@ -25,8 +29,13 @@ export interface ParseOptions {
 }
 
 export async function parseSms(
-  input: { rawSms: string; sender?: string; accounts: AccountContext[]; categories: CategoryContext[] },
-  options: ParseOptions = {}
+  input: {
+    rawSms: string;
+    sender?: string;
+    accounts: AccountContext[];
+    categories: CategoryContext[];
+  },
+  options: ParseOptions = {},
 ): Promise<ParsedSms> {
   const prompt = buildPrompt({
     rawSms: input.rawSms,

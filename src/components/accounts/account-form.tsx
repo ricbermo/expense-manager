@@ -4,6 +4,12 @@ import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,12 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import type { Account, AccountType } from "@/lib/types/database";
 import {
   normalizeStoredBalance,
@@ -35,8 +35,8 @@ import {
 const accountTypeLabels: Record<AccountType, string> = {
   savings: "Ahorros",
   cash: "Efectivo",
-  credit_card: "Tarjeta de Credito",
-  loan: "Prestamo",
+  credit_card: "Tarjeta de crédito",
+  loan: "Préstamo",
 };
 
 function getAccountFormValues(data?: Account) {
@@ -60,7 +60,9 @@ function getAccountFormValues(data?: Account) {
 interface AccountFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<Account, "id" | "created_at">) => Promise<void>;
+  onSubmit: (
+    data: Omit<Account, "id" | "created_at" | "archived_at">,
+  ) => Promise<void>;
   initialData?: Account;
 }
 
@@ -87,7 +89,9 @@ export function AccountForm({
     handleSubmit,
     reset,
     setValue,
-    formState: { isSubmitting },
+    clearErrors,
+    setError,
+    formState: { isSubmitting, errors },
   } = useForm<AccountFormValues>({
     defaultValues: initialValues,
   });
@@ -104,6 +108,16 @@ export function AccountForm({
   }, [open, initialData, reset]);
 
   const onFormSubmit = async (values: AccountFormValues) => {
+    const dueDayValue = Number(values.dueDay);
+    if (
+      (values.type === "credit_card" || values.type === "loan") &&
+      values.dueDay &&
+      (!Number.isInteger(dueDayValue) || dueDayValue < 1 || dueDayValue > 31)
+    ) {
+      setError("dueDay", { message: "Ingresa un día entre 1 y 31." });
+      return;
+    }
+
     const parsedBalance = parseIntegerInput(values.balance);
     const parsedCreditLimit =
       values.type === "credit_card"
@@ -130,8 +144,13 @@ export function AccountForm({
       toast.success(initialData ? "Cuenta actualizada" : "Cuenta creada");
       reset(getAccountFormValues() as AccountFormValues);
       onOpenChange(false);
-    } catch {
-      toast.error("No se pudo guardar la cuenta");
+    } catch (error) {
+      console.error("Save account error:", error);
+      if (error instanceof TypeError) {
+        toast.error("No se pudo guardar la cuenta. Revisa tu conexión.");
+      } else {
+        toast.error("No se pudo guardar la cuenta.");
+      }
     }
   };
 
@@ -148,6 +167,7 @@ export function AccountForm({
             <Label htmlFor="name">Nombre</Label>
             <Input
               id="name"
+              autoFocus
               {...register("name", { required: true })}
               placeholder="Ej: Bancolombia Ahorros"
               required
@@ -182,8 +202,10 @@ export function AccountForm({
                   <SelectContent>
                     <SelectItem value="savings">Ahorros</SelectItem>
                     <SelectItem value="cash">Efectivo</SelectItem>
-                    <SelectItem value="credit_card">Tarjeta de Credito</SelectItem>
-                    <SelectItem value="loan">Prestamo</SelectItem>
+                    <SelectItem value="credit_card">
+                      Tarjeta de crédito
+                    </SelectItem>
+                    <SelectItem value="loan">Préstamo</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -203,9 +225,22 @@ export function AccountForm({
               type="text"
               inputMode="numeric"
               {...register("balance")}
-              onChange={(e) => setValue("balance", formatIntegerInput(e.target.value))}
+              onChange={(e) =>
+                setValue("balance", formatIntegerInput(e.target.value))
+              }
               placeholder="0"
+              aria-invalid={Boolean(errors.balance)}
+              aria-describedby={errors.balance ? "balance-error" : undefined}
             />
+            {errors.balance?.message && (
+              <p
+                id="balance-error"
+                className="text-sm text-destructive"
+                aria-live="polite"
+              >
+                {errors.balance.message}
+              </p>
+            )}
           </div>
 
           {type === "credit_card" && (
@@ -227,7 +262,7 @@ export function AccountForm({
           {(type === "credit_card" || type === "loan") && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="interestRate">Tasa de interes (%)</Label>
+                <Label htmlFor="interestRate">Tasa de interés (%)</Label>
                 <Input
                   id="interestRate"
                   type="text"
@@ -236,14 +271,17 @@ export function AccountForm({
                   onChange={(e) =>
                     setValue(
                       "interestRate",
-                      sanitizeDecimalInput(e.target.value, 2)
+                      sanitizeDecimalInput(e.target.value, 2),
                     )
                   }
                   placeholder="28.5"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Porcentaje anual. Ej: 28.5
+                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dueDay">Dia de pago</Label>
+                <Label htmlFor="dueDay">Día de pago</Label>
                 <Controller
                   name="dueDay"
                   control={control}
@@ -255,26 +293,45 @@ export function AccountForm({
                       pattern="[0-9]*"
                       value={field.value}
                       onChange={(e) =>
-                        field.onChange(e.target.value.replace(/\D/g, "").slice(0, 2))
+                        field.onChange(
+                          e.target.value.replace(/\D/g, "").slice(0, 2),
+                        )
                       }
-                      onBlur={() => {
-                        const parsed = parseDueDayInput(field.value);
-                        field.onChange(parsed ? String(parsed) : "");
-                      }}
+                      onBlur={() => clearErrors("dueDay")}
                       placeholder="15"
+                      aria-invalid={Boolean(errors.dueDay)}
+                      aria-describedby={
+                        errors.dueDay ? "due-day-error" : undefined
+                      }
                     />
                   )}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Día del mes en que vence el pago. Ej: 15
+                </p>
+                {errors.dueDay?.message && (
+                  <p
+                    id="due-day-error"
+                    className="text-sm text-destructive"
+                    aria-live="polite"
+                  >
+                    {errors.dueDay.message}
+                  </p>
+                )}
               </div>
             </>
           )}
 
           <Button
             type="submit"
-            className="w-full"
+            className="h-8 w-full"
             disabled={isSubmitting || !name?.trim()}
           >
-            {isSubmitting ? "Guardando..." : initialData ? "Actualizar" : "Crear"}
+            {isSubmitting
+              ? "Guardando..."
+              : initialData
+                ? "Actualizar"
+                : "Crear"}
           </Button>
         </form>
       </DialogContent>

@@ -1,6 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { getAllowedUserEmail, isAllowedUserEmail } from "@/lib/auth/allowed-user";
+import { type NextRequest, NextResponse } from "next/server";
+import {
+  getAllowedUserEmail,
+  isAllowedUserEmail,
+} from "@/lib/auth/allowed-user";
 import { isProtectedPath, isPublicPath } from "@/lib/auth/route-access";
 
 function applyCookies(from: NextResponse, to: NextResponse) {
@@ -12,7 +15,7 @@ function applyCookies(from: NextResponse, to: NextResponse) {
 function redirectWithCookies(
   request: NextRequest,
   source: NextResponse,
-  pathname: string
+  pathname: string,
 ) {
   const destination = new URL(pathname, request.url);
   const response = NextResponse.redirect(destination);
@@ -20,32 +23,38 @@ function redirectWithCookies(
   return response;
 }
 
+export const runtime = "experimental-edge";
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
+  if (!url || !publishableKey) {
+    throw new Error(
+      "Missing Supabase env vars: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY are required.",
+    );
+  }
 
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
+  const supabase = createServerClient(url, publishableKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
+
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
 
   const {
     data: { user },
@@ -79,5 +88,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/accounts/:path*", "/transactions/:path*", "/budgets/:path*", "/ajustes/:path*"],
+  matcher: [
+    "/",
+    "/login",
+    "/accounts/:path*",
+    "/transactions/:path*",
+    "/budgets/:path*",
+    "/settings/:path*",
+  ],
 };

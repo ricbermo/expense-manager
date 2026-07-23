@@ -39,7 +39,7 @@ test("marca transferencias internas como ignoreReason", () => {
       description: null,
       ignoreReason: "internal_transfer",
     },
-    TODAY
+    TODAY,
   );
   assert.equal(result.ignoreReason, "internal_transfer");
   assert.equal(result.amount, 0);
@@ -53,7 +53,7 @@ test("usa la fecha actual cuando la IA no responde date valida", () => {
       ignoreReason: null,
       date: "no-es-una-fecha",
     },
-    TODAY
+    TODAY,
   );
   assert.equal(result.date, TODAY);
 });
@@ -61,7 +61,7 @@ test("usa la fecha actual cuando la IA no responde date valida", () => {
 test("usa la fecha actual cuando falta date", () => {
   const result = normalizeParsed(
     { amount: 50000, type: "expense", ignoreReason: null },
-    TODAY
+    TODAY,
   );
   assert.equal(result.date, TODAY);
 });
@@ -69,7 +69,7 @@ test("usa la fecha actual cuando falta date", () => {
 test("rechaza tipos de transaccion invalidos", () => {
   const result = normalizeParsed(
     { amount: 100, type: "weird", date: "2026-07-20", ignoreReason: null },
-    TODAY
+    TODAY,
   );
   assert.equal(result.type, null);
 });
@@ -77,19 +77,24 @@ test("rechaza tipos de transaccion invalidos", () => {
 test("redondea y rechaza montos no numericos o negativos", () => {
   const r1 = normalizeParsed(
     { amount: -100, type: "expense", date: "2026-07-20", ignoreReason: null },
-    TODAY
+    TODAY,
   );
   assert.equal(r1.amount, null);
 
   const r2 = normalizeParsed(
-    { amount: "50.000", type: "expense", date: "2026-07-20", ignoreReason: null },
-    TODAY
+    {
+      amount: "50.000",
+      type: "expense",
+      date: "2026-07-20",
+      ignoreReason: null,
+    },
+    TODAY,
   );
   assert.equal(r2.amount, null);
 
   const r3 = normalizeParsed(
     { amount: 1234.7, type: "expense", date: "2026-07-20", ignoreReason: null },
-    TODAY
+    TODAY,
   );
   assert.equal(r3.amount, 1235);
 });
@@ -102,7 +107,7 @@ test("rechaza ignoreReason desconocido", () => {
       date: "2026-07-20",
       ignoreReason: "some_other_reason",
     },
-    TODAY
+    TODAY,
   );
   assert.equal(result.ignoreReason, null);
 });
@@ -119,7 +124,7 @@ test("trimea merchant y description", () => {
       date: "2026-07-20",
       ignoreReason: null,
     },
-    TODAY
+    TODAY,
   );
   assert.equal(result.merchant, "JUMBO");
   assert.equal(result.description, "Compra");
@@ -151,7 +156,7 @@ test("acepta type income para abonos", () => {
       description: "Salario",
       ignoreReason: null,
     },
-    TODAY
+    TODAY,
   );
   assert.equal(result.type, "income");
   assert.equal(result.amount, 1000000);

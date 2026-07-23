@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,12 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useCategories } from "@/lib/hooks/use-categories";
 import {
   formatIntegerInput,
@@ -121,7 +121,9 @@ export function BudgetForm({
         categoryId: values.categoryId,
         limitAmount: parseIntegerInput(values.limitAmount),
       });
-      toast.success(mode === "edit" ? "Presupuesto actualizado" : "Presupuesto creado");
+      toast.success(
+        mode === "edit" ? "Presupuesto actualizado" : "Presupuesto creado",
+      );
       onOpenChange(false);
       reset({ name: "", categoryId: "", limitAmount: "" });
       setSubmitError(null);
@@ -129,12 +131,12 @@ export function BudgetForm({
       toast.error(
         error instanceof Error
           ? error.message
-          : "No se pudo guardar el presupuesto."
+          : "No se pudo guardar el presupuesto.",
       );
       setSubmitError(
         error instanceof Error
           ? error.message
-          : "No se pudo guardar el presupuesto."
+          : "No se pudo guardar el presupuesto.",
       );
     }
   };
@@ -160,17 +162,20 @@ export function BudgetForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="budget-category">Categoria</Label>
+            <Label htmlFor="budget-category">Categoría</Label>
             <Controller
               name="categoryId"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v ?? "")}
+                >
                   <SelectTrigger id="budget-category">
-                    <SelectValue placeholder="Selecciona categoria">
-                      {() => selectedCategory?.name ?? "Selecciona categoria"}
+                    <SelectValue placeholder="Selecciona categoría">
+                      {() => selectedCategory?.name ?? "Selecciona categoría"}
                     </SelectValue>
-                    </SelectTrigger>
+                  </SelectTrigger>
                   <SelectContent>
                     {categories.map((c) => (
                       <SelectItem key={c.id} value={c.id} label={c.name}>
@@ -184,20 +189,22 @@ export function BudgetForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="limit">Limite mensual (COP)</Label>
+            <Label htmlFor="limit">Límite mensual (COP)</Label>
             <Input
               id="limit"
               type="text"
               inputMode="numeric"
               {...register("limitAmount")}
-              onChange={(e) => setValue("limitAmount", formatIntegerInput(e.target.value))}
+              onChange={(e) =>
+                setValue("limitAmount", formatIntegerInput(e.target.value))
+              }
               placeholder="500.000"
               required
             />
           </div>
 
           {submitError && (
-            <p className="text-xs text-rose-600" role="alert">
+            <p className="text-xs text-chart-expense" role="alert">
               {submitError}
             </p>
           )}

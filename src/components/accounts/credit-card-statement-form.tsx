@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatIntegerInput, parseIntegerInput } from "@/lib/utils/number-input-format";
 import type { Account } from "@/lib/types/database";
+import { validateStatement } from "@/lib/utils/credit-card-statements";
+import {
+  formatIntegerInput,
+  parseIntegerInput,
+} from "@/lib/utils/number-input-format";
 
 interface StatementFormValues {
   statement_date: string;
@@ -45,7 +54,9 @@ export function CreditCardStatementForm({
     control,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    setError,
+    clearErrors,
+    formState: { isSubmitting, errors },
   } = useForm<StatementFormValues>({
     defaultValues: {
       statement_date: getTodayLocalDate(),
@@ -66,14 +77,41 @@ export function CreditCardStatementForm({
   }, [open, reset]);
 
   const onFormSubmit = async (values: StatementFormValues) => {
-    await onSubmit({
-      account_id: account.id,
-      statement_date: values.statement_date,
-      total_balance: parseIntegerInput(values.total_balance),
-      minimum_payment: parseIntegerInput(values.minimum_payment),
-      due_date: values.due_date,
+    const totalBalance = parseIntegerInput(values.total_balance);
+    const minimumPayment = parseIntegerInput(values.minimum_payment);
+    const validationError = validateStatement({
+      totalBalance,
+      minimumPayment,
+      statementDate: values.statement_date,
+      dueDate: values.due_date,
     });
-    onOpenChange(false);
+
+    if (validationError) {
+      setError("root.validation", { message: validationError });
+      return;
+    }
+
+    try {
+      await onSubmit({
+        account_id: account.id,
+        statement_date: values.statement_date,
+        total_balance: totalBalance,
+        minimum_payment: minimumPayment,
+        due_date: values.due_date,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Save statement error:", error);
+      if (error instanceof TypeError) {
+        setError("root.server", {
+          message: "No se pudo guardar el extracto. Revisa tu conexión.",
+        });
+      } else {
+        setError("root.server", {
+          message: "No se pudo guardar el extracto. Intenta de nuevo.",
+        });
+      }
+    }
   };
 
   return (
@@ -85,11 +123,20 @@ export function CreditCardStatementForm({
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="statement_date">Fecha del extracto</Label>
-            <Input id="statement_date" type="date" {...register("statement_date")} required />
+            <Input
+              id="statement_date"
+              type="date"
+              autoFocus
+              className="h-8"
+              {...register("statement_date", { onChange: () => clearErrors() })}
+              required
+            />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="total_balance">Saldo total del extracto (COP)</Label>
+            <Label htmlFor="total_balance">
+              Saldo total del extracto (COP)
+            </Label>
             <Controller
               name="total_balance"
               control={control}
@@ -99,10 +146,17 @@ export function CreditCardStatementForm({
                   type="text"
                   inputMode="numeric"
                   value={field.value}
-                  onChange={(e) => field.onChange(formatIntegerInput(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(formatIntegerInput(e.target.value))
+                  }
+                  onBlur={() => clearErrors()}
                   placeholder="500.000"
                   required
-                  className="text-xl font-bold h-12"
+                  className="text-base font-bold h-8"
+                  aria-invalid={Boolean(errors.root?.validation)}
+                  aria-describedby={
+                    errors.root?.validation ? "statement-error" : undefined
+                  }
                 />
               )}
             />
@@ -119,10 +173,17 @@ export function CreditCardStatementForm({
                   type="text"
                   inputMode="numeric"
                   value={field.value}
-                  onChange={(e) => field.onChange(formatIntegerInput(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(formatIntegerInput(e.target.value))
+                  }
+                  onBlur={() => clearErrors()}
                   placeholder="50.000"
                   required
-                  className="text-xl font-bold h-12"
+                  className="text-base font-bold h-8"
+                  aria-invalid={Boolean(errors.root?.validation)}
+                  aria-describedby={
+                    errors.root?.validation ? "statement-error" : undefined
+                  }
                 />
               )}
             />
@@ -130,10 +191,31 @@ export function CreditCardStatementForm({
 
           <div className="space-y-2">
             <Label htmlFor="due_date">Fecha límite de pago</Label>
-            <Input id="due_date" type="date" {...register("due_date")} required />
+            <Input
+              id="due_date"
+              type="date"
+              className="h-8"
+              {...register("due_date", { onChange: () => clearErrors() })}
+              required
+            />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {errors.root?.validation?.message && (
+            <p
+              id="statement-error"
+              className="text-sm text-destructive"
+              aria-live="polite"
+            >
+              {errors.root.validation.message}
+            </p>
+          )}
+          {errors.root?.server?.message && (
+            <p className="text-sm text-destructive" aria-live="polite">
+              {errors.root.server.message}
+            </p>
+          )}
+
+          <Button type="submit" className="h-8 w-full" disabled={isSubmitting}>
             {isSubmitting ? "Guardando..." : "Guardar extracto"}
           </Button>
         </form>

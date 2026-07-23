@@ -11,7 +11,11 @@ export const getCloudflareContext = _cf;
 export function getEnv(name: string): string | undefined {
   // Local dev / Node.js: process.env works natively
   const fromProcess = process.env[name];
-  if (fromProcess && typeof fromProcess === "string" && fromProcess.length > 0) {
+  if (
+    fromProcess &&
+    typeof fromProcess === "string" &&
+    fromProcess.length > 0
+  ) {
     return fromProcess;
   }
 
