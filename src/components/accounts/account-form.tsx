@@ -160,6 +160,7 @@ export function AccountForm({
             <Label htmlFor="name">Nombre</Label>
             <Input
               id="name"
+              autoFocus
               {...register("name", { required: true })}
               placeholder="Ej: Bancolombia Ahorros"
               required
@@ -257,6 +258,9 @@ export function AccountForm({
                   }
                   placeholder="28.5"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Porcentaje anual. Ej: 28.5
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dueDay">Día de pago</Label>
@@ -284,6 +288,9 @@ export function AccountForm({
                     />
                   )}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Día del mes en que vence el pago. Ej: 15
+                </p>
                 {errors.dueDay?.message && (
                   <p
                     id="due-day-error"
@@ -299,7 +306,7 @@ export function AccountForm({
 
           <Button
             type="submit"
-            className="w-full"
+            className="h-11 w-full"
             disabled={isSubmitting || !name?.trim()}
           >
             {isSubmitting

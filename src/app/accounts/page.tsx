@@ -145,13 +145,13 @@ export default function AccountsPage() {
   };
 
   return (
-    <div className="pb-6">
+        <div className="pb-6">
       <PageHeader
         title="Cuentas"
         description="Control de ahorros, crédito y préstamos"
         action={
           <Button
-            size="default"
+            className="h-11"
             onClick={() => {
               setEditing(undefined);
               setFormOpen(true);
@@ -164,7 +164,7 @@ export default function AccountsPage() {
       />
 
       <div className="app-shell page-stack">
-        {nextStatement && nextPaymentAccount && (
+        {nextStatement && nextPaymentAccount ? (
           <section
             className="section-card p-4 md:p-5"
             aria-labelledby="next-payment-title"
@@ -186,13 +186,14 @@ export default function AccountsPage() {
               </p>
             </div>
             <Button
-              size="default"
-              className="mt-4 w-full sm:w-auto"
+              className="mt-4 h-11 w-full sm:w-auto"
               onClick={() => setPaymentFormAccount(nextPaymentAccount)}
             >
               Pagar extracto
             </Button>
           </section>
+        ) : (
+          <div className="min-h-[8rem]" aria-hidden="true" />
         )}
 
         <dl className="grid gap-3 sm:grid-cols-3">
@@ -233,7 +234,7 @@ export default function AccountsPage() {
               Agrega tus cuentas de ahorro, tarjetas o efectivo para llevar el
               control de tu saldo
             </p>
-            <Button className="mt-4" onClick={() => setFormOpen(true)}>
+            <Button className="mt-4 h-11" onClick={() => setFormOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
               Agregar primera cuenta
             </Button>

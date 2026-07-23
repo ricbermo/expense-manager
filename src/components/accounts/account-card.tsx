@@ -100,15 +100,26 @@ export function AccountCard({
             </Badge>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-11 w-11 shrink-0"
-          onClick={() => setManagementOpen(true)}
-          aria-label={`Administrar cuenta ${account.name}`}
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 shrink-0"
+            onClick={() => onEdit(account)}
+            aria-label={`Editar cuenta ${account.name}`}
+          >
+            <Pencil className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 shrink-0"
+            onClick={() => setManagementOpen(true)}
+            aria-label={`Administrar cuenta ${account.name}`}
+          >
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       <div>
@@ -121,7 +132,7 @@ export function AccountCard({
         </p>
         <p
           className={`mt-1 text-2xl font-semibold tabular-nums ${
-            displayedBalance >= 0 ? "text-emerald-600" : "text-rose-600"
+            displayedBalance >= 0 ? "text-emerald-700" : "text-rose-600"
           }`}
         >
           {formatCOP(displayedBalance)}
@@ -176,7 +187,7 @@ export function AccountCard({
       {activity && (activity.income > 0 || activity.expense > 0) && (
         <div className="flex items-center gap-3 border-t border-border/40 pt-2 text-xs text-muted-foreground">
           {activity.income > 0 && (
-            <span className="font-medium text-emerald-600">
+            <span className="font-medium text-emerald-700">
               +{formatCOP(activity.income)}
             </span>
           )}
