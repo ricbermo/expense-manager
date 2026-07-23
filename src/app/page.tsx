@@ -123,30 +123,24 @@ export default function DashboardPage() {
       <PageHeader
         title="Resumen"
         action={
-          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <MonthPager month={month} onChange={changeMonth} />
+            {!isCurrentMonth && (
+              <Button variant="outline" size="default" onClick={() => setMonth(getCurrentMonth())}>
+                Este mes
+              </Button>
+            )}
             <Button
               nativeButton={false}
               render={<Link href={`/transactions?month=${month}`} />}
               variant="default"
-              size="sm"
-              className="relative before:absolute before:inset-[-6px]"
+              size="default"
               aria-label="Registrar movimiento"
             >
               <Plus className="h-4 w-4" />
               <span className="sm:hidden">Registrar</span>
               <span className="hidden sm:inline">Registrar movimiento</span>
             </Button>
-            {!isCurrentMonth ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="relative before:absolute before:inset-[-6px]"
-                onClick={() => setMonth(getCurrentMonth())}
-              >
-                Este mes
-              </Button>
-            ) : null}
-            <MonthPager month={month} onChange={changeMonth} />
           </div>
         }
       />

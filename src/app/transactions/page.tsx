@@ -239,10 +239,10 @@ function TransactionsPageContent() {
         title="Movimientos"
         description="Registra ingresos, gastos y transferencias por mes"
         action={
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <MonthPager month={month} onChange={changeMonth} />
             <Button
-              size="sm"
-              className="order-first h-11 min-h-11 w-full sm:order-last sm:w-auto"
+              size="default"
               onClick={() => {
                 setEditingTransaction(null);
                 setFormOpen(true);
@@ -252,7 +252,6 @@ function TransactionsPageContent() {
               <span className="sm:hidden">Registrar</span>
               <span className="hidden sm:inline">Registrar movimiento</span>
             </Button>
-            <MonthPager month={month} onChange={changeMonth} />
           </div>
         }
       />

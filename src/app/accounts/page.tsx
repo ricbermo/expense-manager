@@ -151,14 +151,13 @@ export default function AccountsPage() {
         description="Control de ahorros, crédito y préstamos"
         action={
           <Button
-            size="sm"
-            className="h-11 px-3"
+            size="default"
             onClick={() => {
               setEditing(undefined);
               setFormOpen(true);
             }}
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="h-4 w-4" />
             Nueva
           </Button>
         }
@@ -187,7 +186,8 @@ export default function AccountsPage() {
               </p>
             </div>
             <Button
-              className="mt-4 h-11 w-full sm:w-auto"
+              size="default"
+              className="mt-4 w-full sm:w-auto"
               onClick={() => setPaymentFormAccount(nextPaymentAccount)}
             >
               Pagar extracto

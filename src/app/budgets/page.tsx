@@ -122,24 +122,19 @@ export default function BudgetsPage() {
         title="Presupuesto"
         description="Monitorea límites y gasto acumulado por categoría"
         action={
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <MonthPager
-              month={month}
-              onChange={changeMonth}
-              className="justify-between sm:justify-start"
-              buttonClassName="h-11 w-11"
-            />
-            <div className="grid grid-cols-2 gap-2 sm:flex">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <MonthPager month={month} onChange={changeMonth} />
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
-                className="h-11"
+                size="default"
                 disabled={copying}
                 onClick={() => void handleCopyPreviousMonth()}
               >
                 <Copy className="h-4 w-4" />
                 {copying ? "Copiando..." : "Copiar mes anterior"}
               </Button>
-              <Button className="h-11" onClick={handleCreate}>
+              <Button size="default" onClick={handleCreate}>
                 <Plus className="h-4 w-4" />
                 Nuevo
               </Button>
@@ -161,7 +156,7 @@ export default function BudgetsPage() {
               No se pudieron cargar los presupuestos
             </p>
             <p className="mt-1 text-xs">{error}</p>
-            <Button className="mt-4 h-11" onClick={() => void refetch()}>
+            <Button className="mt-4" onClick={() => void refetch()}>
               Reintentar
             </Button>
           </div>
@@ -175,13 +170,13 @@ export default function BudgetsPage() {
               excedes.
             </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <Button className="h-11" onClick={handleCreate}>
+              <Button size="default" onClick={handleCreate}>
                 <Plus className="h-4 w-4" />
                 Crear presupuesto
               </Button>
               <Button
                 variant="outline"
-                className="h-11"
+                size="default"
                 disabled={copying}
                 onClick={() => void handleCopyPreviousMonth()}
               >
@@ -200,7 +195,8 @@ export default function BudgetsPage() {
                 <p className="mt-1 text-xs text-muted-foreground">{error}</p>
                 <Button
                   variant="ghost"
-                  className="mt-2 h-11"
+                  size="default"
+                  className="mt-2"
                   onClick={() => void refetch()}
                 >
                   Reintentar
@@ -253,8 +249,8 @@ export default function BudgetsPage() {
                       query: { month, budget: priorityBudget.id },
                     }}
                     className={cn(
-                      buttonVariants({ variant: "outline" }),
-                      "h-11 shrink-0",
+                      buttonVariants({ variant: "outline", size: "default" }),
+                      "shrink-0",
                     )}
                   >
                     Ver gastos
