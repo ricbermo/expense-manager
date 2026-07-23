@@ -563,7 +563,7 @@ export function TransactionForm({
             necesitas.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submitForm} className="space-y-5">
+        <form onSubmit={submitForm} onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submitForm(); }} className="space-y-5">
           <fieldset className="space-y-2">
             <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Tipo de movimiento
@@ -730,7 +730,7 @@ export function TransactionForm({
                           value={field.value}
                           onValueChange={(v) => field.onChange(v ?? "")}
                         >
-                          <SelectTrigger id="budget" className="w-full">
+                          <SelectTrigger id="budget" className="h-11 w-full">
                             <SelectValue placeholder="Sin presupuesto">
                               {() =>
                                 selectedBudget
@@ -814,7 +814,7 @@ export function TransactionForm({
                             value={field.value}
                             onValueChange={(v) => field.onChange(v ?? "")}
                           >
-                            <SelectTrigger id="debtAccount">
+                            <SelectTrigger id="debtAccount" className="h-11">
                               <SelectValue placeholder="Selecciona deuda">
                                 {() =>
                                   selectedDebtAccount?.name ??
@@ -853,7 +853,7 @@ export function TransactionForm({
                             value={field.value || "1"}
                             onValueChange={(v) => field.onChange(v)}
                           >
-                            <SelectTrigger id="installments">
+                            <SelectTrigger id="installments" className="h-11">
                               <SelectValue>
                                 {() => {
                                   const n = Number(field.value || "1");
@@ -965,20 +965,21 @@ export function TransactionForm({
                             control={control}
                             render={({ field }) => (
                               <Input
-                                id="splitBetween"
-                                type="number"
-                                min={2}
-                                max={10}
-                                value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    Math.max(
-                                      2,
-                                      Math.min(10, Number(e.target.value) || 2),
-                                    ),
-                                  )
-                                }
-                              />
+                                  id="splitBetween"
+                                  type="number"
+                                  min={2}
+                                  max={10}
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      Math.max(
+                                        2,
+                                        Math.min(10, Number(e.target.value) || 2),
+                                      ),
+                                    )
+                                  }
+                                  className="h-11"
+                                />
                             )}
                           />
 
@@ -1026,7 +1027,7 @@ export function TransactionForm({
                         value={field.value}
                         onValueChange={(v) => field.onChange(v ?? "")}
                       >
-                        <SelectTrigger id="category">
+                        <SelectTrigger id="category" className="h-11">
                           <SelectValue placeholder="Selecciona categoría">
                             {() =>
                               selectedIncomeCategory?.name ??
@@ -1058,7 +1059,7 @@ export function TransactionForm({
                         value={field.value}
                         onValueChange={(v) => field.onChange(v ?? "")}
                       >
-                        <SelectTrigger id="toAccount">
+                        <SelectTrigger id="toAccount" className="h-11">
                           <SelectValue placeholder="Selecciona cuenta destino">
                             {() =>
                               selectedDestinationAccount?.name ??
@@ -1092,6 +1093,7 @@ export function TransactionForm({
                   id="description"
                   {...register("description")}
                   placeholder="Ej: Almuerzo en restaurante"
+                  className="h-11"
                 />
               </div>
 
@@ -1101,6 +1103,7 @@ export function TransactionForm({
                   id="tags"
                   {...register("tags")}
                   placeholder="Ej: trabajo, ocio, fijo"
+                  className="h-11"
                 />
                 <p className="text-xs text-muted-foreground">
                   Separa con comas
