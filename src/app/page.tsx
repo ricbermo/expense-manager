@@ -21,6 +21,7 @@ import { SavingsRateCard } from "@/components/dashboard/savings-rate-card";
 import { SpendingByCategory } from "@/components/dashboard/spending-by-category";
 import { MonthPager } from "@/components/layout/month-pager";
 import { PageHeader } from "@/components/layout/page-header";
+import { SettingsLink } from "@/components/layout/settings-link";
 import { Button } from "@/components/ui/button";
 import type { CreditCardAlert } from "@/lib/hooks/use-dashboard";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
@@ -141,6 +142,7 @@ export default function DashboardPage() {
               <span className="sm:hidden">Registrar</span>
               <span className="hidden sm:inline">Registrar movimiento</span>
             </Button>
+            <SettingsLink />
           </div>
         }
       />

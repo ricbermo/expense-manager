@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MonthPager } from "@/components/layout/month-pager";
 import { PageHeader } from "@/components/layout/page-header";
+import { SettingsLink } from "@/components/layout/settings-link";
 import { PendingTransactionList } from "@/components/transactions/pending-transaction-list";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
@@ -252,6 +253,7 @@ function TransactionsPageContent() {
               <span className="sm:hidden">Registrar</span>
               <span className="hidden sm:inline">Registrar movimiento</span>
             </Button>
+            <SettingsLink />
           </div>
         }
       />

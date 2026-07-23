@@ -8,6 +8,7 @@ import { BudgetCard } from "@/components/budgets/budget-card";
 import { BudgetForm } from "@/components/budgets/budget-form";
 import { MonthPager } from "@/components/layout/month-pager";
 import { PageHeader } from "@/components/layout/page-header";
+import { SettingsLink } from "@/components/layout/settings-link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { type BudgetWithCategory, useBudgets } from "@/lib/hooks/use-budgets";
 import { cn } from "@/lib/utils";
@@ -139,6 +140,7 @@ export default function BudgetsPage() {
                 Nuevo
               </Button>
             </div>
+            <SettingsLink />
           </div>
         }
       />

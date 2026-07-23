@@ -19,7 +19,7 @@ export function isProtectedPath(pathname: string) {
     normalized.startsWith("/transactions/") ||
     normalized === "/budgets" ||
     normalized.startsWith("/budgets/") ||
-    normalized === "/ajustes" ||
-    normalized.startsWith("/ajustes/")
+    normalized === "/settings" ||
+    normalized.startsWith("/settings/")
   );
 }

@@ -8,6 +8,7 @@ import { AccountForm } from "@/components/accounts/account-form";
 import { CreditCardPaymentForm } from "@/components/accounts/credit-card-payment-form";
 import { CreditCardStatementForm } from "@/components/accounts/credit-card-statement-form";
 import { PageHeader } from "@/components/layout/page-header";
+import { SettingsLink } from "@/components/layout/settings-link";
 import { Button } from "@/components/ui/button";
 import { useAccountActivity } from "@/lib/hooks/use-account-activity";
 import { useAccounts } from "@/lib/hooks/use-accounts";
@@ -19,6 +20,11 @@ import {
   orderAccountsForReconciliation,
 } from "@/lib/utils/credit-card-statements";
 import { formatCOP } from "@/lib/utils/currency";
+
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
 
 function getDueLabel(date: string) {
   const today = new Date();
@@ -45,6 +51,9 @@ export default function AccountsPage() {
   const month = useMemo(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
+  const monthLabel = useMemo(() => {
+    return MONTH_NAMES[new Date().getMonth()];
   }, []);
   const { activity } = useAccountActivity(month);
   const { openStatements, createStatement, recordPayment } =
@@ -192,31 +201,45 @@ export default function AccountsPage() {
         title="Cuentas"
         description="Control de ahorros, crédito y préstamos"
         action={
-          <Button
-            onClick={() => {
-              setEditing(undefined);
-              setFormOpen(true);
-            }}
-            title="Nueva cuenta (⌘N)"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                setEditing(undefined);
+                setFormOpen(true);
+              }}
+              title="Nueva cuenta (⌘N)"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva
+            </Button>
+            <SettingsLink />
+          </div>
         }
       />
 
       <div className="app-shell page-stack">
         {nextStatement && nextPaymentAccount ? (
           <section
-            className="section-card p-4 md:p-5"
+            className="rounded-2xl border p-4 shadow-sm md:p-5"
+            style={{
+              backgroundColor: "var(--alert-warning-bg)",
+              borderColor: "var(--alert-warning-border)",
+            }}
             aria-labelledby="next-payment-title"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p id="next-payment-title" className="text-sm font-medium">
+                <p
+                  id="next-payment-title"
+                  className="text-sm font-medium"
+                  style={{ color: "var(--alert-warning-text)" }}
+                >
                   Próximo pago
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p
+                  className="mt-1 text-xs"
+                  style={{ color: "var(--alert-warning-text-secondary)" }}
+                >
                   {nextPaymentAccount.name} ·{" "}
                   {getDueLabel(nextStatement.due_date)}
                 </p>
@@ -229,7 +252,7 @@ export default function AccountsPage() {
             </div>
           </section>
         ) : (
-          <div className="min-h-[8rem]" aria-hidden="true" />
+          null
         )}
 
         <dl className="grid gap-3 sm:grid-cols-3">
@@ -326,6 +349,7 @@ export default function AccountsPage() {
                 account={account}
                 activity={activity[account.id]}
                 openStatements={openStatementsByAccountId[account.id] ?? []}
+                monthLabel={monthLabel}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onRegisterStatement={setStatementFormAccount}

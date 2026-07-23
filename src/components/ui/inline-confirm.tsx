@@ -27,7 +27,7 @@ export function InlineConfirm({
         <Button
           variant="destructive"
           size="sm"
-          className="h-11 px-3 text-xs"
+          className="h-8 px-3 text-xs"
           onClick={() => {
             onConfirm();
             setConfirming(false);
@@ -39,7 +39,7 @@ export function InlineConfirm({
         <Button
           variant="ghost"
           size="sm"
-          className="h-11 px-3 text-xs"
+          className="h-8 px-3 text-xs"
           onClick={() => setConfirming(false)}
           disabled={disabled}
         >
@@ -53,7 +53,7 @@ export function InlineConfirm({
     <Button
       variant="ghost"
       size="icon"
-      className={`h-11 w-11 text-muted-foreground transition-colors duration-200 hover:text-destructive ${className}`}
+      className={`h-8 w-8 text-muted-foreground transition-colors duration-200 hover:text-destructive ${className}`}
       onClick={() => setConfirming(true)}
       disabled={disabled}
       aria-label={label}

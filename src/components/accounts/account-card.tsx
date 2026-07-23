@@ -59,6 +59,7 @@ interface AccountCardProps {
   account: Account;
   activity?: AccountActivity;
   openStatements: StatementWithAccount[];
+  monthLabel?: string;
   onEdit: (account: Account) => void;
   onDelete: (id: string) => void;
   onRegisterStatement?: (account: Account) => void;
@@ -69,6 +70,7 @@ export function AccountCard({
   account,
   activity,
   openStatements,
+  monthLabel,
   onEdit,
   onDelete,
   onRegisterStatement,
@@ -105,7 +107,7 @@ export function AccountCard({
             <Icon className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-semibold">{account.name}</p>
+            <p className="truncate font-semibold">{account.name}</p>
             <Badge variant="secondary" className="mt-1 text-xs">
               {accountLabels[account.type]}
             </Badge>
@@ -143,7 +145,9 @@ export function AccountCard({
         </p>
         <p
           className={`mt-1 text-2xl font-semibold tabular-nums ${
-            displayedBalance >= 0 ? "text-positive" : "text-negative"
+            account.type === "credit_card" || account.type === "loan"
+              ? "text-negative"
+              : "text-positive"
           }`}
         >
           {formatCOP(displayedBalance)}
@@ -228,7 +232,7 @@ export function AccountCard({
               −{formatCOP(activity.expense)}
             </span>
           )}
-          <span>en el mes seleccionado</span>
+          <span>en {monthLabel ?? "el mes seleccionado"}</span>
         </div>
       )}
 

@@ -92,6 +92,6 @@ export const config = {
     "/accounts/:path*",
     "/transactions/:path*",
     "/budgets/:path*",
-    "/ajustes/:path*",
+    "/settings/:path*",
   ],
 };
