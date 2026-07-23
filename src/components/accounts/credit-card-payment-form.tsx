@@ -109,11 +109,8 @@ export function CreditCardPaymentForm({
   );
   const remainingAfterPayment = useMemo(
     () =>
-      Math.max(
-        0,
-        statementSummary.remainingAmount -
-          parseIntegerInput(watchedAmount ?? ""),
-      ),
+      statementSummary.remainingAmount -
+        parseIntegerInput(watchedAmount ?? ""),
     [statementSummary.remainingAmount, watchedAmount],
   );
 
@@ -202,7 +199,7 @@ export function CreditCardPaymentForm({
                   onBlur={() => clearErrors()}
                   placeholder="50.000"
                   required
-                  className="text-2xl font-bold h-14"
+                  className="text-2xl font-bold h-8"
                   aria-invalid={Boolean(errors.root?.payment)}
                   aria-describedby={
                     errors.root?.payment ? "pay-error" : undefined
@@ -225,7 +222,7 @@ export function CreditCardPaymentForm({
                     field.onChange(v ?? "");
                   }}
                 >
-                  <SelectTrigger id="pay-source" className="h-11">
+                  <SelectTrigger id="pay-source" className="h-8">
                     <SelectValue placeholder="Selecciona cuenta">
                       {() =>
                         selectedSource
@@ -251,7 +248,7 @@ export function CreditCardPaymentForm({
             <Input
               id="pay-date"
               type="date"
-              className="h-11"
+              className="h-8"
               {...register("date")}
               required
             />
@@ -261,7 +258,7 @@ export function CreditCardPaymentForm({
             <Label htmlFor="pay-description">Descripción</Label>
             <Input
               id="pay-description"
-              className="h-11"
+              className="h-8"
               {...register("description")}
             />
           </div>
@@ -283,7 +280,7 @@ export function CreditCardPaymentForm({
 
           <Button
             type="submit"
-            className="h-11 w-full"
+            className="h-8 w-full"
             disabled={isSubmitting || !watchedSourceId}
           >
             {isSubmitting ? "Procesando..." : "Confirmar pago"}

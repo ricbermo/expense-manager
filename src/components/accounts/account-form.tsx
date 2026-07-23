@@ -322,7 +322,7 @@ export function AccountForm({
 
           <Button
             type="submit"
-            className="h-11 w-full"
+            className="h-8 w-full"
             disabled={isSubmitting || !name?.trim()}
           >
             {isSubmitting

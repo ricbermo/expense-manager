@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AccountCard } from "@/components/accounts/account-card";
 import { AccountForm } from "@/components/accounts/account-form";
@@ -20,11 +20,6 @@ import {
 } from "@/lib/utils/credit-card-statements";
 import { formatCOP } from "@/lib/utils/currency";
 
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function getDueLabel(date: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -40,7 +35,10 @@ function getDueLabel(date: string) {
 export default function AccountsPage() {
   const { accounts, loading, createAccount, updateAccount, deleteAccount } =
     useAccounts();
-  const [month] = useState(getCurrentMonth);
+  const month = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
   const { activity } = useAccountActivity(month);
   const { openStatements, createStatement, recordPayment } =
     useCreditCardStatements();
@@ -53,6 +51,21 @@ export default function AccountsPage() {
   const [paymentFormAccount, setPaymentFormAccount] = useState<
     Account | undefined
   >();
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
+        if (!formOpen) {
+          e.preventDefault();
+          setEditing(undefined);
+          setFormOpen(true);
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [formOpen]);
 
   const sourceAccounts = useMemo(
     () => accounts.filter((a) => a.type === "savings" || a.type === "cash"),
@@ -208,12 +221,6 @@ export default function AccountsPage() {
                 )}
               </p>
             </div>
-            <Button
-              className="mt-4 h-11 w-full sm:w-auto"
-              onClick={() => setPaymentFormAccount(nextPaymentAccount)}
-            >
-              Pagar extracto
-            </Button>
           </section>
         ) : (
           <div className="min-h-[8rem]" aria-hidden="true" />
@@ -226,7 +233,7 @@ export default function AccountsPage() {
               {formatCOP(accountTotals.liquidFunds)}
             </dd>
             {accountCounts.liquid > 0 && (
-              <dd className="mt-1 text-[10px] text-muted-foreground/70">
+              <dd className="mt-1 text-[11px] text-muted-foreground/70">
                 {accountCounts.liquid}{" "}
                 {accountCounts.liquid === 1 ? "cuenta" : "cuentas"}
               </dd>
@@ -238,7 +245,7 @@ export default function AccountsPage() {
               {formatCOP(accountTotals.cardDebt)}
             </dd>
             {accountCounts.credit > 0 && (
-              <dd className="mt-1 text-[10px] text-muted-foreground/70">
+              <dd className="mt-1 text-[11px] text-muted-foreground/70">
                 {accountCounts.credit}{" "}
                 {accountCounts.credit === 1 ? "tarjeta" : "tarjetas"}
               </dd>
@@ -248,13 +255,14 @@ export default function AccountsPage() {
             <dt className="text-xs text-muted-foreground">
               Posición neta
               <span
-                className="ml-1 inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-muted text-[9px] font-semibold leading-none text-muted-foreground align-middle"
-                title="Tus ahorros y efectivo, menos tus deudas."
+                className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-[11px] font-semibold leading-none text-muted-foreground align-middle cursor-help"
+                aria-describedby="net-position-desc"
                 tabIndex={0}
-                role="tooltip"
-                aria-label="Tus ahorros y efectivo, menos tus deudas."
               >
                 ?
+              </span>
+              <span id="net-position-desc" className="sr-only">
+                Tus ahorros y efectivo, menos tus deudas.
               </span>
             </dt>
             <dd
@@ -263,7 +271,7 @@ export default function AccountsPage() {
               {formatCOP(accountTotals.netPosition)}
             </dd>
             {accountCounts.total > 0 && (
-              <dd className="mt-1 text-[10px] text-muted-foreground/70">
+              <dd className="mt-1 text-[11px] text-muted-foreground/70">
                 {accountCounts.total}{" "}
                 {accountCounts.total === 1 ? "cuenta" : "cuentas"}
               </dd>
@@ -298,7 +306,7 @@ export default function AccountsPage() {
               Agrega tus cuentas de ahorro, tarjetas o efectivo para llevar el
               control de tu saldo
             </p>
-            <Button className="mt-4 h-11" onClick={() => setFormOpen(true)}>
+            <Button className="mt-4 h-8" onClick={() => setFormOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
               Agregar primera cuenta
             </Button>

@@ -115,7 +115,7 @@ export function AccountCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-11 w-11 shrink-0"
+            className="h-8 w-8 shrink-0"
             onClick={() => onEdit(account)}
             aria-label={`Editar cuenta ${account.name}`}
           >
@@ -124,7 +124,7 @@ export function AccountCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-11 w-11 shrink-0"
+            className="h-8 w-8 shrink-0"
             onClick={() => setManagementOpen(true)}
             aria-label={`Administrar cuenta ${account.name}`}
           >
@@ -207,7 +207,7 @@ export function AccountCard({
         </div>
       ) : account.type === "credit_card" ? (
         <Button
-          className="h-11 w-full"
+          className="h-8 w-full"
           onClick={() => onRegisterStatement?.(account)}
         >
           <FileText className="h-4 w-4" />
@@ -239,7 +239,7 @@ export function AccountCard({
           <div className="flex flex-col gap-2 px-4 pb-4">
             <Button
               variant="outline"
-              className="h-11 w-full"
+              className="h-8 w-full"
               onClick={() => {
                 setManagementOpen(false);
                 onEdit(account);

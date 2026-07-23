@@ -126,7 +126,8 @@ export function CreditCardStatementForm({
             <Input
               id="statement_date"
               type="date"
-              className="h-11"
+              autoFocus
+              className="h-8"
               {...register("statement_date", { onChange: () => clearErrors() })}
               required
             />
@@ -178,7 +179,7 @@ export function CreditCardStatementForm({
                   onBlur={() => clearErrors()}
                   placeholder="50.000"
                   required
-                  className="text-xl font-bold h-12"
+                  className="text-base font-bold h-8"
                   aria-invalid={Boolean(errors.root?.validation)}
                   aria-describedby={
                     errors.root?.validation ? "statement-error" : undefined
@@ -193,7 +194,7 @@ export function CreditCardStatementForm({
             <Input
               id="due_date"
               type="date"
-              className="h-11"
+              className="h-8"
               {...register("due_date", { onChange: () => clearErrors() })}
               required
             />
@@ -214,7 +215,7 @@ export function CreditCardStatementForm({
             </p>
           )}
 
-          <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
+          <Button type="submit" className="h-8 w-full" disabled={isSubmitting}>
             {isSubmitting ? "Guardando..." : "Guardar extracto"}
           </Button>
         </form>
