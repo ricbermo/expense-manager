@@ -6,6 +6,8 @@ import {
 } from "@/lib/auth/allowed-user";
 import { isProtectedPath, isPublicPath } from "@/lib/auth/route-access";
 
+export const runtime = "edge";
+
 function applyCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach((cookie) => {
     to.cookies.set(cookie);
