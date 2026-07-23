@@ -93,6 +93,18 @@
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #dbe4ee;
   --sidebar-ring: #1e3a8a;
+  --acc-savings-bg: #d1fae5;
+  --acc-savings-text: #047857;
+  --acc-cash-bg: #ccfbf1;
+  --acc-cash-text: #0f766e;
+  --acc-credit-bg: #fef3c7;
+  --acc-credit-text: #b45309;
+  --acc-loan-bg: #dbeafe;
+  --acc-loan-text: #1d4ed8;
+  --alert-warning-bg: #fffbeb;
+  --alert-warning-border: #fde68a;
+  --alert-warning-text: #78350f;
+  --alert-warning-text-secondary: #92400e;
 }
 
 .dark {
@@ -133,6 +145,18 @@
   --sidebar-accent-foreground: #e2e8f0;
   --sidebar-border: #1e293b;
   --sidebar-ring: #60a5fa;
+  --acc-savings-bg: #064e3b;
+  --acc-savings-text: #6ee7b7;
+  --acc-cash-bg: #134e4a;
+  --acc-cash-text: #5eead4;
+  --acc-credit-bg: #451a03;
+  --acc-credit-text: #fbbf24;
+  --acc-loan-bg: #1e3a5f;
+  --acc-loan-text: #93c5fd;
+  --alert-warning-bg: #451a03;
+  --alert-warning-border: #78350f;
+  --alert-warning-text: #fde68a;
+  --alert-warning-text-secondary: #fbbf24;
 }
 
 @layer base {

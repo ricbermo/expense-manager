@@ -60,6 +60,15 @@ export default function AccountsPage() {
   );
 
   const accountTotals = useMemo(() => getAccountBalances(accounts), [accounts]);
+  const accountCounts = useMemo(
+    () => ({
+      liquid: accounts.filter((a) => a.type === "savings" || a.type === "cash")
+        .length,
+      credit: accounts.filter((a) => a.type === "credit_card").length,
+      total: accounts.length,
+    }),
+    [accounts],
+  );
   const orderedAccounts = useMemo(
     () => orderAccountsForReconciliation(accounts, openStatements),
     [accounts, openStatements],
@@ -82,7 +91,7 @@ export default function AccountsPage() {
     ? accounts.find((account) => account.id === nextStatement.account_id)
     : undefined;
 
-  const handleSubmit = async (data: Omit<Account, "id" | "created_at">) => {
+  const handleSubmit = async (data: Omit<Account, "id" | "created_at" | "archived_at">) => {
     if (editing) {
       await updateAccount(editing.id, data);
       setEditing(undefined);
@@ -100,8 +109,13 @@ export default function AccountsPage() {
     try {
       await deleteAccount(id);
       toast.success("Cuenta eliminada");
-    } catch {
-      toast.error("No se pudo eliminar la cuenta");
+    } catch (error) {
+      console.error("Delete account error:", error);
+      if (error instanceof TypeError) {
+        toast.error("No se pudo eliminar la cuenta. Revisa tu conexión.");
+      } else {
+        toast.error("No se pudo eliminar la cuenta.");
+      }
     }
   };
 
@@ -116,7 +130,12 @@ export default function AccountsPage() {
       await createStatement(data);
       toast.success("Extracto registrado");
     } catch (error) {
-      toast.error("No se pudo guardar el extracto");
+      console.error("Create statement error:", error);
+      if (error instanceof TypeError) {
+        toast.error("No se pudo guardar el extracto. Revisa tu conexión.");
+      } else {
+        toast.error("No se pudo guardar el extracto.");
+      }
       throw error;
     }
   };
@@ -139,7 +158,12 @@ export default function AccountsPage() {
       });
       toast.success("Pago registrado");
     } catch (error) {
-      toast.error("No se pudo registrar el pago");
+      console.error("Record payment error:", error);
+      if (error instanceof TypeError) {
+        toast.error("No se pudo registrar el pago. Revisa tu conexión.");
+      } else {
+        toast.error("No se pudo registrar el pago.");
+      }
       throw error;
     }
   };
@@ -151,7 +175,6 @@ export default function AccountsPage() {
         description="Control de ahorros, crédito y préstamos"
         action={
           <Button
-            className="h-11"
             onClick={() => {
               setEditing(undefined);
               setFormOpen(true);
@@ -179,7 +202,7 @@ export default function AccountsPage() {
                   {getDueLabel(nextStatement.due_date)}
                 </p>
               </div>
-              <p className="text-xl font-semibold tabular-nums text-amber-700">
+              <p className="text-xl font-semibold tabular-nums text-warning">
                 {formatCOP(
                   getStatementPaymentSummary(nextStatement).remainingAmount,
                 )}
@@ -202,31 +225,72 @@ export default function AccountsPage() {
             <dd className="mt-1 text-lg font-semibold tabular-nums">
               {formatCOP(accountTotals.liquidFunds)}
             </dd>
+            {accountCounts.liquid > 0 && (
+              <dd className="mt-1 text-[10px] text-muted-foreground/70">
+                {accountCounts.liquid}{" "}
+                {accountCounts.liquid === 1 ? "cuenta" : "cuentas"}
+              </dd>
+            )}
           </div>
           <div className="section-card p-4">
             <dt className="text-xs text-muted-foreground">Deuda de tarjetas</dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums text-rose-700">
+            <dd className="mt-1 text-lg font-semibold tabular-nums text-negative">
               {formatCOP(accountTotals.cardDebt)}
             </dd>
+            {accountCounts.credit > 0 && (
+              <dd className="mt-1 text-[10px] text-muted-foreground/70">
+                {accountCounts.credit}{" "}
+                {accountCounts.credit === 1 ? "tarjeta" : "tarjetas"}
+              </dd>
+            )}
           </div>
           <div className="section-card p-4">
-            <dt className="text-xs text-muted-foreground">Posición neta</dt>
+            <dt className="text-xs text-muted-foreground">
+              Posición neta
+              <span
+                className="ml-1 inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-muted text-[9px] font-semibold leading-none text-muted-foreground align-middle"
+                title="Tus ahorros y efectivo, menos tus deudas."
+                tabIndex={0}
+                role="tooltip"
+                aria-label="Tus ahorros y efectivo, menos tus deudas."
+              >
+                ?
+              </span>
+            </dt>
             <dd
-              className={`mt-1 text-lg font-semibold tabular-nums ${accountTotals.netPosition >= 0 ? "text-emerald-700" : "text-rose-700"}`}
+              className={`mt-1 text-lg font-semibold tabular-nums ${accountTotals.netPosition >= 0 ? "text-positive" : "text-negative"}`}
             >
               {formatCOP(accountTotals.netPosition)}
             </dd>
+            {accountCounts.total > 0 && (
+              <dd className="mt-1 text-[10px] text-muted-foreground/70">
+                {accountCounts.total}{" "}
+                {accountCounts.total === 1 ? "cuenta" : "cuentas"}
+              </dd>
+            )}
           </div>
         </dl>
 
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div key={i} className="section-card h-32 animate-pulse" />
+              <div key={i} className="section-card animate-pulse p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-muted" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 rounded bg-muted" />
+                    <div className="h-3 w-20 rounded bg-muted" />
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="h-3 w-16 rounded bg-muted" />
+                  <div className="h-7 w-28 rounded bg-muted" />
+                </div>
+              </div>
             ))}
           </div>
         ) : accounts.length === 0 ? (
-          <div className="empty-state text-muted-foreground">
+          <div className="empty-state text-muted-foreground" role="status">
             <p className="font-medium text-foreground">
               Sin cuentas registradas
             </p>

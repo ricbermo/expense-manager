@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -103,10 +103,18 @@ export function CreditCardPaymentForm({
   const selectedSource = sourceAccounts.find(
     (account) => account.id === watchedSourceId,
   );
-  const statementSummary = getStatementPaymentSummary(pendingStatement);
-  const remainingAfterPayment = Math.max(
-    0,
-    statementSummary.remainingAmount - parseIntegerInput(watchedAmount ?? ""),
+  const statementSummary = useMemo(
+    () => getStatementPaymentSummary(pendingStatement),
+    [pendingStatement],
+  );
+  const remainingAfterPayment = useMemo(
+    () =>
+      Math.max(
+        0,
+        statementSummary.remainingAmount -
+          parseIntegerInput(watchedAmount ?? ""),
+      ),
+    [statementSummary.remainingAmount, watchedAmount],
   );
 
   const onFormSubmit = async (values: PaymentFormValues) => {
@@ -131,10 +139,18 @@ export function CreditCardPaymentForm({
         statementId: pendingStatement.id,
       });
       onOpenChange(false);
-    } catch {
-      setError("root.server", {
-        message: "No se pudo registrar el pago. Intenta de nuevo.",
-      });
+    } catch (error) {
+      console.error("Record payment error:", error);
+      if (error instanceof TypeError) {
+        setError("root.server", {
+          message:
+            "No se pudo registrar el pago. Revisa tu conexión.",
+        });
+      } else {
+        setError("root.server", {
+          message: "No se pudo registrar el pago. Intenta de nuevo.",
+        });
+      }
     }
   };
 
@@ -154,7 +170,7 @@ export function CreditCardPaymentForm({
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Pago mínimo</span>
-            <span className="font-medium text-amber-600">
+            <span className="font-medium text-warning">
               {formatCOP(pendingStatement.minimum_payment)}
             </span>
           </div>

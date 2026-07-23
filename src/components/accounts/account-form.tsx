@@ -60,7 +60,7 @@ function getAccountFormValues(data?: Account) {
 interface AccountFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<Account, "id" | "created_at">) => Promise<void>;
+  onSubmit: (data: Omit<Account, "id" | "created_at" | "archived_at">) => Promise<void>;
   initialData?: Account;
 }
 
@@ -142,8 +142,13 @@ export function AccountForm({
       toast.success(initialData ? "Cuenta actualizada" : "Cuenta creada");
       reset(getAccountFormValues() as AccountFormValues);
       onOpenChange(false);
-    } catch {
-      toast.error("No se pudo guardar la cuenta");
+    } catch (error) {
+      console.error("Save account error:", error);
+      if (error instanceof TypeError) {
+        toast.error("No se pudo guardar la cuenta. Revisa tu conexión.");
+      } else {
+        toast.error("No se pudo guardar la cuenta.");
+      }
     }
   };
 
@@ -222,7 +227,18 @@ export function AccountForm({
                 setValue("balance", formatIntegerInput(e.target.value))
               }
               placeholder="0"
+              aria-invalid={Boolean(errors.balance)}
+              aria-describedby={errors.balance ? "balance-error" : undefined}
             />
+            {errors.balance?.message && (
+              <p
+                id="balance-error"
+                className="text-sm text-destructive"
+                aria-live="polite"
+              >
+                {errors.balance.message}
+              </p>
+            )}
           </div>
 
           {type === "credit_card" && (

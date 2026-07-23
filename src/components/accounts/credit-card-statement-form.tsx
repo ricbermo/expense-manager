@@ -100,10 +100,17 @@ export function CreditCardStatementForm({
         due_date: values.due_date,
       });
       onOpenChange(false);
-    } catch {
-      setError("root.server", {
-        message: "No se pudo guardar el extracto. Intenta de nuevo.",
-      });
+    } catch (error) {
+      console.error("Save statement error:", error);
+      if (error instanceof TypeError) {
+        setError("root.server", {
+          message: "No se pudo guardar el extracto. Revisa tu conexión.",
+        });
+      } else {
+        setError("root.server", {
+          message: "No se pudo guardar el extracto. Intenta de nuevo.",
+        });
+      }
     }
   };
 

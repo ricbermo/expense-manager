@@ -37,7 +37,7 @@ export function useAccounts() {
     );
   }, [globalMutate]);
 
-  const createAccount = async (account: Omit<Account, "id" | "created_at">) => {
+  const createAccount = async (account: Omit<Account, "id" | "created_at" | "archived_at">) => {
     const supabase = createClient();
     const payload = {
       ...account,
@@ -56,7 +56,7 @@ export function useAccounts() {
 
   const updateAccount = async (
     id: string,
-    updates: Partial<Omit<Account, "id" | "created_at">>,
+    updates: Partial<Omit<Account, "id" | "created_at" | "archived_at">>,
   ) => {
     const supabase = createClient();
     const accountType = updates.type ?? accounts.find((a) => a.id === id)?.type;

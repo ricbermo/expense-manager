@@ -41,11 +41,18 @@ const accountLabels = {
   loan: "Préstamo",
 } as const;
 
-const accentByType = {
-  savings: "bg-emerald-100 text-emerald-700",
-  cash: "bg-teal-100 text-teal-700",
-  credit_card: "bg-amber-100 text-amber-700",
-  loan: "bg-blue-100 text-blue-700",
+const typeBgVar = {
+  savings: "var(--acc-savings-bg)",
+  cash: "var(--acc-cash-bg)",
+  credit_card: "var(--acc-credit-bg)",
+  loan: "var(--acc-loan-bg)",
+} as const;
+
+const typeTextVar = {
+  savings: "var(--acc-savings-text)",
+  cash: "var(--acc-cash-text)",
+  credit_card: "var(--acc-credit-text)",
+  loan: "var(--acc-loan-text)",
 } as const;
 
 interface AccountCardProps {
@@ -89,7 +96,11 @@ export function AccountCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-10 w-10 items-center justify-center rounded-full ${accentByType[account.type]}`}
+            className="flex h-10 w-10 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: typeBgVar[account.type],
+              color: typeTextVar[account.type],
+            }}
           >
             <Icon className="h-5 w-5" />
           </div>
@@ -132,7 +143,7 @@ export function AccountCard({
         </p>
         <p
           className={`mt-1 text-2xl font-semibold tabular-nums ${
-            displayedBalance >= 0 ? "text-emerald-700" : "text-rose-600"
+            displayedBalance >= 0 ? "text-positive" : "text-negative"
           }`}
         >
           {formatCOP(displayedBalance)}
@@ -145,34 +156,54 @@ export function AccountCard({
       </div>
 
       {account.type === "credit_card" && nextStatement ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+        <div
+          className="rounded-lg border p-3"
+          style={{
+            backgroundColor: "var(--alert-warning-bg)",
+            borderColor: "var(--alert-warning-border)",
+          }}
+        >
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <div>
-              <p className="text-xs font-medium text-amber-900">
+              <p
+                className="text-xs font-medium"
+                style={{ color: "var(--alert-warning-text)" }}
+              >
                 Próximo extracto
               </p>
-              <p className="mt-0.5 text-xs text-amber-800">
+              <p
+                className="mt-0.5 text-xs"
+                style={{ color: "var(--alert-warning-text-secondary)" }}
+              >
                 Vence {nextStatement.due_date}
               </p>
             </div>
-            <p className="text-sm font-semibold tabular-nums text-amber-900">
+            <p
+              className="text-sm font-semibold tabular-nums"
+              style={{ color: "var(--alert-warning-text)" }}
+            >
               {formatCOP(
                 getStatementPaymentSummary(nextStatement).remainingAmount,
               )}
             </p>
           </div>
           {openStatements.length > 1 && (
-            <p className="mt-2 text-xs text-amber-800">
+            <p
+              className="mt-2 text-xs"
+              style={{ color: "var(--alert-warning-text-secondary)" }}
+            >
               {openStatements.length} extractos pendientes ·{" "}
               {formatCOP(totalOutstanding)} en total
             </p>
           )}
-          <Button
-            className="mt-3 h-11 w-full"
+          <button
+            type="button"
+            className="mt-3 text-xs font-medium underline-offset-2 hover:underline"
+            style={{ color: "var(--alert-warning-text)" }}
             onClick={() => onPayCC?.(account)}
           >
             Pagar extracto
-          </Button>
+          </button>
         </div>
       ) : account.type === "credit_card" ? (
         <Button
@@ -187,12 +218,12 @@ export function AccountCard({
       {activity && (activity.income > 0 || activity.expense > 0) && (
         <div className="flex items-center gap-3 border-t border-border/40 pt-2 text-xs text-muted-foreground">
           {activity.income > 0 && (
-            <span className="font-medium text-emerald-700">
+            <span className="font-medium text-positive">
               +{formatCOP(activity.income)}
             </span>
           )}
           {activity.expense > 0 && (
-            <span className="font-medium text-rose-600">
+            <span className="font-medium text-negative">
               −{formatCOP(activity.expense)}
             </span>
           )}

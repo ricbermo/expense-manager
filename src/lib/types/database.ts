@@ -20,6 +20,7 @@ export interface Account {
   credit_limit: number | null;
   interest_rate: number | null;
   due_day: number | null;
+  archived_at: string | null;
   created_at: string;
 }
 
@@ -89,9 +90,10 @@ export type Database = {
       };
       accounts: {
         Row: Account;
-        Insert: Omit<Account, "id" | "created_at"> & {
+        Insert: Omit<Account, "id" | "created_at" | "archived_at"> & {
           id?: string;
           created_at?: string;
+          archived_at?: string | null;
         };
         Update: Partial<Account>;
         Relationships: [];
