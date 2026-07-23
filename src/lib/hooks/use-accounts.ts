@@ -16,9 +16,7 @@ export function useAccounts() {
       .from("accounts")
       .select("*")
       .order("created_at", { ascending: false });
-    return ((data ?? []) as Account[]).filter(
-      (a) => !a.archived_at,
-    );
+    return ((data ?? []) as Account[]).filter((a) => !a.archived_at);
   }, []);
 
   const {
@@ -39,7 +37,9 @@ export function useAccounts() {
     );
   }, [globalMutate]);
 
-  const createAccount = async (account: Omit<Account, "id" | "created_at" | "archived_at">) => {
+  const createAccount = async (
+    account: Omit<Account, "id" | "created_at" | "archived_at">,
+  ) => {
     const supabase = createClient();
     const payload = {
       ...account,

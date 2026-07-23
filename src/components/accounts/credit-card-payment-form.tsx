@@ -109,8 +109,7 @@ export function CreditCardPaymentForm({
   );
   const remainingAfterPayment = useMemo(
     () =>
-      statementSummary.remainingAmount -
-        parseIntegerInput(watchedAmount ?? ""),
+      statementSummary.remainingAmount - parseIntegerInput(watchedAmount ?? ""),
     [statementSummary.remainingAmount, watchedAmount],
   );
 
@@ -140,8 +139,7 @@ export function CreditCardPaymentForm({
       console.error("Record payment error:", error);
       if (error instanceof TypeError) {
         setError("root.server", {
-          message:
-            "No se pudo registrar el pago. Revisa tu conexión.",
+          message: "No se pudo registrar el pago. Revisa tu conexión.",
         });
       } else {
         setError("root.server", {

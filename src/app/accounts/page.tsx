@@ -22,8 +22,18 @@ import {
 import { formatCOP } from "@/lib/utils/currency";
 
 const MONTH_NAMES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 function getDueLabel(date: string) {
@@ -120,7 +130,9 @@ export default function AccountsPage() {
     ? accounts.find((account) => account.id === nextStatement.account_id)
     : undefined;
 
-  const handleSubmit = async (data: Omit<Account, "id" | "created_at" | "archived_at">) => {
+  const handleSubmit = async (
+    data: Omit<Account, "id" | "created_at" | "archived_at">,
+  ) => {
     if (editing) {
       await updateAccount(editing.id, data);
       setEditing(undefined);
@@ -196,7 +208,7 @@ export default function AccountsPage() {
   };
 
   return (
-        <div className="pb-6">
+    <div className="pb-6">
       <PageHeader
         title="Cuentas"
         description="Control de ahorros, crédito y préstamos"
@@ -251,9 +263,7 @@ export default function AccountsPage() {
               </p>
             </div>
           </section>
-        ) : (
-          null
-        )}
+        ) : null}
 
         <dl className="grid gap-3 sm:grid-cols-3">
           <div className="section-card p-4">
@@ -287,7 +297,6 @@ export default function AccountsPage() {
                 className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-mini font-semibold leading-none text-muted-foreground align-middle cursor-help"
                 title="Tus ahorros y efectivo, menos tus deudas"
                 aria-describedby="net-position-desc"
-                tabIndex={0}
               >
                 ?
               </span>
@@ -312,7 +321,10 @@ export default function AccountsPage() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div key={i} className="section-card motion-safe:animate-pulse p-4">
+              <div
+                key={i}
+                className="section-card motion-safe:animate-pulse p-4"
+              >
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-muted" />
                   <div className="space-y-2">

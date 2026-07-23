@@ -563,7 +563,13 @@ export function TransactionForm({
             necesitas.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submitForm} onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submitForm(); }} className="space-y-5">
+        <form
+          onSubmit={submitForm}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submitForm();
+          }}
+          className="space-y-5"
+        >
           <fieldset className="space-y-2">
             <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Tipo de movimiento
@@ -965,21 +971,21 @@ export function TransactionForm({
                             control={control}
                             render={({ field }) => (
                               <Input
-                                  id="splitBetween"
-                                  type="number"
-                                  min={2}
-                                  max={10}
-                                  value={field.value}
-                                  onChange={(e) =>
-                                    field.onChange(
-                                      Math.max(
-                                        2,
-                                        Math.min(10, Number(e.target.value) || 2),
-                                      ),
-                                    )
-                                  }
-                                  className="h-11"
-                                />
+                                id="splitBetween"
+                                type="number"
+                                min={2}
+                                max={10}
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    Math.max(
+                                      2,
+                                      Math.min(10, Number(e.target.value) || 2),
+                                    ),
+                                  )
+                                }
+                                className="h-11"
+                              />
                             )}
                           />
 

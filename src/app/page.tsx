@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ExpenseProjectionCard } from "@/components/dashboard/expense-projection-card";
 import { IncomeByCategory } from "@/components/dashboard/income-by-category";
 import { MonthlyComparison } from "@/components/dashboard/monthly-comparison";
@@ -72,16 +72,27 @@ export default function DashboardPage() {
     if (!loading && !error) setHasLoadedData(true);
   }, [loading, error]);
 
-  const changeMonth = (delta: number) => {
-    const [y, m] = month.split("-").map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  };
+  const changeMonth = useCallback(
+    (delta: number) => {
+      const [y, m] = month.split("-").map(Number);
+      const d = new Date(y, m - 1 + delta, 1);
+      setMonth(
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      );
+    },
+    [month],
+  );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) return;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      )
+        return;
       if (e.key === "ArrowLeft") changeMonth(-1);
       if (e.key === "ArrowRight") changeMonth(1);
     };
@@ -113,11 +124,12 @@ export default function DashboardPage() {
       : net < 0
         ? `Gastaste ${formatCOP(Math.abs(net))} más de lo que ingresaste.`
         : "Ingresos y gastos están parejos.";
-  const statusMessage = isValidating && !isInitialLoading
-    ? "Actualizando datos..."
-    : error && hasLoadedData
-      ? "No se pudo actualizar; se muestran los últimos datos disponibles."
-      : null;
+  const statusMessage =
+    isValidating && !isInitialLoading
+      ? "Actualizando datos..."
+      : error && hasLoadedData
+        ? "No se pudo actualizar; se muestran los últimos datos disponibles."
+        : null;
 
   return (
     <div>
@@ -127,7 +139,11 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center justify-end gap-2">
             <MonthPager month={month} onChange={changeMonth} />
             {!isCurrentMonth && (
-              <Button variant="outline" size="default" onClick={() => setMonth(getCurrentMonth())}>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={() => setMonth(getCurrentMonth())}
+              >
                 Este mes
               </Button>
             )}
@@ -346,10 +362,7 @@ export default function DashboardPage() {
               </section>
             )}
 
-            <section
-              className="section-card"
-              aria-label="Resumen del mes"
-            >
+            <section className="section-card" aria-label="Resumen del mes">
               <button
                 type="button"
                 onClick={() => router.push("/transactions")}
@@ -445,12 +458,15 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => {
-                  setShowAnalysis((v) => {
-                    const next = !v;
-                    sessionStorage.setItem("dashboard:showAnalysis", String(next));
-                    return next;
-                  });
-                }}
+                    setShowAnalysis((v) => {
+                      const next = !v;
+                      sessionStorage.setItem(
+                        "dashboard:showAnalysis",
+                        String(next),
+                      );
+                      return next;
+                    });
+                  }}
                   aria-expanded={showAnalysis}
                   className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
                 >
@@ -497,7 +513,10 @@ export default function DashboardPage() {
                       </div>
                       {showCompositionBar && (
                         <div>
-                          <div aria-hidden="true" className="flex h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            aria-hidden="true"
+                            className="flex h-2 overflow-hidden rounded-full bg-muted"
+                          >
                             <div
                               className="bg-positive"
                               style={{

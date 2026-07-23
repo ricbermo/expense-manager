@@ -60,7 +60,9 @@ function getAccountFormValues(data?: Account) {
 interface AccountFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<Account, "id" | "created_at" | "archived_at">) => Promise<void>;
+  onSubmit: (
+    data: Omit<Account, "id" | "created_at" | "archived_at">,
+  ) => Promise<void>;
   initialData?: Account;
 }
 
