@@ -242,14 +242,15 @@ function TransactionsPageContent() {
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <Button
               size="sm"
-              className="order-first w-full sm:order-last sm:w-auto"
+              className="order-first h-11 min-h-11 w-full sm:order-last sm:w-auto"
               onClick={() => {
                 setEditingTransaction(null);
                 setFormOpen(true);
               }}
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Registrar movimiento
+              <Plus className="h-4 w-4" />
+              <span className="sm:hidden">Registrar</span>
+              <span className="hidden sm:inline">Registrar movimiento</span>
             </Button>
             <MonthPager month={month} onChange={changeMonth} />
           </div>

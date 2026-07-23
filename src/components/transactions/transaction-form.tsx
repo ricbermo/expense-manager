@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -552,101 +553,116 @@ export function TransactionForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-h-[min(90vh,48rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto p-5 sm:p-6">
+        <DialogHeader className="pr-8">
           <DialogTitle>
             {isEditing ? "Editar movimiento" : "Nuevo movimiento"}
           </DialogTitle>
+          <DialogDescription>
+            Completa los datos principales. Puedes añadir detalles si los
+            necesitas.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submitForm} className="space-y-4">
-          <div className="grid grid-cols-3 gap-1.5">
-            {(["expense", "income", "transfer"] as TransactionType[]).map(
-              (t) => (
-                <Button
-                  key={t}
-                  type="button"
-                  variant={type === t ? "default" : "outline"}
-                  className="h-11 text-sm font-medium"
-                  onClick={() => {
-                    setValue("type", t);
-                    if (t !== "expense") {
-                      setShowDetails(true);
+        <form onSubmit={submitForm} className="space-y-5">
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Tipo de movimiento
+            </legend>
+            <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-muted/50 p-1">
+              {(["expense", "income", "transfer"] as TransactionType[]).map(
+                (t) => (
+                  <Button
+                    key={t}
+                    type="button"
+                    variant={type === t ? "default" : "ghost"}
+                    className="h-10 text-sm font-medium"
+                    onClick={() => {
+                      setValue("type", t);
+                      if (t !== "expense") {
+                        setShowDetails(true);
+                      }
+                    }}
+                  >
+                    {typeLabels[t]}
+                  </Button>
+                ),
+              )}
+            </div>
+          </fieldset>
+
+          <div className="space-y-4 rounded-xl border border-border/60 bg-card p-3 sm:p-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Monto (COP)</Label>
+              <Controller
+                name="amount"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="amount"
+                    type="text"
+                    inputMode="numeric"
+                    value={field.value}
+                    ref={(element) => {
+                      field.ref(element);
+                      amountInputRef.current = element;
+                    }}
+                    onChange={(e) =>
+                      field.onChange(formatIntegerInput(e.target.value))
                     }
-                  }}
-                >
-                  {typeLabels[t]}
-                </Button>
-              ),
-            )}
-          </div>
+                    placeholder="50.000"
+                    aria-required="true"
+                    className="h-12 text-xl font-semibold"
+                  />
+                )}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="amount">Monto (COP)</Label>
-            <Controller
-              name="amount"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="amount"
-                  type="text"
-                  inputMode="numeric"
-                  value={field.value}
-                  ref={(element) => {
-                    field.ref(element);
-                    amountInputRef.current = element;
-                  }}
-                  onChange={(e) =>
-                    field.onChange(formatIntegerInput(e.target.value))
-                  }
-                  placeholder="50.000"
-                  aria-required="true"
-                  className="text-2xl font-bold h-14"
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="account">
+                  {type === "transfer"
+                    ? "Cuenta origen"
+                    : type === "expense"
+                      ? "Cuenta para pagar"
+                      : "Cuenta"}
+                </Label>
+                <Controller
+                  name="accountId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v ?? "")}
+                    >
+                      <SelectTrigger id="account" className="h-11">
+                        <SelectValue placeholder="Selecciona cuenta">
+                          {() =>
+                            selectedOriginAccount?.name ?? "Selecciona cuenta"
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {originAccounts.map((a) => (
+                          <SelectItem key={a.id} value={a.id} label={a.name}>
+                            {a.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
-              )}
-            />
-          </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="account">
-              {type === "transfer"
-                ? "Cuenta origen"
-                : type === "expense"
-                  ? "Cuenta para pagar"
-                  : "Cuenta"}
-            </Label>
-            <Controller
-              name="accountId"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={(v) => field.onChange(v ?? "")}
-                >
-                  <SelectTrigger id="account" className="h-11">
-                    <SelectValue placeholder="Selecciona cuenta">
-                      {() => selectedOriginAccount?.name ?? "Selecciona cuenta"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {originAccounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id} label={a.name}>
-                        {a.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="date">Fecha</Label>
-            <Input
-              id="date"
-              type="date"
-              className="h-11"
-              {...register("date")}
-            />
+              <div className="space-y-2">
+                <Label htmlFor="date">Fecha</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  className="h-11"
+                  {...register("date")}
+                />
+              </div>
+            </div>
           </div>
 
           {submitAttempted && !canSave && (
@@ -662,37 +678,43 @@ export function TransactionForm({
             </div>
           )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isSubmitting}
-            onClick={() => setSaveAndAddAnother(false)}
-          >
-            {isSubmitting ? "Guardando..." : submitLabel}
-          </Button>
+          <div className="space-y-3 border-t border-border/60 pt-4">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                type="submit"
+                className="w-full sm:flex-1"
+                disabled={isSubmitting}
+                onClick={() => setSaveAndAddAnother(false)}
+              >
+                {isSubmitting ? "Guardando..." : submitLabel}
+              </Button>
 
-          {!isEditing && (
+              {!isEditing && (
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={isSubmitting}
+                  onClick={() => setSaveAndAddAnother(true)}
+                >
+                  Guardar y añadir otro
+                </Button>
+              )}
+            </div>
+
             <Button
-              type="submit"
-              variant="outline"
-              className="w-full"
-              disabled={isSubmitting}
-              onClick={() => setSaveAndAddAnother(true)}
+              type="button"
+              variant="ghost"
+              className="h-11 w-full text-muted-foreground"
+              aria-expanded={showDetails}
+              aria-controls="transaction-details"
+              onClick={() => setShowDetails((visible) => !visible)}
             >
-              Guardar y añadir otro
+              {showDetails
+                ? "Ocultar opciones avanzadas"
+                : "Opciones avanzadas"}
             </Button>
-          )}
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            aria-expanded={showDetails}
-            aria-controls="transaction-details"
-            onClick={() => setShowDetails((visible) => !visible)}
-          >
-            {showDetails ? "Ocultar detalles" : "Más detalles"}
-          </Button>
+          </div>
 
           {showDetails && (
             <div id="transaction-details" className="space-y-4">
