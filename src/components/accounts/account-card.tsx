@@ -196,14 +196,15 @@ export function AccountCard({
               {formatCOP(totalOutstanding)} en total
             </p>
           )}
-          <button
-            type="button"
-            className="mt-3 text-xs font-medium underline-offset-2 hover:underline"
+          <Button
+            variant="link"
+            size="sm"
+            className="mt-2 h-auto px-0 text-xs font-medium underline-offset-2"
             style={{ color: "var(--alert-warning-text)" }}
             onClick={() => onPayCC?.(account)}
           >
-            Pagar extracto
-          </button>
+            Pagar extracto →
+          </Button>
         </div>
       ) : account.type === "credit_card" ? (
         <Button

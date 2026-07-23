@@ -152,7 +152,7 @@ export function CreditCardStatementForm({
                   onBlur={() => clearErrors()}
                   placeholder="500.000"
                   required
-                  className="text-xl font-bold h-12"
+                  className="text-base font-bold h-8"
                   aria-invalid={Boolean(errors.root?.validation)}
                   aria-describedby={
                     errors.root?.validation ? "statement-error" : undefined

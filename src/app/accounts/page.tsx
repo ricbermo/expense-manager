@@ -28,7 +28,9 @@ function getDueLabel(date: string) {
 
   if (days === 0) return "Vence hoy";
   if (days === 1) return "Vence mañana";
+  if (days === -1) return "Venció ayer";
   if (days < 0) return `Venció hace ${Math.abs(days)} días`;
+  if (days === 1) return "Vence en 1 día";
   return `Vence en ${days} días`;
 }
 
@@ -233,7 +235,7 @@ export default function AccountsPage() {
               {formatCOP(accountTotals.liquidFunds)}
             </dd>
             {accountCounts.liquid > 0 && (
-              <dd className="mt-1 text-[11px] text-muted-foreground/70">
+              <dd className="mt-1 text-mini text-muted-foreground/70">
                 {accountCounts.liquid}{" "}
                 {accountCounts.liquid === 1 ? "cuenta" : "cuentas"}
               </dd>
@@ -245,7 +247,7 @@ export default function AccountsPage() {
               {formatCOP(accountTotals.cardDebt)}
             </dd>
             {accountCounts.credit > 0 && (
-              <dd className="mt-1 text-[11px] text-muted-foreground/70">
+              <dd className="mt-1 text-mini text-muted-foreground/70">
                 {accountCounts.credit}{" "}
                 {accountCounts.credit === 1 ? "tarjeta" : "tarjetas"}
               </dd>
@@ -255,7 +257,7 @@ export default function AccountsPage() {
             <dt className="text-xs text-muted-foreground">
               Posición neta
               <span
-                className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-[11px] font-semibold leading-none text-muted-foreground align-middle cursor-help"
+                className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-mini font-semibold leading-none text-muted-foreground align-middle cursor-help"
                 aria-describedby="net-position-desc"
                 tabIndex={0}
               >
@@ -271,7 +273,7 @@ export default function AccountsPage() {
               {formatCOP(accountTotals.netPosition)}
             </dd>
             {accountCounts.total > 0 && (
-              <dd className="mt-1 text-[11px] text-muted-foreground/70">
+              <dd className="mt-1 text-mini text-muted-foreground/70">
                 {accountCounts.total}{" "}
                 {accountCounts.total === 1 ? "cuenta" : "cuentas"}
               </dd>
