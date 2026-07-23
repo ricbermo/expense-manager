@@ -26,7 +26,7 @@ export function useAccountActivity(month: string) {
         .gte("date", startDate)
         .lt("date", endDate)
         .in("type", ["income", "expense"]),
-      supabase.from("accounts").select("id, type").is("archived_at", null),
+      supabase.from("accounts").select("id, type"),
     ]);
 
     const creditCardAccountIds = new Set(

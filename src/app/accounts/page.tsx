@@ -23,7 +23,7 @@ import { formatCOP } from "@/lib/utils/currency";
 function getDueLabel(date: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dueDate = new Date(`${date}T00:00:00`);
+  const dueDate = new Date(`${date}T12:00:00`);
   const days = Math.round((dueDate.getTime() - today.getTime()) / 86_400_000);
 
   if (days === 0) return "Vence hoy";
@@ -142,13 +142,8 @@ export default function AccountsPage() {
         },
         duration: 10_000,
       });
-    } catch (error) {
-      console.error("Delete account error:", error);
-      if (error instanceof TypeError) {
-        toast.error("No se pudo eliminar la cuenta. Revisa tu conexión.");
-      } else {
-        toast.error("No se pudo eliminar la cuenta.");
-      }
+    } catch {
+      toast.error("No se pudo archivar la cuenta.");
     }
   };
 
@@ -163,12 +158,7 @@ export default function AccountsPage() {
       await createStatement(data);
       toast.success("Extracto registrado");
     } catch (error) {
-      console.error("Create statement error:", error);
-      if (error instanceof TypeError) {
-        toast.error("No se pudo guardar el extracto. Revisa tu conexión.");
-      } else {
-        toast.error("No se pudo guardar el extracto.");
-      }
+      toast.error("No se pudo guardar el extracto.");
       throw error;
     }
   };
@@ -191,12 +181,7 @@ export default function AccountsPage() {
       });
       toast.success("Pago registrado");
     } catch (error) {
-      console.error("Record payment error:", error);
-      if (error instanceof TypeError) {
-        toast.error("No se pudo registrar el pago. Revisa tu conexión.");
-      } else {
-        toast.error("No se pudo registrar el pago.");
-      }
+      toast.error("No se pudo registrar el pago.");
       throw error;
     }
   };
@@ -277,6 +262,7 @@ export default function AccountsPage() {
               Posición neta
               <span
                 className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-mini font-semibold leading-none text-muted-foreground align-middle cursor-help"
+                title="Tus ahorros y efectivo, menos tus deudas"
                 aria-describedby="net-position-desc"
                 tabIndex={0}
               >
@@ -303,7 +289,7 @@ export default function AccountsPage() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div key={i} className="section-card animate-pulse p-4">
+              <div key={i} className="section-card motion-safe:animate-pulse p-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-muted" />
                   <div className="space-y-2">

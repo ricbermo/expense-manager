@@ -251,7 +251,7 @@ export function AccountCard({
             </Button>
             <InlineConfirm
               onConfirm={() => onDelete(account.id)}
-              label="Eliminar cuenta"
+              label="Archivar cuenta"
             />
           </div>
         </SheetContent>

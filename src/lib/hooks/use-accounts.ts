@@ -15,9 +15,10 @@ export function useAccounts() {
     const { data } = await supabase
       .from("accounts")
       .select("*")
-      .is("archived_at", null)
       .order("created_at", { ascending: false });
-    return (data ?? []) as Account[];
+    return ((data ?? []) as Account[]).filter(
+      (a) => !a.archived_at,
+    );
   }, []);
 
   const {

@@ -99,7 +99,7 @@ export function useDashboard(month: string) {
         .select("*, categories(name, color)")
         .gte("date", prevStartDate)
         .lt("date", prevEndDate),
-      supabase.from("accounts").select("id, balance, type").is("archived_at", null),
+      supabase.from("accounts").select("id, balance, type"),
       supabase
         .from("budgets")
         .select("id, name, limit_amount, category_id, categories(name)")
