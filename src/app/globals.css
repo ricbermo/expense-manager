@@ -102,10 +102,10 @@
   --acc-credit-text: oklch(0.50 0.14 70);
   --acc-loan-bg: oklch(0.95 0.04 240);
   --acc-loan-text: oklch(0.45 0.18 240);
-  --alert-warning-bg: #fffbeb;
-  --alert-warning-border: #fde68a;
-  --alert-warning-text: #78350f;
-  --alert-warning-text-secondary: #92400e;
+  --alert-warning-bg: #dbeafe;
+  --alert-warning-border: #93c5fd;
+  --alert-warning-text: #1e3a8a;
+  --alert-warning-text-secondary: #3b82f6;
 }
 
 .dark {
@@ -154,10 +154,10 @@
   --acc-credit-text: oklch(0.85 0.08 70);
   --acc-loan-bg: oklch(0.30 0.06 240);
   --acc-loan-text: oklch(0.80 0.06 240);
-  --alert-warning-bg: #451a03;
-  --alert-warning-border: #78350f;
-  --alert-warning-text: #fde68a;
-  --alert-warning-text-secondary: #fbbf24;
+  --alert-warning-bg: #172554;
+  --alert-warning-border: #1e3a8a;
+  --alert-warning-text: #bfdbfe;
+  --alert-warning-text-secondary: #93c5fd;
 }
 
 @layer base {

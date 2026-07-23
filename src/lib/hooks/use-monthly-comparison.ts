@@ -51,7 +51,7 @@ export function useMonthlyComparison() {
         .gte("date", start)
         .lt("date", end)
         .in("type", ["income", "expense"]),
-      supabase.from("accounts").select("id, type"),
+      supabase.from("accounts").select("id, type").is("archived_at", null),
     ]);
 
     const firstError = [transactionsResult.error, accountsResult.error].find(

@@ -15,6 +15,7 @@ export function useAccounts() {
     const { data } = await supabase
       .from("accounts")
       .select("*")
+      .is("archived_at", null)
       .order("created_at", { ascending: false });
     return (data ?? []) as Account[];
   }, []);
@@ -81,7 +82,21 @@ export function useAccounts() {
 
   const deleteAccount = async (id: string) => {
     const supabase = createClient();
-    const { error } = await supabase.from("accounts").delete().eq("id", id);
+    const { error } = await supabase
+      .from("accounts")
+      .update({ archived_at: new Date().toISOString() } as never)
+      .eq("id", id);
+    if (error) throw error;
+    await mutate();
+    await revalidateDashboard();
+  };
+
+  const restoreAccount = async (id: string) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("accounts")
+      .update({ archived_at: null } as never)
+      .eq("id", id);
     if (error) throw error;
     await mutate();
     await revalidateDashboard();
@@ -93,6 +108,7 @@ export function useAccounts() {
     createAccount,
     updateAccount,
     deleteAccount,
+    restoreAccount,
     refetch,
   };
 }

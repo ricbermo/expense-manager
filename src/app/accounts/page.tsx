@@ -30,13 +30,18 @@ function getDueLabel(date: string) {
   if (days === 1) return "Vence mañana";
   if (days === -1) return "Venció ayer";
   if (days < 0) return `Venció hace ${Math.abs(days)} días`;
-  if (days === 1) return "Vence en 1 día";
   return `Vence en ${days} días`;
 }
 
 export default function AccountsPage() {
-  const { accounts, loading, createAccount, updateAccount, deleteAccount } =
-    useAccounts();
+  const {
+    accounts,
+    loading,
+    createAccount,
+    updateAccount,
+    deleteAccount,
+    restoreAccount,
+  } = useAccounts();
   const month = useMemo(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -123,7 +128,20 @@ export default function AccountsPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteAccount(id);
-      toast.success("Cuenta eliminada");
+      toast.success("Cuenta archivada", {
+        action: {
+          label: "Deshacer",
+          onClick: async () => {
+            try {
+              await restoreAccount(id);
+              toast.success("Cuenta restaurada");
+            } catch {
+              toast.error("No se pudo restaurar la cuenta.");
+            }
+          },
+        },
+        duration: 10_000,
+      });
     } catch (error) {
       console.error("Delete account error:", error);
       if (error instanceof TypeError) {
@@ -194,6 +212,7 @@ export default function AccountsPage() {
               setEditing(undefined);
               setFormOpen(true);
             }}
+            title="Nueva cuenta (⌘N)"
           >
             <Plus className="h-4 w-4" />
             Nueva
