@@ -48,7 +48,7 @@ function DeltaPill({
         isPositive ? "text-positive" : "text-negative"
       }`}
     >
-      <Icon className="h-3 w-3" />
+      <Icon className="h-3 w-3" aria-hidden="true" />
       {Math.abs(pct)}%
     </span>
   );
@@ -56,7 +56,12 @@ function DeltaPill({
 
 export default function DashboardPage() {
   const [month, setMonth] = useState(getCurrentMonth);
-  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("dashboard:showAnalysis") === "true";
+    }
+    return false;
+  });
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const { data, dataMonth, loading, error, refetch, isValidating } =
     useDashboard(month);
@@ -71,6 +76,17 @@ export default function DashboardPage() {
     const d = new Date(y, m - 1 + delta, 1);
     setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   };
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) return;
+      if (e.key === "ArrowLeft") changeMonth(-1);
+      if (e.key === "ArrowRight") changeMonth(1);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [changeMonth]);
 
   const net = data.totalIncome - data.totalExpenses;
   const prevNet = data.prevTotalIncome - data.prevTotalExpenses;
@@ -113,7 +129,7 @@ export default function DashboardPage() {
               render={<Link href={`/transactions?month=${month}`} />}
               variant="default"
               size="sm"
-              className="h-11 min-h-11"
+              className="relative before:absolute before:inset-[-6px]"
               aria-label="Registrar movimiento"
             >
               <Plus className="h-4 w-4" />
@@ -124,7 +140,7 @@ export default function DashboardPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-11"
+                className="relative before:absolute before:inset-[-6px]"
                 onClick={() => setMonth(getCurrentMonth())}
               >
                 Este mes
@@ -335,20 +351,20 @@ export default function DashboardPage() {
             )}
 
             <section
-              className="section-card divide-y divide-border/60"
+              className="section-card"
               aria-label="Resumen del mes"
             >
               <button
                 type="button"
                 onClick={() => router.push("/transactions")}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                className="flex w-full items-center justify-between border-b border-border/60 px-4 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Ingresos
                   </p>
                   <p
-                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
+                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap overflow-hidden text-ellipsis max-w-full ${
                       data.totalIncome === 0
                         ? "text-muted-foreground"
                         : "text-positive"
@@ -368,14 +384,14 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => router.push("/transactions")}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                className="flex w-full items-center justify-between border-b border-border/60 px-4 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Gastos
                   </p>
                   <p
-                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
+                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap overflow-hidden text-ellipsis max-w-full ${
                       data.totalExpenses === 0
                         ? "text-muted-foreground"
                         : "text-negative"
@@ -396,14 +412,14 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => router.push("/accounts")}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-muted-foreground">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Balance total
                   </p>
                   <p
-                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
+                    className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap overflow-hidden text-ellipsis max-w-full ${
                       data.totalBalance < 0
                         ? "text-negative"
                         : "text-foreground"
@@ -429,19 +445,27 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setShowAnalysis((v) => !v)}
-                aria-expanded={showAnalysis}
-                className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
-              >
-                <span>Análisis</span>
-                <ChevronDown
-                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
-                    showAnalysis ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+              <h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                  setShowAnalysis((v) => {
+                    const next = !v;
+                    sessionStorage.setItem("dashboard:showAnalysis", String(next));
+                    return next;
+                  });
+                }}
+                  aria-expanded={showAnalysis}
+                  className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                >
+                  <span>Análisis</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                      showAnalysis ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+              </h2>
               {showAnalysis && (
                 <div className="grid gap-3 animate-in fade-in duration-200 md:grid-cols-2">
                   {showComposition && (
@@ -477,7 +501,7 @@ export default function DashboardPage() {
                       </div>
                       {showCompositionBar && (
                         <div>
-                          <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+                          <div aria-hidden="true" className="flex h-2 overflow-hidden rounded-full bg-muted">
                             <div
                               className="bg-positive"
                               style={{
