@@ -45,7 +45,7 @@ function DeltaPill({
   return (
     <span
       className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        isPositive ? "text-emerald-700" : "text-rose-700"
+        isPositive ? "text-positive" : "text-negative"
       }`}
     >
       <Icon className="h-3 w-3" />
@@ -96,13 +96,11 @@ export default function DashboardPage() {
       : net < 0
         ? `Gastaste ${formatCOP(Math.abs(net))} más de lo que ingresaste.`
         : "Ingresos y gastos están parejos.";
-  const statusMessage = isInitialLoading
-    ? "Cargando datos del dashboard..."
-    : isValidating
-      ? "Actualizando datos..."
-      : error && hasLoadedData
-        ? "No se pudo actualizar; se muestran los últimos datos disponibles."
-        : null;
+  const statusMessage = isValidating && !isInitialLoading
+    ? "Actualizando datos..."
+    : error && hasLoadedData
+      ? "No se pudo actualizar; se muestran los últimos datos disponibles."
+      : null;
 
   return (
     <div>
@@ -180,26 +178,26 @@ export default function DashboardPage() {
               className="section-card p-5 md:p-6"
               aria-label="Neto del mes"
             >
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-sm font-medium text-muted-foreground">
                 Neto del mes
               </p>
               <p
-                className={`mt-2 text-3xl font-semibold tabular-nums md:text-4xl ${
+                className={`mt-1 text-2xl font-semibold tabular-nums ${
                   net === 0
                     ? "text-muted-foreground"
                     : net > 0
-                      ? "text-emerald-700"
-                      : "text-rose-700"
+                      ? "text-positive"
+                      : "text-negative"
                 }`}
               >
                 {formatCOP(net)}
               </p>
-              <p className="mt-2 text-sm text-foreground">{statusSummary}</p>
+              <p className="mt-1 text-sm text-foreground">{statusSummary}</p>
               {showNetDelta ? (
-                <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span
                     className={`inline-flex items-center gap-0.5 font-medium ${
-                      netDelta > 0 ? "text-emerald-700" : "text-rose-700"
+                      netDelta > 0 ? "text-positive" : "text-negative"
                     }`}
                   >
                     {netDelta > 0 ? (
@@ -230,10 +228,10 @@ export default function DashboardPage() {
                       const overdue = alert.daysUntilDue < 0;
                       const urgent = alert.daysUntilDue <= 7;
                       const color = overdue
-                        ? "text-rose-700"
+                        ? "text-negative"
                         : urgent
-                          ? "text-amber-700"
-                          : "text-blue-700";
+                          ? "text-warning"
+                          : "text-muted-foreground";
                       const label = overdue
                         ? `Vencida hace ${Math.abs(alert.daysUntilDue)} días`
                         : alert.daysUntilDue === 0
@@ -243,7 +241,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           key={alert.id}
-                          className="clickable-card flex w-full items-center gap-3 p-3 text-left"
+                          className="clickable-card flex w-full items-center gap-3 overflow-hidden p-3 text-left"
                           onClick={() => router.push("/accounts")}
                         >
                           <CreditCard className={`h-4 w-4 shrink-0 ${color}`} />
@@ -256,7 +254,7 @@ export default function DashboardPage() {
                               Fecha límite: {formatDate(alert.dueDate)}
                             </p>
                           </div>
-                          <div className="shrink-0 text-right">
+                          <div className="text-right">
                             <p
                               className={`text-sm font-semibold tabular-nums whitespace-nowrap ${color}`}
                             >
@@ -289,14 +287,14 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         key={alert.name}
-                        className="clickable-card flex w-full items-center gap-3 p-3 text-left"
+                        className="clickable-card flex w-full items-center gap-3 overflow-hidden p-3 text-left"
                         onClick={() => router.push("/budgets")}
                       >
                         <AlertTriangle
                           className={`h-4 w-4 shrink-0 ${
                             alert.percentage >= 100
-                              ? "text-rose-700"
-                              : "text-amber-700"
+                              ? "text-negative"
+                              : "text-warning"
                           }`}
                         />
                         <div className="min-w-0 flex-1">
@@ -307,12 +305,12 @@ export default function DashboardPage() {
                             {alert.categoryName}
                           </p>
                         </div>
-                        <div className="shrink-0 text-right">
+                        <div className="text-right">
                           <p
                             className={`text-sm font-semibold tabular-nums whitespace-nowrap ${
                               alert.percentage >= 100
-                                ? "text-rose-700"
-                                : "text-amber-700"
+                                ? "text-negative"
+                                : "text-warning"
                             }`}
                           >
                             {alert.percentage}%
@@ -353,7 +351,7 @@ export default function DashboardPage() {
                     className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
                       data.totalIncome === 0
                         ? "text-muted-foreground"
-                        : "text-emerald-700"
+                        : "text-positive"
                     }`}
                   >
                     {formatCOP(data.totalIncome)}
@@ -380,7 +378,7 @@ export default function DashboardPage() {
                     className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
                       data.totalExpenses === 0
                         ? "text-muted-foreground"
-                        : "text-rose-700"
+                        : "text-negative"
                     }`}
                   >
                     {formatCOP(data.totalExpenses)}
@@ -407,7 +405,7 @@ export default function DashboardPage() {
                   <p
                     className={`mt-0.5 text-xl font-semibold tabular-nums whitespace-nowrap ${
                       data.totalBalance < 0
-                        ? "text-rose-700"
+                        ? "text-negative"
                         : "text-foreground"
                     }`}
                   >
@@ -461,7 +459,7 @@ export default function DashboardPage() {
                             <p className="text-sm font-medium text-muted-foreground">
                               Gasto fijo
                             </p>
-                            <p className="text-lg font-semibold tabular-nums text-emerald-700">
+                            <p className="text-lg font-semibold tabular-nums text-positive">
                               {formatCOP(data.recurringExpenses)}
                             </p>
                           </div>
@@ -471,7 +469,7 @@ export default function DashboardPage() {
                             <p className="text-sm font-medium text-muted-foreground">
                               Gasto ocasional
                             </p>
-                            <p className="text-lg font-semibold tabular-nums text-orange-700">
+                            <p className="text-lg font-semibold tabular-nums text-caution">
                               {formatCOP(data.occasionalExpenses)}
                             </p>
                           </div>
@@ -481,13 +479,13 @@ export default function DashboardPage() {
                         <div>
                           <div className="flex h-2 overflow-hidden rounded-full bg-muted">
                             <div
-                              className="bg-emerald-700 transition-[width] duration-300 ease-out"
+                              className="bg-positive"
                               style={{
                                 width: `${(data.recurringExpenses / data.totalExpenses) * 100}%`,
                               }}
                             />
                             <div
-                              className="bg-orange-700 transition-[width] duration-300 ease-out"
+                              className="bg-caution"
                               style={{
                                 width: `${(data.occasionalExpenses / data.totalExpenses) * 100}%`,
                               }}

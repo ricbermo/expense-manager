@@ -86,10 +86,10 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
     ratio === null
       ? "text-foreground"
       : ratio >= 1.25
-        ? "text-rose-700"
+        ? "text-negative"
         : ratio >= 1.1
-          ? "text-amber-700"
-          : "text-emerald-700";
+          ? "text-warning"
+          : "text-positive";
 
   const pct =
     avg3m && avg3m > 0 ? Math.round(((projected - avg3m) / avg3m) * 100) : null;
@@ -103,7 +103,7 @@ export function ExpenseProjectionCard({ month, expensesMTD }: Props) {
         {pct !== null && pct !== 0 && (
           <span
             className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-              pct > 0 ? "text-rose-700" : "text-emerald-700"
+              pct > 0 ? "text-negative" : "text-positive"
             }`}
           >
             {pct > 0 ? (

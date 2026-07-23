@@ -25,6 +25,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-caution: var(--caution);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -74,6 +78,10 @@
   --chart-3: #ca8a04;
   --chart-4: #dc2626;
   --chart-5: #475569;
+  --positive: #059669;
+  --negative: #e11d48;
+  --warning: #d97706;
+  --caution: #ea580c;
   --chart-income: #047857;
   --chart-expense: #e11d48;
   --radius: 0.625rem;
@@ -111,6 +119,10 @@
   --chart-3: #fcd34d;
   --chart-4: #fca5a5;
   --chart-5: #94a3b8;
+  --positive: #5eead4;
+  --negative: #fca5a5;
+  --warning: #fcd34d;
+  --caution: #fdba74;
   --chart-income: #5eead4;
   --chart-expense: #fca5a5;
   --sidebar: #0b1220;
