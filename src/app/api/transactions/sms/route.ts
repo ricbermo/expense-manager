@@ -74,8 +74,9 @@ export async function POST(request: Request) {
   }
 
   const rawSms = typeof body.rawSms === "string" ? body.rawSms.trim() : "";
-  const sender =
-    typeof body.sender === "string" ? body.sender.trim() : undefined;
+  const senderClean =
+    typeof body.sender === "string" ? body.sender.trim() : "";
+  const sender = senderClean || undefined;
 
   if (!rawSms) {
     return NextResponse.json({ error: "rawSms is required" }, { status: 400 });

@@ -39,13 +39,13 @@ Add a **"Get Contents of URL"** action. Configure it:
   ```json
   {
     "rawSms": "<tap and insert the SMS text variable here>",
-    "sender": "Davivienda"
+    "sender": ""
   }
   ```
 
 For `rawSms`, tap the value field and choose the variable from Action 1 (the
-SMS text). For `sender`, hardcode the bank name per shortcut (or use a magic
-variable from the automation trigger).
+SMS text). El campo `sender` se deja vacío — Gemini identifica el banco
+automáticamente desde el contenido del SMS.
 
 ### Action 3 — Show notification with the result
 
@@ -61,22 +61,31 @@ Add a **"Show Notification"** action:
 Add a "Vibrate Device" or "Play Sound" action to give you haptic feedback that
 the webhook completed.
 
-## 2) Create one automation per bank number
+## 2) Create automations by keyword (not by sender number)
 
-For each bank's sender number (Davivienda SMS sender, Nequi SMS sender,
-Davibank SMS sender, etc.) create an **Automation**:
+Los bancos colombianos usan **códigos cortos** (ej: `980123`) como remitentes
+SMS. iOS Shortcuts formatea automáticamente estos números (ej: `980-123`), y
+la automatización nunca se dispara porque el sender real no coincide.
 
-1. Open the **Shortcuts** app → **Automation** tab → **+ New Automation**.
-2. Choose **Message** as the trigger.
-3. Configure:
-   - **Sender:** add the bank's SMS phone number
-   - **Message contains:** leave empty (matches all messages)
-   - **Run Immediately:** yes (this skips the "Ask Before Running" prompt)
-4. Action: **Run Shortcut** → select "Procesar Gasto SMS".
-5. Optionally pass the bank name as input for the `sender` field.
+En vez de filtrar por número de remitente, crea una o más automatizaciones
+que se disparen por **palabras clave** en el contenido del SMS:
 
-Repeat for each bank number. Each automation takes ~3 minutes and only needs
-to be created once.
+1. Abre **Shortcuts** → **Automation** → **+ New Automation**.
+2. Elige **Message** como trigger.
+3. Configura:
+   - **Sender:** dejar vacío
+   - **Message contains:** ingresar una palabra clave
+   - **Run Immediately:** sí
+4. Action: **Run Shortcut** → seleccionar "Procesar Gasto SMS".
+5. Tap **Done**.
+
+Repite para cada palabra clave que quieras cubrir. Recomendado:
+- `compra` — captura la mayoría de gastos (tarjeta débito/crédito, PSE, datafono)
+- `abono` — captura ingresos y depósitos
+- `retiro` — captura retiros de cajero
+
+Con estas 3 automatizaciones cubres ~95 % de los SMS bancarios sin depender
+del número de remitente.
 
 ## 3) End-to-end test
 
@@ -93,6 +102,10 @@ to be created once.
 
 ## Troubleshooting
 
+- **La automatización nunca se dispara:** iOS Shortcuts formatea los códigos
+  cortos de los bancos (ej: `980123` → `980-123`). Solución: usa el trigger
+  por **Message contains** con palabras clave como `compra`, `abono` o `retiro`
+  (ver sección 2).
 - **401 Unauthorized:** Check that `Authorization: Bearer <key>` matches
   `SHORTCUT_API_KEY` on the server exactly.
 - **500 Missing env vars:** The server is missing one of
