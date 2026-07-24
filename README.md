@@ -88,7 +88,7 @@ Open [http://localhost:3000](http://localhost:3000). You'll be redirected to `/l
 ## Customization
 
 - **Your email** — set `ALLOWED_USER_EMAIL` in your environment. The fallback is in `src/lib/auth/allowed-user.ts`.
-- **Categories** — edit `supabase/seed.sql` and add/remove rows. Categories have a name, icon (Lucide name), color, and type (`expense` or `income`).
+- **Categories** — edit `supabase/seed.sql` and add/remove rows. Categories have a name, icon (Lucide name), color, and type (`expense` or `income`). Default categories are in Spanish — translate or replace them to suit your language and spending patterns.
 - **Theme** — colors, typography, and component styles are defined in `DESIGN.md` and the token system in `.impeccable/design.json`. The palette is cool slate-and-navy; fork-friendly by design.
 - **Currency** — all amounts are stored as `BIGINT` (integer cents of the base unit). The display format can be changed in the currency utility at `src/lib/utils/currency.ts`.
 

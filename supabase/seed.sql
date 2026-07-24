@@ -1,7 +1,11 @@
 -- ╔═══════════════════════════════════════════════════════════════════════╗
 -- ║  BEFORE RUNNING THIS SEED:                                           ║
--- ║  Replace 'your-email@example.com' below with YOUR email address.     ║
--- ║  Then create that user in Supabase Auth before running this seed.    ║
+-- ║  1. Replace 'your-email@example.com' below with YOUR email address. ║
+-- ║  2. Create that user in Supabase Auth before running this seed.     ║
+-- ║                                                                      ║
+-- ║  NOTE: Default categories are in Spanish (Alimentacion, Transporte,  ║
+-- ║  etc.). Customize the INSERT statements below to match your          ║
+-- ║  language and spending categories before running.                    ║
 -- ╚═══════════════════════════════════════════════════════════════════════╝
 
 DO $$
