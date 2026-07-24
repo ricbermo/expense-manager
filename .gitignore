@@ -60,4 +60,9 @@ public/swe-worker-*.js
 
 # Local agent artifacts
 /.impeccable/critique/
+/.impeccable/config.local.json
 /docs/superpowers/
+/docs/plans/
+
+# Editor / IDE
+.claude/

@@ -13,11 +13,11 @@ BEGIN
   SELECT id
   INTO owner_id
   FROM auth.users
-  WHERE lower(email) = lower('rickardoberdejo@gmail.com')
+  WHERE lower(email) = lower('your-email@example.com')
   LIMIT 1;
 
   IF owner_id IS NULL THEN
-    RAISE EXCEPTION 'Create auth user rickardoberdejo@gmail.com before running this migration';
+    RAISE EXCEPTION 'Create auth user your-email@example.com before running this migration';
   END IF;
 
   ALTER TABLE categories ADD COLUMN IF NOT EXISTS user_id UUID;
@@ -103,44 +103,44 @@ CREATE POLICY "categories owner only" ON categories
 FOR ALL
 USING (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 )
 WITH CHECK (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 );
 
 CREATE POLICY "accounts owner only" ON accounts
 FOR ALL
 USING (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 )
 WITH CHECK (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 );
 
 CREATE POLICY "transactions owner only" ON transactions
 FOR ALL
 USING (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 )
 WITH CHECK (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 );
 
 CREATE POLICY "budgets owner only" ON budgets
 FOR ALL
 USING (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 )
 WITH CHECK (
   user_id = auth.uid()
-  AND COALESCE(auth.jwt() ->> 'email', '') = 'rickardoberdejo@gmail.com'
+  AND COALESCE(auth.jwt() ->> 'email', '') = 'your-email@example.com'
 );
 
 -- Enforce ownership consistency across references

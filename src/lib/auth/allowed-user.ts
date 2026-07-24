@@ -1,4 +1,5 @@
-export const FALLBACK_ALLOWED_USER_EMAIL = "rickardoberdejo@gmail.com";
+// Change this to your own email, or set ALLOWED_USER_EMAIL in your environment
+export const FALLBACK_ALLOWED_USER_EMAIL = "your-email@example.com";
 
 export function getAllowedUserEmail() {
   return (process.env.ALLOWED_USER_EMAIL ?? FALLBACK_ALLOWED_USER_EMAIL)
