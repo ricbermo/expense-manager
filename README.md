@@ -20,6 +20,21 @@ A personal expense tracker and budget manager built for a **single user** who wa
 
 ---
 
+## Screenshots
+
+Vista previa de las pantallas principales con datos ficticios. Abre cada HTML en el navegador para ver el mockup en vista móvil.
+
+| Pantalla | Archivo |
+|----------|---------|
+| **Dashboard** — Resumen mensual, KPI cards, tendencia, gastos por categoría | [`screenshots/screenshot-dashboard.html`](screenshots/screenshot-dashboard.html) |
+| **Movimientos** — Lista de transacciones con búsqueda y filtros | [`screenshots/screenshot-transactions.html`](screenshots/screenshot-transactions.html) |
+| **Cuentas** — Resumen de saldos, tarjetas de crédito y próximos pagos | [`screenshots/screenshot-accounts.html`](screenshots/screenshot-accounts.html) |
+| **Presupuestos** — Límites por categoría con barras de progreso y alertas | [`screenshots/screenshot-budgets.html`](screenshots/screenshot-budgets.html) |
+| **Ajustes** — Configuración, zona de peligro y cierre de sesión | [`screenshots/screenshot-settings.html`](screenshots/screenshot-settings.html) |
+| **Ingresar** — Pantalla de inicio de sesión | [`screenshots/screenshot-login.html`](screenshots/screenshot-login.html) |
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |

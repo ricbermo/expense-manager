@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gastos - Ingresar</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ink: #020617;
+      --paper: #f8fafc;
+      --navy: #0f172a;
+      --card-white: #ffffff;
+      --slate-200: #dbe4ee;
+      --muted-bg: #eef2f7;
+      --muted-text: #475569;
+      --emerald: #059669;
+      --rose: #e11d48;
+      --amber: #f59e0b;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 390px;
+      min-height: 100vh;
+      background: var(--paper);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+
+    /* Login Card */
+    .login-card {
+      width: 100%;
+      max-width: 320px;
+      background: var(--card-white);
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219, 228, 238, 0.9);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      padding: 2rem 1.5rem;
+    }
+
+    /* Logo Area */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 0.875rem;
+      background: var(--navy);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .logo-icon svg {
+      width: 1.5rem;
+      height: 1.5rem;
+      color: #fff;
+    }
+
+    .login-title {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.025em;
+      margin-bottom: 0.375rem;
+    }
+
+    .login-subtitle {
+      font-size: 0.8125rem;
+      color: var(--muted-text);
+      line-height: 1.5;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 0.375rem;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 2.25rem;
+      padding: 0 0.75rem;
+      border-radius: 0.625rem;
+      border: 1px solid var(--slate-200);
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      color: var(--ink);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      outline: none;
+    }
+
+    .form-input::placeholder {
+      color: var(--muted-text);
+    }
+
+    .form-input:focus {
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+    }
+
+    .form-input[type="password"] {
+      letter-spacing: 0.15em;
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 2.25rem;
+      border-radius: 0.625rem;
+      background: var(--navy);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+      margin-top: 0.5rem;
+    }
+
+    .btn-submit:hover {
+      background: #1e293b;
+    }
+
+    .btn-submit:active {
+      transform: translateY(1px);
+    }
+
+    /* Footer Text */
+    .login-footer {
+      text-align: center;
+      margin-top: 1.25rem;
+    }
+
+    .login-footer p {
+      font-size: 0.6875rem;
+      color: var(--muted-text);
+      line-height: 1.5;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .animate-in {
+      animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    .animate-fade {
+      animation: fadeIn 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.1s; }
+    .delay-3 { animation-delay: 0.15s; }
+    .delay-4 { animation-delay: 0.2s; }
+    .delay-5 { animation-delay: 0.25s; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- Login Card -->
+    <div class="login-card animate-in delay-1">
+      <!-- Logo -->
+      <div class="logo-area animate-in delay-2">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+          </svg>
+        </div>
+        <h1 class="login-title">Ingresar</h1>
+        <p class="login-subtitle">Accede con tu correo y contraseña para continuar.</p>
+      </div>
+
+      <!-- Form -->
+      <form class="animate-in delay-3">
+        <div class="form-group">
+          <label class="form-label" for="email">Correo electrónico</label>
+          <input class="form-input" type="email" id="email" placeholder="tu@correo.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Contraseña</label>
+          <input class="form-input" type="password" id="password" placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn-submit">Ingresar</button>
+      </form>
+
+      <!-- Footer -->
+      <div class="login-footer animate-in delay-4">
+        <p>Si no tienes cuenta, contacta al administrador.</p>
+      </div>
+    </div>
+
+    <!-- Subtle brand mark -->
+    <div class="animate-fade delay-5" style="margin-top: 2rem; text-align: center;">
+      <p style="font-size: 0.6875rem; color: var(--muted-text); font-weight: 500; letter-spacing: 0.02em;">Gastos</p>
+    </div>
+  </div>
+</body>
+</html>

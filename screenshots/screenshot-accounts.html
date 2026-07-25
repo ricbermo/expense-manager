@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gastos - Cuentas</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ink: #020617;
+      --paper: #f8fafc;
+      --navy: #0f172a;
+      --card-white: #ffffff;
+      --slate-200: #dbe4ee;
+      --muted-bg: #eef2f7;
+      --muted-text: #475569;
+      --emerald: #059669;
+      --rose: #e11d48;
+      --amber: #f59e0b;
+      --blue-light: #dbeafe;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 390px;
+      min-height: 100vh;
+      background: var(--paper);
+      position: relative;
+      padding-bottom: 5.5rem;
+    }
+
+    /* Header */
+    .header {
+      background: var(--navy);
+      padding: 2rem 1.25rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.025em;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      height: 2rem;
+      padding: 0 0.875rem;
+      border-radius: 0.625rem;
+      background: var(--emerald);
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.15s ease, transform 0.1s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary:hover {
+      background: #047857;
+    }
+
+    .btn-primary svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.5;
+    }
+
+    /* Content */
+    .content {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Alert Card */
+    .alert-card {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 1.125rem;
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .alert-icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.5rem;
+      background: rgba(245, 158, 11, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--amber);
+    }
+
+    .alert-icon svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .alert-content {
+      flex: 1;
+    }
+
+    .alert-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.125rem;
+    }
+
+    .alert-desc {
+      font-size: 0.75rem;
+      color: var(--muted-text);
+      line-height: 1.4;
+    }
+
+    .alert-amount {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--amber);
+      margin-top: 0.25rem;
+    }
+
+    /* Summary Grid */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .summary-card {
+      background: var(--card-white);
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219, 228, 238, 0.9);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      padding: 0.875rem 0.75rem;
+      text-align: center;
+    }
+
+    .summary-label {
+      font-size: 0.625rem;
+      font-weight: 500;
+      color: var(--muted-text);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.375rem;
+    }
+
+    .summary-value {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      font-feature-settings: 'tnum' 1;
+      letter-spacing: -0.02em;
+    }
+
+    .summary-value.positive {
+      color: var(--emerald);
+    }
+
+    .summary-value.negative {
+      color: var(--rose);
+    }
+
+    .summary-value.neutral {
+      color: var(--ink);
+    }
+
+    /* Section Header */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.25rem;
+    }
+
+    .section-title {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    /* Account Card */
+    .account-card {
+      background: var(--card-white);
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219, 228, 238, 0.9);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      padding: 1rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .account-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .account-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .account-left {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .account-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.625rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .account-icon svg {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+
+    .account-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .account-type {
+      font-size: 0.6875rem;
+      color: var(--muted-text);
+      margin-top: 0.0625rem;
+    }
+
+    .account-amount {
+      font-size: 1.125rem;
+      font-weight: 700;
+      font-feature-settings: 'tnum' 1;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    /* Credit Card Details */
+    .credit-details {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.625rem;
+      padding-top: 0.625rem;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .credit-detail {
+      flex: 1;
+    }
+
+    .credit-detail-label {
+      font-size: 0.625rem;
+      color: var(--muted-text);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 500;
+      margin-bottom: 0.125rem;
+    }
+
+    .credit-detail-value {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-feature-settings: 'tnum' 1;
+      color: var(--ink);
+    }
+
+    .credit-detail-value.overdue {
+      color: var(--rose);
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 2rem);
+      max-width: 358px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219, 228, 238, 0.6);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      text-decoration: none;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: rgba(15, 23, 42, 0.04);
+    }
+
+    .nav-item.active {
+      background: rgba(15, 23, 42, 0.06);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: -0.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1.25rem;
+      height: 3px;
+      background: var(--navy);
+      border-radius: 999px;
+    }
+
+    .nav-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--muted-text);
+      transition: color 0.15s ease;
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--navy);
+    }
+
+    .nav-label {
+      font-size: 0.5625rem;
+      font-weight: 600;
+      color: var(--muted-text);
+      letter-spacing: 0.01em;
+      transition: color 0.15s ease;
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--navy);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-in {
+      animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.1s; }
+    .delay-3 { animation-delay: 0.15s; }
+    .delay-4 { animation-delay: 0.2s; }
+    .delay-5 { animation-delay: 0.25s; }
+    .delay-6 { animation-delay: 0.3s; }
+    .delay-7 { animation-delay: 0.35s; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <h1 class="header-title">Cuentas</h1>
+        <button class="btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Nueva
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+      <!-- Alert Card -->
+      <div class="alert-card animate-in delay-1">
+        <div class="alert-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <div class="alert-content">
+          <p class="alert-title">Próximo pago de tarjeta</p>
+          <p class="alert-desc">Visa Credencial — vence el 5 ago</p>
+          <p class="alert-amount">$1.342.600</p>
+        </div>
+      </div>
+
+      <!-- Summary Grid -->
+      <div class="summary-grid animate-in delay-2">
+        <div class="summary-card">
+          <p class="summary-label">Disponible</p>
+          <p class="summary-value positive">$3.650.000</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Deuda tarjetas</p>
+          <p class="summary-value negative">$2.082.600</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Posición neta</p>
+          <p class="summary-value neutral">$1.567.400</p>
+        </div>
+      </div>
+
+      <!-- Accounts Section -->
+      <div class="animate-in delay-3">
+        <div class="section-header">
+          <h2 class="section-title">Mis cuentas</h2>
+        </div>
+      </div>
+
+      <!-- Savings Account -->
+      <div class="account-card animate-in delay-4">
+        <div class="account-top">
+          <div class="account-left">
+            <div class="account-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--emerald);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+              </svg>
+            </div>
+            <div>
+              <p class="account-name">Ahorros</p>
+              <p class="account-type">Cuenta de ahorros</p>
+            </div>
+          </div>
+          <p class="account-amount">$3.200.000</p>
+        </div>
+      </div>
+
+      <!-- Cash Account -->
+      <div class="account-card animate-in delay-5">
+        <div class="account-top">
+          <div class="account-left">
+            <div class="account-icon" style="background: rgba(15, 23, 42, 0.06); color: var(--ink);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+              </svg>
+            </div>
+            <div>
+              <p class="account-name">Efectivo</p>
+              <p class="account-type">Efectivo</p>
+            </div>
+          </div>
+          <p class="account-amount">$450.000</p>
+        </div>
+      </div>
+
+      <!-- Visa Credit Card -->
+      <div class="account-card animate-in delay-6">
+        <div class="account-top">
+          <div class="account-left">
+            <div class="account-icon" style="background: rgba(30, 58, 138, 0.1); color: #1e3a8a;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+              </svg>
+            </div>
+            <div>
+              <p class="account-name">Visa Credencial</p>
+              <p class="account-type">Tarjeta de crédito</p>
+            </div>
+          </div>
+          <p class="account-amount" style="color: var(--rose);">-$1.342.600</p>
+        </div>
+        <div class="credit-details">
+          <div class="credit-detail">
+            <p class="credit-detail-label">Corte</p>
+            <p class="credit-detail-value">21 jul</p>
+          </div>
+          <div class="credit-detail">
+            <p class="credit-detail-label">Pago mínimo</p>
+            <p class="credit-detail-value">$67.130</p>
+          </div>
+          <div class="credit-detail">
+            <p class="credit-detail-label">Saldo total</p>
+            <p class="credit-detail-value overdue">$1.342.600</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mastercard -->
+      <div class="account-card animate-in delay-7">
+        <div class="account-top">
+          <div class="account-left">
+            <div class="account-icon" style="background: rgba(225, 29, 72, 0.1); color: var(--rose);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+              </svg>
+            </div>
+            <div>
+              <p class="account-name">Mastercard</p>
+              <p class="account-type">Tarjeta de crédito</p>
+            </div>
+          </div>
+          <p class="account-amount" style="color: var(--rose);">-$740.000</p>
+        </div>
+        <div class="credit-details">
+          <div class="credit-detail">
+            <p class="credit-detail-label">Corte</p>
+            <p class="credit-detail-value">28 jul</p>
+          </div>
+          <div class="credit-detail">
+            <p class="credit-detail-label">Pago mínimo</p>
+            <p class="credit-detail-value">$37.000</p>
+          </div>
+          <div class="credit-detail">
+            <p class="credit-detail-label">Saldo total</p>
+            <p class="credit-detail-value">$740.000</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+        </svg>
+        <span class="nav-label">Inicio</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+        </svg>
+        <span class="nav-label">Movimientos</span>
+      </a>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+        </svg>
+        <span class="nav-label">Cuentas</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
+        <span class="nav-label">Presupuestos</span>
+      </a>
+    </nav>
+  </div>
+</body>
+</html>

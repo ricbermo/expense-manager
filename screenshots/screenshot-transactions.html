@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gastos - Movimientos</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ink: #020617;
+      --paper: #f8fafc;
+      --navy: #0f172a;
+      --card-white: #ffffff;
+      --slate-200: #dbe4ee;
+      --muted-bg: #eef2f7;
+      --muted-text: #475569;
+      --emerald: #059669;
+      --rose: #e11d48;
+      --amber: #f59e0b;
+      --blue-light: #dbeafe;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 390px;
+      min-height: 100vh;
+      background: var(--paper);
+      position: relative;
+      padding-bottom: 5.5rem;
+    }
+
+    /* Header */
+    .header {
+      background: var(--navy);
+      padding: 2rem 1.25rem 1.25rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.025em;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      height: 2rem;
+      padding: 0 0.875rem;
+      border-radius: 0.625rem;
+      background: var(--emerald);
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.15s ease, transform 0.1s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary:hover {
+      background: #047857;
+    }
+
+    .btn-primary svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.5;
+    }
+
+    /* Month Pager */
+    .month-pager {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .month-pager-btn {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .month-pager-btn:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    .month-pager-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .month-pager-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: -0.01em;
+      min-width: 7rem;
+      text-align: center;
+    }
+
+    /* Search Bar */
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--card-white);
+      border-radius: 0.625rem;
+      border: 1px solid var(--slate-200);
+      padding: 0 0.75rem;
+      height: 2.25rem;
+      margin-bottom: 0.625rem;
+      transition: border-color 0.15s ease;
+    }
+
+    .search-bar:focus-within {
+      border-color: var(--navy);
+    }
+
+    .search-bar svg {
+      width: 14px;
+      height: 14px;
+      color: var(--muted-text);
+      flex-shrink: 0;
+    }
+
+    .search-bar input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      color: var(--ink);
+      width: 100%;
+    }
+
+    .search-bar input::placeholder {
+      color: var(--muted-text);
+    }
+
+    /* Filter Row */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      height: 1.75rem;
+      padding: 0 0.625rem;
+      border-radius: 0.5rem;
+      background: var(--card-white);
+      border: 1px solid var(--slate-200);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted-text);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--navy);
+      color: var(--ink);
+    }
+
+    .filter-btn.active {
+      background: rgba(15, 23, 42, 0.06);
+      border-color: var(--navy);
+      color: var(--navy);
+    }
+
+    .filter-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .filter-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.5625rem;
+      font-weight: 600;
+    }
+
+    /* Content */
+    .content {
+      padding: 0 1.25rem;
+    }
+
+    /* Date Group */
+    .date-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .date-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--muted-text);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Transaction Item */
+    .transaction-card {
+      background: var(--card-white);
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219, 228, 238, 0.9);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      margin-bottom: 0.5rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .transaction-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .transaction-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.875rem;
+    }
+
+    .transaction-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.625rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.875rem;
+    }
+
+    .transaction-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .transaction-desc {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .transaction-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-top: 0.125rem;
+    }
+
+    .transaction-category {
+      font-size: 0.6875rem;
+      color: var(--muted-text);
+      font-weight: 400;
+    }
+
+    .transaction-account {
+      font-size: 0.625rem;
+      color: var(--muted-text);
+      font-weight: 500;
+      opacity: 0.7;
+    }
+
+    .transaction-amount {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-feature-settings: 'tnum' 1;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .transaction-amount.income {
+      color: var(--emerald);
+    }
+
+    .transaction-amount.expense {
+      color: var(--ink);
+    }
+
+    .transaction-amount.transfer {
+      color: var(--muted-text);
+    }
+
+    .transaction-account-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--slate-200);
+      flex-shrink: 0;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 2rem);
+      max-width: 358px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219, 228, 238, 0.6);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      text-decoration: none;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: rgba(15, 23, 42, 0.04);
+    }
+
+    .nav-item.active {
+      background: rgba(15, 23, 42, 0.06);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: -0.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1.25rem;
+      height: 3px;
+      background: var(--navy);
+      border-radius: 999px;
+    }
+
+    .nav-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--muted-text);
+      transition: color 0.15s ease;
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--navy);
+    }
+
+    .nav-label {
+      font-size: 0.5625rem;
+      font-weight: 600;
+      color: var(--muted-text);
+      letter-spacing: 0.01em;
+      transition: color 0.15s ease;
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--navy);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-in {
+      animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.1s; }
+    .delay-3 { animation-delay: 0.15s; }
+    .delay-4 { animation-delay: 0.2s; }
+    .delay-5 { animation-delay: 0.25s; }
+    .delay-6 { animation-delay: 0.3s; }
+    .delay-7 { animation-delay: 0.35s; }
+    .delay-8 { animation-delay: 0.4s; }
+    .delay-9 { animation-delay: 0.45s; }
+    .delay-10 { animation-delay: 0.5s; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <h1 class="header-title">Movimientos</h1>
+        <button class="btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Registrar
+        </button>
+      </div>
+
+      <div class="month-pager">
+        <button class="month-pager-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        <span class="month-pager-label">Julio 2026</span>
+        <button class="month-pager-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="search-bar">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input type="text" placeholder="Buscar por descripción, categoría, cuenta...">
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-btn active">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+          </svg>
+          Filtros
+          <span class="filter-badge">2</span>
+        </button>
+        <button class="filter-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13-6L16.5 19m0 0L12 14.5m4.5 4.5V7.5" />
+          </svg>
+          Ordenar
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+      <!-- Hoy -->
+      <div class="date-group animate-in delay-1">
+        <p class="date-label">Hoy — 24 jul</p>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--emerald);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Supermercado Éxito</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Alimentación</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Visa Credencial</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$186.500</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ayer -->
+      <div class="date-group animate-in delay-2">
+        <p class="date-label">Ayer — 23 jul</p>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(15, 23, 42, 0.06); color: var(--ink);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Uber</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Transporte</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Efectivo</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$32.800</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 jul -->
+      <div class="date-group animate-in delay-3">
+        <p class="date-label">3 jul</p>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Netflix</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Entretenimiento</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Visa Credencial</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$17.900</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 jul -->
+      <div class="date-group animate-in delay-4">
+        <p class="date-label">2 jul</p>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(249, 115, 22, 0.1); color: #f97316;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Domicilio Rappi</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Restaurantes</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Mastercard</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$45.200</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1 jul -->
+      <div class="date-group animate-in delay-5">
+        <p class="date-label">1 jul</p>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--emerald);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Nómina</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Ingreso</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Ahorros</span>
+              </div>
+            </div>
+            <p class="transaction-amount income">$3.250.000</p>
+          </div>
+        </div>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(225, 29, 72, 0.1); color: var(--rose);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Fitness Gym</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Salud</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Visa Credencial</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$89.900</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jun -->
+      <div class="date-group animate-in delay-6">
+        <p class="date-label">Jun 2026</p>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(15, 23, 42, 0.06); color: var(--muted-text);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Transferencia a ahorros</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Transferencia</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Efectivo → Ahorros</span>
+              </div>
+            </div>
+            <p class="transaction-amount transfer">$500.000</p>
+          </div>
+        </div>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(100, 116, 139, 0.1); color: #64748b;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">EPM</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Servicios</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Ahorros</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$128.400</p>
+          </div>
+        </div>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Spotify</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Entretenimiento</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Visa Credencial</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$14.900</p>
+          </div>
+        </div>
+
+        <div class="transaction-card">
+          <div class="transaction-item">
+            <div class="transaction-icon" style="background: rgba(15, 23, 42, 0.06); color: var(--ink);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+              </svg>
+            </div>
+            <div class="transaction-details">
+              <p class="transaction-desc">Parqueadero</p>
+              <div class="transaction-meta">
+                <span class="transaction-category">Transporte</span>
+                <div class="transaction-account-dot"></div>
+                <span class="transaction-account">Efectivo</span>
+              </div>
+            </div>
+            <p class="transaction-amount expense">$8.500</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+        </svg>
+        <span class="nav-label">Inicio</span>
+      </a>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+        </svg>
+        <span class="nav-label">Movimientos</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+        </svg>
+        <span class="nav-label">Cuentas</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
+        <span class="nav-label">Presupuestos</span>
+      </a>
+    </nav>
+  </div>
+</body>
+</html>
