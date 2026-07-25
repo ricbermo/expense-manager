@@ -3,519 +3,307 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gastos - Ajustes</title>
+  <title>Gastos — Ajustes</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --ink: #020617;
-      --paper: #f8fafc;
-      --navy: #0f172a;
-      --card-white: #ffffff;
-      --slate-200: #dbe4ee;
-      --muted-bg: #eef2f7;
-      --muted-text: #475569;
-      --emerald: #059669;
-      --rose: #e11d48;
-      --amber: #f59e0b;
+      --background: #f8fafc;
+      --foreground: #020617;
+      --card: #ffffff;
+      --card-foreground: #0f172a;
+      --primary: #0f172a;
+      --primary-foreground: #f8fafc;
+      --muted: #eef2f7;
+      --muted-foreground: #475569;
+      --border: #dbe4ee;
+      --negative: #e11d48;
     }
 
     body {
-      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      min-height: 100vh;
+      font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
       display: flex;
       justify-content: center;
+      min-height: 100vh;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
     .phone-frame {
       width: 100%;
       max-width: 390px;
       min-height: 100vh;
-      background: var(--paper);
+      background: var(--background);
       position: relative;
-      padding-bottom: 5.5rem;
+      overflow-x: hidden;
     }
 
-    /* Header */
-    .header {
-      background: var(--navy);
-      padding: 2rem 1.25rem 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 50;
+    .page-header {
+      padding: 1.5rem 1rem 0.75rem;
     }
-
-    .header-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #fff;
+    .page-header h1 {
+      font-size: clamp(1.5rem, 4vw, 1.875rem);
+      font-weight: 600;
       letter-spacing: -0.025em;
+      color: var(--foreground);
+      line-height: 1.2;
+    }
+    .page-header-desc {
+      margin-top: 0.25rem;
+      font-size: 0.875rem;
+      color: var(--muted-foreground);
     }
 
-    /* Content */
     .content {
-      padding: 1.25rem;
+      padding: 0 1rem 7rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.25rem;
     }
 
-    /* Section Label */
-    .section-label {
-      font-size: 0.6875rem;
-      font-weight: 500;
-      color: var(--muted-text);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-top: 0.25rem;
-    }
-
-    /* Settings Card */
-    .settings-card {
-      background: var(--card-white);
+    .section-card {
+      background: var(--card);
       border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.9);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
     }
 
-    .settings-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.875rem 1rem;
-      border-bottom: 1px solid var(--slate-200);
-    }
-
-    .settings-item:last-child {
-      border-bottom: none;
-    }
-
-    .settings-item-icon {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 0.5rem;
-      display: flex;
+    .btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .settings-item-icon svg {
-      width: 1rem;
-      height: 1rem;
-    }
-
-    .settings-item-content {
-      flex: 1;
-    }
-
-    .settings-item-title {
+      gap: 0.375rem;
+      height: 2rem;
+      padding: 0.5rem 0.625rem;
+      border-radius: 0.625rem;
       font-size: 0.8125rem;
       font-weight: 500;
-      color: var(--ink);
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
     }
-
-    .settings-item-desc {
-      font-size: 0.6875rem;
-      color: var(--muted-text);
-      margin-top: 0.0625rem;
-      line-height: 1.4;
+    .btn:active { transform: translateY(1px); }
+    .btn-destructive {
+      background: rgba(225,29,72,0.1);
+      color: var(--negative);
+      height: 2.75rem;
+      padding: 0 1rem;
     }
-
-    .settings-item-action {
-      flex-shrink: 0;
+    .btn-destructive:hover { background: rgba(225,29,72,0.2); }
+    .btn-outline {
+      background: transparent;
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      height: 2.75rem;
+      padding: 0 1rem;
     }
+    .btn-outline:hover { background: var(--muted); }
+    .btn svg { width: 1rem; height: 1rem; }
 
-    /* Danger Zone */
     .danger-card {
-      background: var(--card-white);
+      background: var(--card);
       border-radius: 1.125rem;
-      border: 1px solid rgba(225, 29, 72, 0.2);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      overflow: hidden;
+      border: 1px solid rgba(225,29,72,0.2);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+      padding: 1rem;
     }
-
     .danger-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.75rem;
-      padding: 1rem 1rem 0.5rem;
     }
-
     .danger-icon {
       width: 2.25rem;
       height: 2.25rem;
       border-radius: 0.625rem;
-      background: rgba(225, 29, 72, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      color: var(--rose);
+      background: rgba(225,29,72,0.1);
+      color: var(--negative);
     }
-
-    .danger-icon svg {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
-
+    .danger-icon svg { width: 1.125rem; height: 1.125rem; }
     .danger-title {
       font-size: 0.875rem;
       font-weight: 600;
-      color: var(--ink);
+      color: var(--foreground);
     }
-
     .danger-desc {
+      margin-top: 0.25rem;
       font-size: 0.75rem;
-      color: var(--muted-text);
+      color: var(--muted-foreground);
       line-height: 1.5;
-      padding: 0 1rem;
-      margin-bottom: 0.75rem;
     }
-
     .danger-actions {
-      padding: 0 1rem 1rem;
+      margin-top: 1rem;
     }
 
-    .btn-danger {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      height: 2rem;
-      padding: 0 0.875rem;
-      border-radius: 0.625rem;
-      background: rgba(225, 29, 72, 0.08);
-      color: var(--rose);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      font-family: inherit;
-    }
-
-    .btn-danger:hover {
-      background: rgba(225, 29, 72, 0.15);
-    }
-
-    .btn-danger svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    /* Session Card */
     .session-card {
-      background: var(--card-white);
+      background: var(--card);
       border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.9);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
       padding: 1rem;
     }
-
-    .session-info {
+    .session-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.75rem;
-      margin-bottom: 0.75rem;
     }
-
     .session-icon {
       width: 2.25rem;
       height: 2.25rem;
       border-radius: 0.625rem;
-      background: rgba(15, 23, 42, 0.06);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      color: var(--muted-text);
+      background: var(--muted);
+      color: var(--muted-foreground);
     }
-
-    .session-icon svg {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
-
-    .session-details {
-      flex: 1;
-    }
-
-    .session-label {
-      font-size: 0.6875rem;
-      color: var(--muted-text);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .session-email {
+    .session-icon svg { width: 1.125rem; height: 1.125rem; }
+    .session-title {
       font-size: 0.875rem;
       font-weight: 600;
-      color: var(--ink);
-      margin-top: 0.125rem;
+      color: var(--foreground);
+    }
+    .session-desc {
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      line-height: 1.5;
+    }
+    .session-actions {
+      margin-top: 1rem;
     }
 
-    .btn-outline {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      height: 2rem;
-      padding: 0 0.875rem;
-      border-radius: 0.625rem;
-      background: transparent;
-      border: 1px solid var(--slate-200);
-      color: var(--ink);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      font-family: inherit;
-      width: 100%;
-      justify-content: center;
-    }
-
-    .btn-outline:hover {
-      background: var(--muted-bg);
-    }
-
-    .btn-outline svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    /* Bottom Nav */
     .bottom-nav {
       position: fixed;
+      inset-inline: 0;
       bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 2rem);
-      max-width: 358px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.6);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-      padding: 0.5rem 0.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      z-index: 100;
+      z-index: 50;
+      padding: 0 1rem;
     }
-
+    .bottom-nav-inner {
+      max-width: 28rem;
+      margin: 0 auto;
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219,228,238,0.8);
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 0.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    }
+    .bottom-nav-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.25rem;
+      height: 3.5rem;
+      align-items: center;
+    }
     .nav-item {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 0.25rem;
-      padding: 0.375rem 0.75rem;
-      border-radius: 0.75rem;
-      cursor: pointer;
-      transition: background 0.15s ease;
+      height: 100%;
+      border-radius: 0.875rem;
       text-decoration: none;
-      position: relative;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1;
+      transition: color 0.2s;
+      padding: 0 0.25rem;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      color: var(--muted-foreground);
     }
+    .nav-item svg { width: 1.25rem; height: 1.25rem; }
 
-    .nav-item:hover {
-      background: rgba(15, 23, 42, 0.04);
-    }
-
-    .nav-item.active {
-      background: rgba(15, 23, 42, 0.06);
-    }
-
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      top: -0.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 1.25rem;
-      height: 3px;
-      background: var(--navy);
-      border-radius: 999px;
-    }
-
-    .nav-icon {
-      width: 1.25rem;
-      height: 1.25rem;
-      color: var(--muted-text);
-      transition: color 0.15s ease;
-    }
-
-    .nav-item.active .nav-icon {
-      color: var(--navy);
-    }
-
-    .nav-label {
-      font-size: 0.5625rem;
-      font-weight: 600;
-      color: var(--muted-text);
-      letter-spacing: 0.01em;
-      transition: color 0.15s ease;
-    }
-
-    .nav-item.active .nav-label {
-      color: var(--navy);
-    }
-
-    /* Animations */
     @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
     .animate-in {
       animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       opacity: 0;
     }
-
     .delay-1 { animation-delay: 0.05s; }
     .delay-2 { animation-delay: 0.1s; }
     .delay-3 { animation-delay: 0.15s; }
-    .delay-4 { animation-delay: 0.2s; }
-    .delay-5 { animation-delay: 0.25s; }
   </style>
 </head>
 <body>
   <div class="phone-frame">
-    <!-- Header -->
-    <header class="header">
-      <h1 class="header-title">Ajustes</h1>
+    <header class="page-header animate-in delay-1">
+      <h1>Ajustes</h1>
+      <p class="page-header-desc">Configuración de la cuenta y datos</p>
     </header>
 
-    <!-- Content -->
     <main class="content">
-      <!-- General Section -->
-      <p class="section-label animate-in delay-1">General</p>
-      <div class="settings-card animate-in delay-1">
-        <div class="settings-item">
-          <div class="settings-item-icon" style="background: rgba(15, 23, 42, 0.06); color: var(--muted-text);">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div class="settings-item-content">
-            <p class="settings-item-title">Zona horaria</p>
-            <p class="settings-item-desc">America/Bogota (COT, UTC-5)</p>
-          </div>
-        </div>
-        <div class="settings-item">
-          <div class="settings-item-icon" style="background: rgba(15, 23, 42, 0.06); color: var(--muted-text);">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
-            </svg>
-          </div>
-          <div class="settings-item-content">
-            <p class="settings-item-title">Moneda</p>
-            <p class="settings-item-desc">COP — Peso colombiano</p>
-          </div>
-        </div>
-        <div class="settings-item">
-          <div class="settings-item-icon" style="background: rgba(15, 23, 42, 0.06); color: var(--muted-text);">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-            </svg>
-          </div>
-          <div class="settings-item-content">
-            <p class="settings-item-title">Formato de fecha</p>
-            <p class="settings-item-desc">dd MMM yyyy</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Danger Zone -->
-      <p class="section-label animate-in delay-2" style="color: var(--rose);">Zona de peligro</p>
-      <div class="danger-card animate-in delay-3">
+      <section class="section-card danger-card animate-in delay-2">
         <div class="danger-header">
           <div class="danger-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
           </div>
-          <p class="danger-title">Reiniciar mes</p>
+          <div>
+            <p class="danger-title">Zona de peligro</p>
+            <p class="danger-desc">Resetea todos los datos del mes actual. Esta acción no se puede deshacer y eliminará todos los movimientos, presupuestos y categorías del mes en curso.</p>
+          </div>
         </div>
-        <p class="danger-desc">
-          Elimina todos los movimientos del mes actual y restablece los presupuestos. Esta acción no se puede deshacer.
-        </p>
         <div class="danger-actions">
-          <button class="btn-danger">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-            </svg>
-            Reiniciar mes
+          <button type="button" class="btn btn-destructive">Resetear mes actual</button>
+        </div>
+      </section>
+
+      <section class="section-card session-card animate-in delay-3">
+        <div class="session-header">
+          <div class="session-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
+          </div>
+          <div>
+            <p class="session-title">Sesión</p>
+            <p class="session-desc">Cierra tu sesión actual. Volverás a la pantalla de ingreso.</p>
+          </div>
+        </div>
+        <div class="session-actions">
+          <button type="button" class="btn btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:0.875rem; height:0.875rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
+            Cerrar sesión
           </button>
         </div>
-      </div>
-
-      <!-- Session -->
-      <p class="section-label animate-in delay-4">Sesión</p>
-      <div class="session-card animate-in delay-5">
-        <div class="session-info">
-          <div class="session-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-            </svg>
-          </div>
-          <div class="session-details">
-            <p class="session-label">Sesión activa</p>
-            <p class="session-email">ricardo@gastos.app</p>
-          </div>
-        </div>
-        <button class="btn-outline">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-          </svg>
-          Cerrar sesión
-        </button>
-      </div>
+      </section>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-        </svg>
-        <span class="nav-label">Inicio</span>
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-        </svg>
-        <span class="nav-label">Movimientos</span>
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-        </svg>
-        <span class="nav-label">Cuentas</span>
-      </a>
-      <a href="#" class="nav-item active">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <span class="nav-label">Ajustes</span>
-      </a>
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <div class="bottom-nav-inner">
+        <div class="bottom-nav-grid">
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+            <span>Movimientos</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+            <span>Cuentas</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+            <span>Presupuesto</span>
+          </a>
+        </div>
+      </div>
     </nav>
   </div>
 </body>

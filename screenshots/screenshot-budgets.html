@@ -3,447 +3,349 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gastos - Presupuestos</title>
+  <title>Gastos — Presupuesto</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --ink: #020617;
-      --paper: #f8fafc;
-      --navy: #0f172a;
-      --card-white: #ffffff;
-      --slate-200: #dbe4ee;
-      --muted-bg: #eef2f7;
-      --muted-text: #475569;
-      --emerald: #059669;
-      --rose: #e11d48;
-      --amber: #f59e0b;
-      --blue-light: #dbeafe;
+      --background: #f8fafc;
+      --foreground: #020617;
+      --card: #ffffff;
+      --card-foreground: #0f172a;
+      --primary: #0f172a;
+      --primary-foreground: #f8fafc;
+      --secondary: #e2e8f0;
+      --muted: #eef2f7;
+      --muted-foreground: #475569;
+      --border: #dbe4ee;
+      --positive: #059669;
+      --negative: #e11d48;
+      --warning: #d97706;
     }
 
     body {
-      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      min-height: 100vh;
+      font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
       display: flex;
       justify-content: center;
+      min-height: 100vh;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
     .phone-frame {
       width: 100%;
       max-width: 390px;
       min-height: 100vh;
-      background: var(--paper);
+      background: var(--background);
       position: relative;
-      padding-bottom: 5.5rem;
+      overflow-x: hidden;
     }
 
-    /* Header */
-    .header {
-      background: var(--navy);
-      padding: 2rem 1.25rem 1.25rem;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-
-    .header-top {
+    /* Page Header */
+    .page-header {
+      padding: 1.5rem 1rem 0.75rem;
       display: flex;
-      align-items: center;
+      flex-wrap: wrap;
+      align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 0.75rem;
+      gap: 0.75rem;
     }
-
-    .header-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.025em;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 0.375rem;
-    }
-
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      height: 2rem;
-      padding: 0 0.875rem;
-      border-radius: 0.625rem;
-      background: var(--emerald);
-      color: #fff;
-      font-size: 0.8125rem;
+    .page-header h1 {
+      font-size: clamp(1.5rem, 4vw, 1.875rem);
       font-weight: 600;
-      border: none;
-      cursor: pointer;
-      letter-spacing: -0.01em;
-      transition: background 0.15s ease, transform 0.1s ease;
-      font-family: inherit;
+      letter-spacing: -0.025em;
+      color: var(--foreground);
+      line-height: 1.2;
     }
-
-    .btn-primary:hover {
-      background: #047857;
-    }
-
-    .btn-primary svg {
-      width: 14px;
-      height: 14px;
-      stroke-width: 2.5;
-    }
-
-    .btn-outline {
-      display: inline-flex;
+    .page-header-actions {
+      display: flex;
       align-items: center;
-      gap: 0.375rem;
-      height: 2rem;
-      padding: 0 0.75rem;
-      border-radius: 0.625rem;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.2);
-      color: rgba(255,255,255,0.8);
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      font-family: inherit;
+      gap: 0.5rem;
+      width: 100%;
     }
-
-    .btn-outline:hover {
-      background: rgba(255,255,255,0.08);
-    }
-
-    .btn-outline svg {
-      width: 12px;
-      height: 12px;
-    }
-
-    /* Month Pager */
     .month-pager {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
+      gap: 0.25rem;
     }
-
-    .month-pager-btn {
-      width: 1.75rem;
-      height: 1.75rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: transparent;
-      color: rgba(255,255,255,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.15s ease;
-    }
-
-    .month-pager-btn:hover {
-      background: rgba(255,255,255,0.08);
-    }
-
-    .month-pager-btn svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    .month-pager-label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.9);
-      letter-spacing: -0.01em;
-      min-width: 7rem;
+    .month-pager span {
+      min-width: 8rem;
       text-align: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--foreground);
+      white-space: nowrap;
     }
 
     /* Content */
     .content {
-      padding: 1.25rem;
+      padding: 0 1rem 7rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.25rem;
     }
 
-    /* Status Card */
-    .status-card {
-      background: var(--card-white);
+    /* Section Card */
+    .section-card {
+      background: var(--card);
       border-radius: 1.125rem;
-      border: 1px solid rgba(225, 29, 72, 0.2);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      padding: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
     }
 
-    .status-icon {
-      width: 2.25rem;
-      height: 2.25rem;
-      border-radius: 0.625rem;
-      background: rgba(225, 29, 72, 0.1);
-      display: flex;
+    /* Button */
+    .btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      color: var(--rose);
-    }
-
-    .status-icon svg {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
-
-    .status-content {
-      flex: 1;
-    }
-
-    .status-title {
+      gap: 0.375rem;
+      height: 2rem;
+      padding: 0.5rem 0.625rem;
+      border-radius: 0.625rem;
       font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--ink);
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
     }
-
-    .status-desc {
-      font-size: 0.75rem;
-      color: var(--muted-text);
-      margin-top: 0.125rem;
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted-foreground);
     }
+    .btn-ghost:hover { background: var(--muted); color: var(--foreground); }
+    .btn-outline {
+      background: transparent;
+      color: var(--foreground);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover { background: var(--secondary); }
+    .btn svg { width: 1rem; height: 1rem; }
 
-    .status-amount {
+    /* Tabular Nums */
+    .tabular { font-variant-numeric: tabular-nums; }
+
+    /* Budget Summary Card */
+    .budget-summary { padding: 1rem; }
+    .budget-summary h2 {
       font-size: 0.875rem;
-      font-weight: 700;
-      font-feature-settings: 'tnum' 1;
-      color: var(--rose);
+      font-weight: 500;
+      color: var(--foreground);
     }
-
-    /* Section Header */
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .budget-summary .summary-amount {
       margin-top: 0.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
     }
-
-    .section-title {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: -0.02em;
+    .budget-summary .summary-link {
+      margin-top: 0.375rem;
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
     /* Budget Card */
     .budget-card {
-      background: var(--card-white);
-      border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.9);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       padding: 1rem;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
-
-    .budget-card:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-
     .budget-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.625rem;
     }
-
     .budget-left {
       display: flex;
       align-items: center;
-      gap: 0.625rem;
+      gap: 0.5rem;
+      min-width: 0;
     }
-
     .budget-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 9999px;
       flex-shrink: 0;
     }
-
+    .budget-name-group { min-width: 0; line-height: 1.2; }
     .budget-name {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--ink);
-    }
-
-    .budget-right {
-      text-align: right;
-    }
-
-    .budget-spent {
       font-size: 0.875rem;
-      font-weight: 700;
-      font-feature-settings: 'tnum' 1;
-      letter-spacing: -0.01em;
-    }
-
-    .budget-limit {
-      font-size: 0.6875rem;
-      color: var(--muted-text);
-      margin-top: 0.0625rem;
-    }
-
-    .budget-bar-container {
-      width: 100%;
-      height: 6px;
-      background: var(--slate-200);
-      border-radius: 999px;
+      font-weight: 500;
+      white-space: nowrap;
       overflow: hidden;
-      margin-bottom: 0.5rem;
+      text-overflow: ellipsis;
     }
-
-    .budget-bar {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    .budget-category {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-
-    .budget-meta {
+    .budget-right {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 0.5rem;
+      flex-shrink: 0;
     }
-
-    .budget-percent {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      font-feature-settings: 'tnum' 1;
-    }
-
     .budget-status {
-      font-size: 0.625rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .budget-status.exceeded { color: var(--negative); }
+    .budget-status.alert { color: #b45309; }
+    .budget-status.healthy { color: var(--muted-foreground); }
+    .budget-edit-btn {
+      width: 2.75rem;
+      height: 2.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      border-radius: 0.625rem;
+      cursor: pointer;
+      color: var(--muted-foreground);
+      transition: color 0.15s;
+      font-family: inherit;
+    }
+    .budget-edit-btn:hover { color: var(--foreground); background: var(--muted); }
+    .budget-edit-btn svg { width: 0.875rem; height: 0.875rem; }
+
+    /* Progress Bar */
+    .progress-wrap { display: flex; flex-direction: column; gap: 0.25rem; }
+    .progress-track {
+      height: 0.5rem;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 9999px;
+      background: var(--muted);
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: transform 0.3s;
+    }
+    .progress-fill.exceeded { background: #e11d48; }
+    .progress-fill.alert { background: #b45309; }
+    .progress-fill.healthy { background: #059669; }
+    .progress-label {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+    }
+
+    /* Budget Bottom Row */
+    .budget-bottom {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+    .budget-spent {
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+    .budget-remaining {
       font-weight: 500;
-      padding: 0.125rem 0.5rem;
-      border-radius: 999px;
+      font-variant-numeric: tabular-nums;
     }
+    .budget-remaining.positive { color: var(--positive); }
+    .budget-remaining.negative { color: var(--negative); }
 
-    .budget-status.ok {
-      color: var(--emerald);
-      background: rgba(5, 150, 105, 0.08);
+    /* Budget Card Link */
+    .budget-card-link {
+      display: block;
+      width: 100%;
+      height: 2.75rem;
+      line-height: 2.75rem;
+      text-align: center;
+      border-radius: 0.625rem;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--foreground);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s;
+      font-family: inherit;
+      cursor: pointer;
     }
-
-    .budget-status.warning {
-      color: var(--amber);
-      background: rgba(245, 158, 11, 0.08);
-    }
-
-    .budget-status.exceeded {
-      color: var(--rose);
-      background: rgba(225, 29, 72, 0.08);
-    }
+    .budget-card-link:hover { background: var(--secondary); }
 
     /* Bottom Nav */
     .bottom-nav {
       position: fixed;
+      inset-inline: 0;
       bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 2rem);
-      max-width: 358px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.6);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-      padding: 0.5rem 0.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      z-index: 100;
+      z-index: 50;
+      padding: 0 1rem;
     }
-
+    .bottom-nav-inner {
+      max-width: 28rem;
+      margin: 0 auto;
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219,228,238,0.8);
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 0.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    }
+    .bottom-nav-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.25rem;
+      height: 3.5rem;
+      align-items: center;
+    }
     .nav-item {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 0.25rem;
-      padding: 0.375rem 0.75rem;
-      border-radius: 0.75rem;
-      cursor: pointer;
-      transition: background 0.15s ease;
+      height: 100%;
+      border-radius: 0.875rem;
       text-decoration: none;
-      position: relative;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1;
+      transition: color 0.2s;
+      padding: 0 0.25rem;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
     }
-
-    .nav-item:hover {
-      background: rgba(15, 23, 42, 0.04);
-    }
-
+    .nav-item svg { width: 1.25rem; height: 1.25rem; }
     .nav-item.active {
-      background: rgba(15, 23, 42, 0.06);
+      background: var(--primary);
+      color: var(--primary-foreground);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
     }
-
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      top: -0.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 1.25rem;
-      height: 3px;
-      background: var(--navy);
-      border-radius: 999px;
-    }
-
-    .nav-icon {
-      width: 1.25rem;
-      height: 1.25rem;
-      color: var(--muted-text);
-      transition: color 0.15s ease;
-    }
-
-    .nav-item.active .nav-icon {
-      color: var(--navy);
-    }
-
-    .nav-label {
-      font-size: 0.5625rem;
-      font-weight: 600;
-      color: var(--muted-text);
-      letter-spacing: 0.01em;
-      transition: color 0.15s ease;
-    }
-
-    .nav-item.active .nav-label {
-      color: var(--navy);
-    }
+    .nav-item:not(.active) { color: var(--muted-foreground); }
 
     /* Animations */
     @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
     .animate-in {
       animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       opacity: 0;
     }
-
     .delay-1 { animation-delay: 0.05s; }
     .delay-2 { animation-delay: 0.1s; }
     .delay-3 { animation-delay: 0.15s; }
@@ -455,196 +357,185 @@
 </head>
 <body>
   <div class="phone-frame">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-top">
-        <h1 class="header-title">Presupuesto</h1>
-        <div class="header-actions">
-          <button class="btn-outline">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-            </svg>
-            Copiar mes
+    <!-- Page Header -->
+    <header class="page-header animate-in delay-1">
+      <h1>Presupuesto</h1>
+      <div class="page-header-actions">
+        <div class="month-pager">
+          <button type="button" class="btn btn-ghost" aria-label="Mes anterior">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
           </button>
-          <button class="btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Nuevo
+          <span>Julio 2026</span>
+          <button type="button" class="btn btn-ghost" aria-label="Mes siguiente">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
           </button>
         </div>
-      </div>
-
-      <div class="month-pager">
-        <button class="month-pager-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
+        <button type="button" class="btn btn-outline" style="gap: 0.375rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:0.875rem; height:0.875rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"/></svg>
+          Copiar del mes anterior
         </button>
-        <span class="month-pager-label">Julio 2026</span>
-        <button class="month-pager-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
+        <button type="button" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Nuevo
         </button>
+        <a href="#" class="btn btn-ghost" aria-label="Ajustes" style="flex-shrink:0;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
       </div>
     </header>
 
     <!-- Content -->
     <main class="content">
-      <!-- Status Card -->
-      <div class="status-card animate-in delay-1">
-        <div class="status-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-          </svg>
-        </div>
-        <div class="status-content">
-          <p class="status-title">2 presupuestos excedidos</p>
-          <p class="status-desc">Restaurantes y Entretenimiento pasaron el límite</p>
-        </div>
-        <p class="status-amount">-$320.000</p>
-      </div>
+      <!-- Budget Summary -->
+      <section class="section-card budget-summary animate-in delay-2" aria-labelledby="budget-summary-heading">
+        <h2 id="budget-summary-heading">1 presupuesto excedido</h2>
+        <p class="summary-amount tabular" style="color: var(--negative);">$44.000 por encima del límite</p>
+        <a href="#" class="summary-link">Ver gastos →</a>
+      </section>
 
-      <!-- Budgets -->
-      <div class="animate-in delay-2">
-        <div class="section-header">
-          <h2 class="section-title">Presupuestos</h2>
-        </div>
-      </div>
-
-      <!-- Alimentación -->
-      <div class="budget-card animate-in delay-3">
-        <div class="budget-top">
-          <div class="budget-left">
-            <div class="budget-dot" style="background: #059669;"></div>
-            <span class="budget-name">Alimentación</span>
-          </div>
-          <div class="budget-right">
-            <p class="budget-spent" style="color: var(--amber);">$697.600</p>
-            <p class="budget-limit">de $700.000</p>
-          </div>
-        </div>
-        <div class="budget-bar-container">
-          <div class="budget-bar" style="width: 99.6%; background: var(--amber);"></div>
-        </div>
-        <div class="budget-meta">
-          <span class="budget-percent" style="color: var(--amber);">99,6%</span>
-          <span class="budget-status warning">Casi en el límite</span>
-        </div>
-      </div>
-
-      <!-- Transporte -->
-      <div class="budget-card animate-in delay-4">
-        <div class="budget-top">
-          <div class="budget-left">
-            <div class="budget-dot" style="background: #0f172a;"></div>
-            <span class="budget-name">Transporte</span>
-          </div>
-          <div class="budget-right">
-            <p class="budget-spent" style="color: var(--ink);">$250.000</p>
-            <p class="budget-limit">de $400.000</p>
-          </div>
-        </div>
-        <div class="budget-bar-container">
-          <div class="budget-bar" style="width: 62.5%; background: var(--emerald);"></div>
-        </div>
-        <div class="budget-meta">
-          <span class="budget-percent" style="color: var(--emerald);">62,5%</span>
-          <span class="budget-status ok">En camino</span>
-        </div>
-      </div>
-
-      <!-- Restaurantes -->
-      <div class="budget-card animate-in delay-5">
+      <!-- Budget Card: Restaurantes (Exceeded) -->
+      <div class="section-card budget-card animate-in delay-3">
         <div class="budget-top">
           <div class="budget-left">
             <div class="budget-dot" style="background: #f97316;"></div>
-            <span class="budget-name">Restaurantes</span>
+            <div class="budget-name-group">
+              <p class="budget-name">Restaurantes</p>
+              <p class="budget-category">Alimentación</p>
+            </div>
           </div>
           <div class="budget-right">
-            <p class="budget-spent" style="color: var(--rose);">$320.000</p>
-            <p class="budget-limit">de $300.000</p>
+            <span class="budget-status exceeded">Excedido</span>
+            <button type="button" class="budget-edit-btn" aria-label="Editar presupuesto Restaurantes">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+            </button>
           </div>
         </div>
-        <div class="budget-bar-container">
-          <div class="budget-bar" style="width: 100%; background: var(--rose);"></div>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill exceeded" style="transform: scaleX(1); transform-origin: left;"></div>
+          </div>
+          <p class="progress-label">120% del límite</p>
         </div>
-        <div class="budget-meta">
-          <span class="budget-percent" style="color: var(--rose);">106,7%</span>
-          <span class="budget-status exceeded">Excedido</span>
+        <div class="budget-bottom">
+          <span class="budget-spent">$264.000 gastado</span>
+          <span class="budget-remaining negative">$44.000 excedido</span>
         </div>
+        <a href="#" class="budget-card-link">Ver gastos</a>
       </div>
 
-      <!-- Entretenimiento -->
-      <div class="budget-card animate-in delay-6">
+      <!-- Budget Card: Transporte (Healthy) -->
+      <div class="section-card budget-card animate-in delay-4">
+        <div class="budget-top">
+          <div class="budget-left">
+            <div class="budget-dot" style="background: #3b82f6;"></div>
+            <div class="budget-name-group">
+              <p class="budget-name">Transporte</p>
+              <p class="budget-category">Movilidad</p>
+            </div>
+          </div>
+          <div class="budget-right">
+            <span class="budget-status healthy">Dentro del límite</span>
+            <button type="button" class="budget-edit-btn" aria-label="Editar presupuesto Transporte">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill healthy" style="transform: scaleX(0.62); transform-origin: left;"></div>
+          </div>
+          <p class="progress-label">62% del límite</p>
+        </div>
+        <div class="budget-bottom">
+          <span class="budget-spent">$155.000 gastado</span>
+          <span class="budget-remaining positive">$95.000 disponible</span>
+        </div>
+        <a href="#" class="budget-card-link">Ver gastos</a>
+      </div>
+
+      <!-- Budget Card: Entretenimiento (Alert) -->
+      <div class="section-card budget-card animate-in delay-5">
         <div class="budget-top">
           <div class="budget-left">
             <div class="budget-dot" style="background: #8b5cf6;"></div>
-            <span class="budget-name">Entretenimiento</span>
+            <div class="budget-name-group">
+              <p class="budget-name">Entretenimiento</p>
+              <p class="budget-category">Ocio</p>
+            </div>
           </div>
           <div class="budget-right">
-            <p class="budget-spent" style="color: var(--ink);">$180.000</p>
-            <p class="budget-limit">de $200.000</p>
+            <span class="budget-status alert">En alerta</span>
+            <button type="button" class="budget-edit-btn" aria-label="Editar presupuesto Entretenimiento">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+            </button>
           </div>
         </div>
-        <div class="budget-bar-container">
-          <div class="budget-bar" style="width: 90%; background: var(--emerald);"></div>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill alert" style="transform: scaleX(0.9); transform-origin: left;"></div>
+          </div>
+          <p class="progress-label">90% del límite</p>
         </div>
-        <div class="budget-meta">
-          <span class="budget-percent" style="color: var(--emerald);">90%</span>
-          <span class="budget-status ok">En camino</span>
+        <div class="budget-bottom">
+          <span class="budget-spent">$180.000 gastado</span>
+          <span class="budget-remaining positive">$20.000 disponible</span>
         </div>
+        <a href="#" class="budget-card-link">Ver gastos</a>
       </div>
 
-      <!-- Servicios -->
-      <div class="budget-card animate-in delay-7">
+      <!-- Budget Card: Servicios (Healthy) -->
+      <div class="section-card budget-card animate-in delay-6">
         <div class="budget-top">
           <div class="budget-left">
             <div class="budget-dot" style="background: #64748b;"></div>
-            <span class="budget-name">Servicios</span>
+            <div class="budget-name-group">
+              <p class="budget-name">Servicios</p>
+              <p class="budget-category">Hogar</p>
+            </div>
           </div>
           <div class="budget-right">
-            <p class="budget-spent" style="color: var(--ink);">$436.000</p>
-            <p class="budget-limit">de $500.000</p>
+            <span class="budget-status healthy">Dentro del límite</span>
+            <button type="button" class="budget-edit-btn" aria-label="Editar presupuesto Servicios">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+            </button>
           </div>
         </div>
-        <div class="budget-bar-container">
-          <div class="budget-bar" style="width: 87.2%; background: var(--emerald);"></div>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill healthy" style="transform: scaleX(0.872); transform-origin: left;"></div>
+          </div>
+          <p class="progress-label">87% del límite</p>
         </div>
-        <div class="budget-meta">
-          <span class="budget-percent" style="color: var(--emerald);">87,2%</span>
-          <span class="budget-status ok">En camino</span>
+        <div class="budget-bottom">
+          <span class="budget-spent">$436.000 gastado</span>
+          <span class="budget-remaining positive">$64.000 disponible</span>
         </div>
+        <a href="#" class="budget-card-link">Ver gastos</a>
       </div>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-        </svg>
-        <span class="nav-label">Inicio</span>
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-        </svg>
-        <span class="nav-label">Movimientos</span>
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-        </svg>
-        <span class="nav-label">Cuentas</span>
-      </a>
-      <a href="#" class="nav-item active">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-        </svg>
-        <span class="nav-label">Presupuestos</span>
-      </a>
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <div class="bottom-nav-inner">
+        <div class="bottom-nav-grid">
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+            <span>Movimientos</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+            <span>Cuentas</span>
+          </a>
+          <a href="#" class="nav-item active" aria-current="page">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+            <span>Presupuesto</span>
+          </a>
+        </div>
+      </div>
     </nav>
   </div>
 </body>

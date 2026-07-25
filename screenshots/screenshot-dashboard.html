@@ -3,469 +3,346 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gastos - Dashboard</title>
+  <title>Gastos — Resumen</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy: #0f172a;
-      --paper: #f8fafc;
-      --card-white: #ffffff;
-      --slate-200: #dbe4ee;
-      --muted-text: #475569;
-      --emerald: #059669;
-      --rose: #e11d48;
-      --amber: #f59e0b;
-      --ink: #020617;
+      --background: #f8fafc;
+      --foreground: #020617;
+      --card: #ffffff;
+      --card-foreground: #0f172a;
+      --primary: #0f172a;
+      --primary-foreground: #f8fafc;
+      --secondary: #e2e8f0;
+      --muted: #eef2f7;
+      --muted-foreground: #475569;
+      --border: #dbe4ee;
+      --positive: #059669;
+      --negative: #e11d48;
+      --warning: #d97706;
+      --ring: #1e3a8a;
     }
 
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      min-height: 100vh;
+      font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
       display: flex;
       justify-content: center;
+      min-height: 100vh;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
     .phone-frame {
       width: 100%;
       max-width: 390px;
       min-height: 100vh;
-      background: var(--paper);
+      background: var(--background);
       position: relative;
-      padding-bottom: 5.5rem;
+      overflow-x: hidden;
     }
 
-    /* Header */
-    .header {
-      background: var(--navy);
-      padding: 2rem 1.25rem 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-
-    .header-top {
+    /* Page Header */
+    .page-header {
+      padding: 1.5rem 1rem 0.75rem;
       display: flex;
-      align-items: center;
+      flex-wrap: wrap;
+      align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 1rem;
+      gap: 0.75rem;
     }
-
-    .header-greeting {
-      font-size: 0.8125rem;
-      color: rgba(255, 255, 255, 0.5);
-      font-weight: 400;
-      letter-spacing: 0.01em;
-      margin-bottom: 0.125rem;
-    }
-
-    .header-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.02em;
-    }
-
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      height: 2rem;
-      padding: 0 0.875rem;
-      border-radius: 0.625rem;
-      background: var(--emerald);
-      color: #fff;
-      font-size: 0.8125rem;
+    .page-header h1 {
+      font-size: clamp(1.5rem, 4vw, 1.875rem);
       font-weight: 600;
-      border: none;
-      cursor: pointer;
-      letter-spacing: -0.01em;
-      transition: background 0.15s ease, transform 0.1s ease;
+      letter-spacing: -0.025em;
+      color: var(--foreground);
+      line-height: 1.2;
     }
-
-    .btn-primary:hover {
-      background: #047857;
-      transform: translateY(-1px);
-    }
-
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-
-    .btn-primary svg {
-      width: 14px;
-      height: 14px;
-      stroke-width: 2.5;
-    }
-
-    /* Balance Summary */
-    .balance-summary {
+    .page-header-actions {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 0.5rem;
-      margin-top: 0.5rem;
+      width: 100%;
     }
-
-    .balance-label {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.45);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .month-pager {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .month-pager span {
+      min-width: 8rem;
+      text-align: center;
+      font-size: 0.875rem;
       font-weight: 500;
+      color: var(--foreground);
+      white-space: nowrap;
     }
 
-    .balance-amount {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.95);
-      letter-spacing: -0.01em;
-    }
-
-    /* Content Area */
+    /* Content */
     .content {
-      padding: 1.25rem;
+      padding: 0 1rem 7rem;
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
     }
 
-    /* KPI Cards */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.625rem;
-    }
-
-    .kpi-card {
-      background: var(--card-white);
+    /* Section Card */
+    .section-card {
+      background: var(--card);
       border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.9);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      padding: 0.875rem 1rem;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
     }
 
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* Clickable Card */
+    .clickable-card {
+      background: var(--card);
+      border-radius: 1.125rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .clickable-card:hover {
+      border-color: rgba(15,23,42,0.2);
     }
 
-    .kpi-icon {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 0.5rem;
-      display: flex;
+    /* Button */
+    .btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 0.625rem;
-    }
-
-    .kpi-icon svg {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
-
-    .kpi-icon.income {
-      background: rgba(5, 150, 105, 0.1);
-      color: var(--emerald);
-    }
-
-    .kpi-icon.expense {
-      background: rgba(225, 29, 72, 0.1);
-      color: var(--rose);
-    }
-
-    .kpi-icon.net {
-      background: rgba(15, 23, 42, 0.08);
-      color: var(--navy);
-    }
-
-    .kpi-icon.savings {
-      background: rgba(245, 158, 11, 0.1);
-      color: var(--amber);
-    }
-
-    .kpi-label {
-      font-size: 0.6875rem;
-      color: var(--muted-text);
+      gap: 0.375rem;
+      height: 2rem;
+      padding: 0.5rem 0.625rem;
+      border-radius: 0.625rem;
+      font-size: 0.8125rem;
       font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.25rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
     }
-
-    .kpi-value {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: -0.02em;
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted-foreground);
     }
-
-    /* Section */
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.75rem;
+    .btn-ghost:hover { background: var(--muted); color: var(--foreground); }
+    .btn-outline {
+      background: transparent;
+      color: var(--foreground);
+      border: 1px solid var(--border);
     }
+    .btn-outline:hover { background: var(--secondary); }
+    .btn svg { width: 1rem; height: 1rem; }
 
-    .section-title {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: -0.02em;
+    /* Tabular Nums */
+    .tabular { font-variant-numeric: tabular-nums; }
+
+    /* Neto del mes */
+    .neto-section { padding: 1.25rem; }
+    .neto-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted-foreground);
     }
-
-    .section-link {
+    .neto-amount {
+      margin-top: 0.25rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+    .neto-status {
+      margin-top: 0.25rem;
+      font-size: 0.875rem;
+      color: var(--foreground);
+    }
+    .neto-delta {
+      margin-top: 0.25rem;
       font-size: 0.75rem;
-      color: var(--muted-text);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    /* Chart Card */
-    .chart-card {
-      background: var(--card-white);
-      border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.9);
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      padding: 1.25rem;
-    }
-
-    .chart-months {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.75rem;
-    }
-
-    .chart-month {
-      font-size: 0.625rem;
-      color: var(--muted-text);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-
-    .chart-month.active {
-      color: var(--ink);
-      font-weight: 700;
-    }
-
-    .chart-area {
-      position: relative;
-      height: 140px;
-      margin-bottom: 0.5rem;
-    }
-
-    .chart-svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .chart-legend {
-      display: flex;
-      gap: 1rem;
-      padding-top: 0.5rem;
-    }
-
-    .legend-item {
+      color: var(--muted-foreground);
       display: flex;
       align-items: center;
       gap: 0.375rem;
-      font-size: 0.6875rem;
-      color: var(--muted-text);
+    }
+
+    /* Section Header */
+    .section-header {
+      padding: 0 0.25rem;
+    }
+    .section-header h2 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+
+    /* Alert Card */
+    .alert-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+    }
+    .alert-card .alert-icon {
+      flex-shrink: 0;
+      width: 1rem;
+      height: 1rem;
+    }
+    .alert-card .alert-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .alert-card .alert-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+    .alert-card .alert-sub {
+      font-size: 0.75rem;
+    }
+    .alert-card .alert-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .alert-card .alert-amount {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .alert-card .alert-meta {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+    }
+
+    /* Summary Rows */
+    .summary-rows { padding: 0.25rem 0; }
+    .summary-row {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .summary-row:hover { background: var(--muted); }
+    .summary-row .row-label {
+      flex: 1;
+      font-size: 0.875rem;
       font-weight: 500;
     }
-
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+    .summary-row .row-amount {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .summary-row .row-chevron {
+      margin-left: 0.5rem;
+      width: 1rem;
+      height: 1rem;
+      color: var(--muted-foreground);
     }
 
-    .legend-dot.income {
-      background: var(--emerald);
-    }
-
-    .legend-dot.expense {
-      background: var(--rose);
-    }
-
-    /* Category Section */
-    .category-list {
-      display: flex;
-      flex-direction: column;
+    /* Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 0.75rem;
     }
 
-    .category-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.375rem;
-    }
-
-    .category-info {
+    /* Analysis Toggle */
+    .analysis-toggle {
       display: flex;
       align-items: center;
       justify-content: space-between;
-    }
-
-    .category-left {
-      display: flex;
-      align-items: center;
-      gap: 0.625rem;
-    }
-
-    .category-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .category-name {
-      font-size: 0.8125rem;
-      font-weight: 500;
-      color: var(--ink);
-    }
-
-    .category-right {
-      display: flex;
-      align-items: center;
-      gap: 0.625rem;
-    }
-
-    .category-percent {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--ink);
-      min-width: 2.5rem;
-      text-align: right;
-    }
-
-    .category-amount {
-      font-size: 0.6875rem;
-      color: var(--muted-text);
-      min-width: 5.5rem;
-      text-align: right;
-    }
-
-    .category-bar-container {
       width: 100%;
-      height: 6px;
-      background: var(--slate-200);
-      border-radius: 999px;
-      overflow: hidden;
+      padding: 0.25rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
     }
-
-    .category-bar {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    .analysis-toggle span {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .analysis-toggle svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--muted-foreground);
+      transition: transform 0.2s;
+    }
+    .analysis-toggle[aria-expanded="true"] svg {
+      transform: rotate(180deg);
     }
 
     /* Bottom Nav */
     .bottom-nav {
       position: fixed;
+      inset-inline: 0;
       bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 2rem);
-      max-width: 358px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 1.125rem;
-      border: 1px solid rgba(219, 228, 238, 0.6);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-      padding: 0.5rem 0.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      z-index: 100;
+      z-index: 50;
+      padding: 0 1rem;
     }
-
+    .bottom-nav-inner {
+      max-width: 28rem;
+      margin: 0 auto;
+      border-radius: 1.125rem;
+      border: 1px solid rgba(219,228,238,0.8);
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 0.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    }
+    .bottom-nav-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.25rem;
+      height: 3.5rem;
+      align-items: center;
+    }
     .nav-item {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 0.25rem;
-      padding: 0.375rem 0.75rem;
-      border-radius: 0.75rem;
-      cursor: pointer;
-      transition: background 0.15s ease;
+      height: 100%;
+      border-radius: 0.875rem;
       text-decoration: none;
-      position: relative;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1;
+      transition: color 0.2s;
+      padding: 0 0.25rem;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
     }
-
-    .nav-item:hover {
-      background: rgba(15, 23, 42, 0.04);
-    }
-
+    .nav-item svg { width: 1.25rem; height: 1.25rem; }
     .nav-item.active {
-      background: rgba(15, 23, 42, 0.06);
+      background: var(--primary);
+      color: var(--primary-foreground);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
     }
-
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      top: -0.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 1.25rem;
-      height: 3px;
-      background: var(--navy);
-      border-radius: 999px;
-    }
-
-    .nav-icon {
-      width: 1.25rem;
-      height: 1.25rem;
-      color: var(--muted-text);
-      transition: color 0.15s ease;
-    }
-
-    .nav-item.active .nav-icon {
-      color: var(--navy);
-    }
-
-    .nav-label {
-      font-size: 0.5625rem;
-      font-weight: 600;
-      color: var(--muted-text);
-      letter-spacing: 0.01em;
-      transition: color 0.15s ease;
-    }
-
-    .nav-item.active .nav-label {
-      color: var(--navy);
+    .nav-item:not(.active) {
+      color: var(--muted-foreground);
     }
 
     /* Animations */
     @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
     .animate-in {
       animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       opacity: 0;
     }
-
     .delay-1 { animation-delay: 0.05s; }
     .delay-2 { animation-delay: 0.1s; }
     .delay-3 { animation-delay: 0.15s; }
@@ -473,276 +350,155 @@
     .delay-5 { animation-delay: 0.25s; }
     .delay-6 { animation-delay: 0.3s; }
     .delay-7 { animation-delay: 0.35s; }
-    .delay-8 { animation-delay: 0.4s; }
-    .delay-9 { animation-delay: 0.45s; }
   </style>
 </head>
 <body>
   <div class="phone-frame">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-top">
-        <div>
-          <p class="header-greeting">Hola, Ricardo</p>
-          <h1 class="header-title">Dashboard</h1>
+    <!-- Page Header -->
+    <header class="page-header animate-in delay-1">
+      <h1>Resumen</h1>
+      <div class="page-header-actions">
+        <div class="month-pager">
+          <button class="btn btn-ghost" aria-label="Mes anterior">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+          </button>
+          <span>Julio 2026</span>
+          <button class="btn btn-ghost" aria-label="Mes siguiente">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+          </button>
         </div>
-        <button class="btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Nueva
+        <button class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Registrar
         </button>
-      </div>
-      <div class="balance-summary">
-        <span class="balance-label">Saldo total</span>
-        <span class="balance-amount">$4.400.000</span>
+        <a href="#" class="btn btn-ghost" aria-label="Ajustes" style="flex-shrink:0;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
       </div>
     </header>
 
     <!-- Content -->
     <main class="content">
-      <!-- KPI Cards -->
-      <div class="kpi-grid">
-        <div class="kpi-card animate-in delay-1">
-          <div class="kpi-icon income">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5v-15m0 0l-6.75 6.75M12 4.5l6.75 6.75" />
-            </svg>
-          </div>
-          <p class="kpi-label">Ingresos</p>
-          <p class="kpi-value" style="color: var(--emerald)">$3.250.000</p>
+      <!-- Neto del mes -->
+      <section class="section-card neto-section animate-in delay-2" aria-label="Neto del mes">
+        <p class="neto-label">Neto del mes</p>
+        <p class="neto-amount tabular" style="color: var(--positive);">$485.200</p>
+        <p class="neto-status">Tus gastos están dentro del presupuesto</p>
+        <div class="neto-delta">
+          <span style="color: var(--positive); font-weight: 500; display: inline-flex; align-items: center; gap: 0.125rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.518l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+            $120.000
+          </span>
+          <span>vs mes anterior</span>
         </div>
-        <div class="kpi-card animate-in delay-2">
-          <div class="kpi-icon expense">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" />
-            </svg>
-          </div>
-          <p class="kpi-label">Gastos</p>
-          <p class="kpi-value" style="color: var(--rose)">$2.180.000</p>
-        </div>
-        <div class="kpi-card animate-in delay-3">
-          <div class="kpi-icon net">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
-            </svg>
-          </div>
-          <p class="kpi-label">Neto</p>
-          <p class="kpi-value">$1.070.000</p>
-        </div>
-        <div class="kpi-card animate-in delay-4">
-          <div class="kpi-icon savings">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-            </svg>
-          </div>
-          <p class="kpi-label">Tasa ahorro</p>
-          <p class="kpi-value">32,9%</p>
-        </div>
-      </div>
+      </section>
 
-      <!-- Monthly Trend Chart -->
-      <div class="chart-card animate-in delay-5">
-        <div class="section-header" style="margin-bottom: 0;">
-          <h2 class="section-title">Tendencia mensual</h2>
-          <span class="section-link">Ver todo</span>
-        </div>
-        <div class="chart-months" style="margin-top: 0.75rem;">
-          <span class="chart-month">Ene</span>
-          <span class="chart-month">Feb</span>
-          <span class="chart-month">Mar</span>
-          <span class="chart-month">Abr</span>
-          <span class="chart-month">May</span>
-          <span class="chart-month active">Jun</span>
-        </div>
-        <div class="chart-area">
-          <svg class="chart-svg" viewBox="0 0 340 140" preserveAspectRatio="none">
-            <!-- Grid lines -->
-            <line x1="0" y1="35" x2="340" y2="35" stroke="#dbe4ee" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.5"/>
-            <line x1="0" y1="70" x2="340" y2="70" stroke="#dbe4ee" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.5"/>
-            <line x1="0" y1="105" x2="340" y2="105" stroke="#dbe4ee" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.5"/>
-
-            <!-- Income area fill -->
-            <path d="M0,95 L68,80 L136,90 L204,65 L272,55 L340,45 L340,140 L0,140 Z" fill="url(#incomeGradient)" opacity="0.15"/>
-            <!-- Income line -->
-            <polyline points="0,95 68,80 136,90 204,65 272,55 340,45" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Income dots -->
-            <circle cx="0" cy="95" r="3.5" fill="#059669" stroke="#fff" stroke-width="2"/>
-            <circle cx="68" cy="80" r="3.5" fill="#059669" stroke="#fff" stroke-width="2"/>
-            <circle cx="136" cy="90" r="3.5" fill="#059669" stroke="#fff" stroke-width="2"/>
-            <circle cx="204" cy="65" r="3.5" fill="#059669" stroke="#fff" stroke-width="2"/>
-            <circle cx="272" cy="55" r="3.5" fill="#059669" stroke="#fff" stroke-width="2"/>
-            <circle cx="340" cy="45" r="4" fill="#059669" stroke="#fff" stroke-width="2.5"/>
-
-            <!-- Expense area fill -->
-            <path d="M0,110 L68,105 L136,100 L204,95 L272,85 L340,80 L340,140 L0,140 Z" fill="url(#expenseGradient)" opacity="0.12"/>
-            <!-- Expense line -->
-            <polyline points="0,110 68,105 136,100 204,95 272,85 340,80" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Expense dots -->
-            <circle cx="0" cy="110" r="3.5" fill="#e11d48" stroke="#fff" stroke-width="2"/>
-            <circle cx="68" cy="105" r="3.5" fill="#e11d48" stroke="#fff" stroke-width="2"/>
-            <circle cx="136" cy="100" r="3.5" fill="#e11d48" stroke="#fff" stroke-width="2"/>
-            <circle cx="204" cy="95" r="3.5" fill="#e11d48" stroke="#fff" stroke-width="2"/>
-            <circle cx="272" cy="85" r="3.5" fill="#e11d48" stroke="#fff" stroke-width="2"/>
-            <circle cx="340" cy="80" r="4" fill="#e11d48" stroke="#fff" stroke-width="2.5"/>
-
-            <!-- Gradients -->
-            <defs>
-              <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#059669" stop-opacity="0.3"/>
-                <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
-              </linearGradient>
-              <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#e11d48" stop-opacity="0.25"/>
-                <stop offset="100%" stop-color="#e11d48" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <div class="chart-legend">
-          <div class="legend-item">
-            <div class="legend-dot income"></div>
-            Ingresos
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot expense"></div>
-            Gastos
-          </div>
-        </div>
-      </div>
-
-      <!-- Spending by Category -->
-      <div class="animate-in delay-6">
+      <!-- Requiere atención -->
+      <section class="animate-in delay-3">
         <div class="section-header">
-          <h2 class="section-title">Gastos por categoría</h2>
-          <span class="section-link">Ver todo</span>
+          <h2>Requiere atención</h2>
         </div>
-        <div class="category-list">
-          <div class="category-item">
-            <div class="category-info">
-              <div class="category-left">
-                <div class="category-dot" style="background: #059669;"></div>
-                <span class="category-name">Alimentación</span>
-              </div>
-              <div class="category-right">
-                <span class="category-amount">$697.600</span>
-                <span class="category-percent">32%</span>
-              </div>
+        <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <button class="clickable-card alert-card" onclick="void(0)">
+            <svg class="alert-icon" style="color: var(--warning);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            <div class="alert-body">
+              <p class="alert-name">Bancolombia Visa</p>
+              <p class="alert-sub" style="color: var(--warning);">Vence en 3 días</p>
+              <p class="alert-sub" style="color: var(--muted-foreground);">Fecha límite: 28 jul 2026</p>
             </div>
-            <div class="category-bar-container">
-              <div class="category-bar" style="width: 32%; background: #059669;"></div>
+            <div class="alert-right">
+              <p class="alert-amount tabular" style="color: var(--warning);">$85.000</p>
+              <p class="alert-meta">pago mínimo</p>
+              <p class="alert-meta">Total: $430.000</p>
             </div>
-          </div>
+            <svg style="width:1rem; height:1rem; color: var(--muted-foreground); flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+          </button>
+          <button class="clickable-card alert-card" onclick="void(0)">
+            <svg class="alert-icon" style="color: var(--negative);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+            <div class="alert-body">
+              <p class="alert-name">Restaurantes</p>
+              <p class="alert-sub" style="color: var(--negative);">Excedido 120%</p>
+              <p class="alert-sub" style="color: var(--muted-foreground);">$264.000 de $220.000</p>
+            </div>
+            <div class="alert-right">
+              <p class="alert-amount tabular" style="color: var(--negative);">-$44.000</p>
+              <p class="alert-meta">excedido</p>
+            </div>
+            <svg style="width:1rem; height:1rem; color: var(--muted-foreground); flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+          </button>
+        </div>
+      </section>
 
-          <div class="category-item">
-            <div class="category-info">
-              <div class="category-left">
-                <div class="category-dot" style="background: #0f172a;"></div>
-                <span class="category-name">Transporte</span>
-              </div>
-              <div class="category-right">
-                <span class="category-amount">$392.400</span>
-                <span class="category-percent">18%</span>
-              </div>
-            </div>
-            <div class="category-bar-container">
-              <div class="category-bar" style="width: 18%; background: #0f172a;"></div>
-            </div>
+      <!-- Resumen del mes -->
+      <section class="section-card animate-in delay-4">
+        <div class="summary-rows">
+          <div class="summary-row">
+            <span class="row-label" style="color: var(--positive);">Ingresos</span>
+            <span class="row-amount tabular" style="color: var(--positive);">$2.850.000</span>
+            <svg class="row-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
           </div>
-
-          <div class="category-item">
-            <div class="category-info">
-              <div class="category-left">
-                <div class="category-dot" style="background: #8b5cf6;"></div>
-                <span class="category-name">Entretenimiento</span>
-              </div>
-              <div class="category-right">
-                <span class="category-amount">$261.600</span>
-                <span class="category-percent">12%</span>
-              </div>
-            </div>
-            <div class="category-bar-container">
-              <div class="category-bar" style="width: 12%; background: #8b5cf6;"></div>
-            </div>
+          <div class="summary-row">
+            <span class="row-label" style="color: var(--negative);">Gastos</span>
+            <span class="row-amount tabular" style="color: var(--negative);">$2.364.800</span>
+            <svg class="row-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
           </div>
-
-          <div class="category-item">
-            <div class="category-info">
-              <div class="category-left">
-                <div class="category-dot" style="background: #e11d48;"></div>
-                <span class="category-name">Salud</span>
-              </div>
-              <div class="category-right">
-                <span class="category-amount">$174.400</span>
-                <span class="category-percent">8%</span>
-              </div>
-            </div>
-            <div class="category-bar-container">
-              <div class="category-bar" style="width: 8%; background: #e11d48;"></div>
-            </div>
-          </div>
-
-          <div class="category-item">
-            <div class="category-info">
-              <div class="category-left">
-                <div class="category-dot" style="background: #f59e0b;"></div>
-                <span class="category-name">Restaurantes</span>
-              </div>
-              <div class="category-right">
-                <span class="category-amount">$218.000</span>
-                <span class="category-percent">10%</span>
-              </div>
-            </div>
-            <div class="category-bar-container">
-              <div class="category-bar" style="width: 10%; background: #f59e0b;"></div>
-            </div>
-          </div>
-
-          <div class="category-item">
-            <div class="category-info">
-              <div class="category-left">
-                <div class="category-dot" style="background: #64748b;"></div>
-                <span class="category-name">Servicios</span>
-              </div>
-              <div class="category-right">
-                <span class="category-amount">$436.000</span>
-                <span class="category-percent">20%</span>
-              </div>
-            </div>
-            <div class="category-bar-container">
-              <div class="category-bar" style="width: 20%; background: #64748b;"></div>
-            </div>
+          <div class="summary-row">
+            <span class="row-label" style="color: var(--foreground);">Balance total</span>
+            <span class="row-amount tabular" style="color: var(--positive);">$485.200</span>
+            <svg class="row-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
           </div>
         </div>
+      </section>
+
+      <!-- Grid: Savings Rate + Expense Projection -->
+      <div class="grid-2 animate-in delay-5">
+        <div class="section-card" style="padding: 1rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 0.875rem; font-weight: 500; color: var(--muted-foreground);">Del ingreso que queda</p>
+          </div>
+          <p class="tabular" style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 600; color: var(--positive);">17%</p>
+          <p style="margin-top: 0.25rem; font-size: 0.75rem; color: var(--muted-foreground);">Del ingreso que queda tras gastos</p>
+        </div>
+        <div class="section-card" style="padding: 1rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 0.875rem; font-weight: 500; color: var(--muted-foreground);">Gasto estimado al cierre</p>
+          </div>
+          <p class="tabular" style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 600; color: var(--foreground);">$2.510.000</p>
+          <p style="margin-top: 0.25rem; font-size: 0.75rem; color: var(--muted-foreground);">Gastos registrados hasta hoy, llevados al día 31.</p>
+        </div>
+      </div>
+
+      <!-- Análisis colapsable -->
+      <div class="animate-in delay-6">
+        <button class="analysis-toggle" aria-expanded="false">
+          <span>Análisis</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </button>
       </div>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-      <a href="#" class="nav-item active">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-        </svg>
-        <span class="nav-label">Inicio</span>
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-        </svg>
-        <span class="nav-label">Movimientos</span>
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-        </svg>
-        <span class="nav-label">Cuentas</span>
-      </a>
-      <a href="#" class="nav-item">
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-        </svg>
-        <span class="nav-label">Presupuestos</span>
-      </a>
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <div class="bottom-nav-inner">
+        <div class="bottom-nav-grid">
+          <a href="#" class="nav-item active" aria-current="page">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+            <span>Movimientos</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+            <span>Cuentas</span>
+          </a>
+          <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+            <span>Presupuesto</span>
+          </a>
+        </div>
+      </div>
     </nav>
   </div>
 </body>
