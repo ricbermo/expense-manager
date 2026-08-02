@@ -84,9 +84,10 @@ cp .env.example .env.local
 
 ### Database
 
-1. Run `supabase/schema.sql` in your Supabase SQL editor to create tables, indexes, triggers, and RLS policies
-2. Create your user in **Supabase Auth** (use the email you set in `ALLOWED_USER_EMAIL`)
-3. (Optional) Run `supabase/seed.sql` to populate default categories
+1. Run `supabase/schema.sql` in your Supabase SQL editor to create base tables, indexes, triggers, and RLS policies
+2. Apply the SQL files in `supabase/migrations/` **in filename order** — they add credit card statements, statement payments, installments, tags, and other features on top of the base schema
+3. Create your user in **Supabase Auth** (use the email you set in `ALLOWED_USER_EMAIL`)
+4. (Optional) Run `supabase/seed.sql` to populate default categories
 
 > **Important:** Before running SQL, replace `your-email@example.com` in the RLS policies with your actual email. Every table policy locks data to `auth.jwt() ->> 'email'` — if the email doesn't match, you get no data.
 

@@ -8,7 +8,10 @@ import type {
   CreditCardStatement,
   CreditCardStatementPayment,
 } from "@/lib/types/database";
-import { getOpenStatements } from "@/lib/utils/credit-card-statements";
+import {
+  DUPLICATE_STATEMENT_MESSAGE,
+  getOpenStatements,
+} from "@/lib/utils/credit-card-statements";
 
 export type StatementWithAccount = CreditCardStatement & {
   accounts: { name: string } | null;
@@ -64,6 +67,13 @@ export function useCreditCardStatements() {
       "id" | "created_at" | "paid_at" | "payment_transaction_id"
     >,
   ) => {
+    const duplicate = statements.some(
+      (s) =>
+        s.account_id === data.account_id &&
+        s.statement_date === data.statement_date,
+    );
+    if (duplicate) throw new Error(DUPLICATE_STATEMENT_MESSAGE);
+
     const supabase = createClient();
     const { error } = await supabase
       .from("credit_card_statements")

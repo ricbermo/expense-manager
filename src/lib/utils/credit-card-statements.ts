@@ -62,6 +62,9 @@ export function orderAccountsForReconciliation<
   });
 }
 
+export const DUPLICATE_STATEMENT_MESSAGE =
+  "Ya existe un extracto registrado para esta fecha.";
+
 export function validateStatement({
   totalBalance,
   minimumPayment,

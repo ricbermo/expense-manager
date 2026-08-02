@@ -12,7 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Account } from "@/lib/types/database";
-import { validateStatement } from "@/lib/utils/credit-card-statements";
+import {
+  DUPLICATE_STATEMENT_MESSAGE,
+  validateStatement,
+} from "@/lib/utils/credit-card-statements";
 import {
   formatIntegerInput,
   parseIntegerInput,
@@ -102,6 +105,13 @@ export function CreditCardStatementForm({
       onOpenChange(false);
     } catch (error) {
       console.error("Save statement error:", error);
+      if (
+        error instanceof Error &&
+        error.message === DUPLICATE_STATEMENT_MESSAGE
+      ) {
+        setError("root.server", { message: error.message });
+        return;
+      }
       if (error instanceof TypeError) {
         setError("root.server", {
           message: "No se pudo guardar el extracto. Revisa tu conexión.",
